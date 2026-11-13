@@ -77346,8 +77346,19 @@ function _finish(){
 })();
 </script>
 
-<!-- ═══ PI NETWORK SDK — optional payment layer ═══ -->
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<!-- ═══ PI NETWORK SDK — optional payment layer ═══
+     Hub R5: loaded only on the Pi rail (?pi=1, remembered, or a Pi Browser user agent). It was about 600 ms
+     of main thread on every web visit for a payment lane the web never shows. _initPi runs when it lands. -->
+<script>
+(function(){
+  var onPi = window.LW_RAIL === 'pi';
+  try { if (/PiBrowser|Pi Browser|MinePi/i.test(navigator.userAgent || '')) onPi = true; } catch(e){}
+  if (!onPi) return;
+  var s = document.createElement('script'); s.src = 'https://sdk.minepi.com/pi-sdk.js';
+  s.onload = function(){ window._lwPiSdkLoaded = true; if (typeof window._lwPiSdkReady === 'function') window._lwPiSdkReady(); };
+  document.head.appendChild(s);
+})();
+</script>
 <!-- Shared "found a bug or have an idea?" form (app + portal + shells). -->
 <script src="feedback.js?v=6"></script>
 <script>
@@ -77948,8 +77959,9 @@ window.LW_Pi={
   }
 };
 
-// Initialize on load
-_initPi();
+// Initialize on load (Hub R5: the SDK now loads on demand, so init waits for it when it is still on its way)
+if(typeof Pi!=='undefined'||window._lwPiSdkLoaded)_initPi();
+else window._lwPiSdkReady=_initPi;
 })();
 </script>
 
