@@ -59620,11 +59620,12 @@ function _toast(m,opts){if(opts&&opts.sticky){return _lwStickyToast(m,opts);}var
 // boot messages don't overwrite each other (the single #w-toast node +
 // shared _tt timer made consecutive boot toasts stomp one another).
 // Hub R13: is a card up that a toast must not cover (its title, its buttons)? The onboarding, the beta notice,
-// the account card, the overnight report, a dialog, the bloom card, the level up, the Sunbeam modal.
+// the account card, the overnight report, a dialog, the bloom card, the level up, the Sunbeam modal,
+// the keeper page and the settings menu.
 window._lwCardUp=function(){
   try{
     var b=document.body; if(!b) return true; if(b.classList.contains('ob-active')) return true;
-    var sel=['#pw-onboard','#lw-beta-modal','#sws-id-modal.open','#morning-report','#lw-confirm-modal','#pw-win-overlay','#lu-overlay.open','#lw-sunbeam-modal','#cinematic-reveal.open'];
+    var sel=['#pw-onboard','#lw-beta-modal','#sws-id-modal.open','#morning-report','#lw-confirm-modal','#pw-win-overlay','#lu-overlay.open','#lw-sunbeam-modal','#cinematic-reveal.open','#pw-character.open','#settings-overlay'];
     for(var i=0;i<sel.length;i++){ var el=document.querySelector(sel[i]); if(!el) continue; var cs=getComputedStyle(el);
       if(cs.display!=='none' && cs.visibility!=='hidden' && +cs.opacity>0.05 && el.getBoundingClientRect().height>0) return true; }
   }catch(e){}
