@@ -52,6 +52,10 @@ A friend code is a ROOM that outlives a duel. Data lives under the existing priv
   stays in the room, with "Wait here" and "Leave the room". Nobody is ever dropped into a duel against the
   computer from a friend room.
 - The heading of this screen is "Play a friend", never "Ranked Duel".
+- **A link, not only a code.** The room offers "Share a link": `https://lucidwinds.com/satellites/sixfold/?room=<CODE>`
+  (and the same on the upstream Pages address). Opening it lands straight in that room. This is how a duel gets
+  passed around, so it must work from a cold install: the page loads, the first run card is skipped or kept to
+  one tap, then the room.
 
 ## F3. Emotes and the bluff (the psychological game)
 - An emote bar in the room and, as one small button that opens it, during the choosing phase of a round:
@@ -68,6 +72,26 @@ A friend code is a ROOM that outlives a duel. Data lives under the existing priv
 - The duel screen's leftover gap between the tier card and the buttons; the Close button's style, checked in a
   shot this time.
 - Anything in the friend path that still says "ranked" or "rival" where it means "friend".
+
+## Next, not in this build: the public lobby (Stephen, 13 Nov: "we should have a matchmaking lobby duels so we can get people actually playing and dueling random opponents. We will want to build to this")
+
+"Find a rival" already searches a public lobby and has been live since 13 Nov; two lone humans match after
+about 13 seconds. What stands between that and strangers duelling, in the order to build it:
+- **L1. Safe for strangers (required first).** Anonymous sign in, and database rules keyed to the signed in
+  id (the rules inside `sixfold/` are open today); a real id per player (`Rank.createLadder` gives every fresh
+  install the same id; online play papers over it with a random id per page load); a per round timeout and a
+  short reconnect grace, so a player who switches apps cannot hang the other; ratings that cannot be written
+  by hand (a Cloud Function or rule validation); old duel records cleaned up.
+- **L2. A lobby you can see.** Who is online (a count, names and tiers), a visible search, and the same room
+  as F2 after every duel: ready for a rematch, emotes, or "Next rival".
+- **L3. Someone to fight when nobody is online.** The honest problem is not code: with few players, a random
+  search usually finds no one. Sentinels already fill in. Better: **ghost duels**, a recorded real player's
+  habits played back by the predictor the game already has, clearly labelled as a ghost, so there is always a
+  "human" to beat and a real name on the other side. Fable's recommendation.
+- **L4. The ladder.** A global top list and your own neighbourhood, replacing "Your standing".
+- **L5. Getting people in.** The room link from F2 on Reddit and the arcade; a set "duel hour" so players
+  arrive together; the publishing board for the store listing.
+Each of L1 to L4 is its own build with its own plan. L1 needs a functions deploy and a rules deploy, his.
 
 ## The end
 All suites, domcheck, the extended smoke once against the live database (two phones: room, ready, a duel, an
