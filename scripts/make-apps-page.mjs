@@ -121,23 +121,33 @@ const app = (slug) => {
    grow a Music section and a Sports section that hard-failed this build
    with "No wording for hub category". The hub writes the kicker, the
    question and the line; this script only lays them out. */
+/* KILN and SUMI (15 Nov 2026) are on the studio hub AND in the Arcade as games.
+   Stephen, the same day: "i think they should go in the game studio ... but
+   they can stay in the app studio as well for now". The Arcade is this site,
+   so by his rule of 17 Aug (no duplicates, games belong in the Arcade) they
+   are left off this page, and the section that held them says where they are. */
+const ARCADE_SLUGS = new Set(['kiln', 'sumi']);
+const ARCADE_SUB = { 'pen-paper': 'Draw three letters and grow a whole alphabet you can install as a font. For clay and ink, KILN and SUMI are in the Arcade.' };
 const APPS = {};
 const CATS = [];
 for (const c of cat.categories) {
   for (const field of ['id', 'kick', 'question', 'sub']) {
     if (!c[field]) { console.error(`category "${c.title || c.id}" has no ${field} in the catalogue`); process.exit(1); }
   }
-  const slugs = c.slugs.filter((s) => s !== HUSH_SLUG);
+  const slugs = c.slugs.filter((s) => s !== HUSH_SLUG && !ARCADE_SLUGS.has(s));
   if (!slugs.length) continue;
   for (const slug of slugs) APPS[slug] = app(slug);
-  CATS.push({ id: c.id, kick: c.kick, q: c.question, sub: c.sub, slugs });
+  const moved = c.slugs.some((s) => ARCADE_SLUGS.has(s));
+  CATS.push({ id: c.id, kick: c.kick, q: c.question, sub: (moved && ARCADE_SUB[c.id]) || c.sub, slugs });
 }
 const HUSH = cat.apps[HUSH_SLUG] ? app(HUSH_SLUG) : null;
 if (!HUSH) { console.error('the catalogue has no hush entry, and this page ends on Hush'); process.exit(1); }
 
 /* Counted from the contract, never typed. The hub counts its own shelf; a
    number typed here is a number that goes stale the next time he ships. */
-const total = cat.count;
+/* The two the Arcade holds (see ARCADE_SLUGS) are not on this page, so they are
+   not in this page's count either: the number is what a visitor can see here. */
+const total = cat.count - [...ARCADE_SLUGS].filter((s) => cat.apps[s]).length;
 const shownHere = Object.keys(APPS).length + 1;
 if (shownHere !== total) {
   console.error(`the catalogue counts ${total} apps but this page would show ${shownHere}. Something is missing from a category.`);

@@ -1471,6 +1471,11 @@ var CATS = [["all","All"],["fav","♥ Favorites"],["new","New"],
 // be iframed or same-tab — a new tab is required. Hosted free on Firebase.
 var GAMES = [
  ["pompond","Pom Pond","creative","A chore tracker where kids earn Poms, hatch collectible critters into their pond, and fill buckets to unlock rewards a parent picks, and it opens in its own tab.","","https://pom-pond.web.app","https://pom-pond.web.app/icons/icon-512.png"],
+ /* KILN and SUMI (15 Nov 2026): two of Stephen's own sprints. They live on the
+    studio's site and open in their own tab, the Pom Pond way, so a pot or a
+    print saved from either door is the same pot. No flag: anyone may open them. */
+ ["kiln","KILN","creative","Throw a pot on a 3D wheel, trim it, glaze it, pick one of four kilns and open the door on what the fire did. A pottery studio in your hands, and it opens in its own tab.","","https://skywolfstudio.com/kiln/","/portal-assets/thumbs/kiln.png"],
+ ["sumi","SUMI","creative","Float ink on water, comb it into feathers and pull a marbled print you can sign, seal and frame. Paper marbling on your phone, and it opens in its own tab.","","https://skywolfstudio.com/sumi/","/portal-assets/thumbs/sumi.png"],
  ["song","Music Studio","creative","Make real songs fast: song starters, 80+ real instruments, hum a melody into the grid, live keys and music video export."],
  ["bloomwheel","Bloom Wheel","creative","Draw botanical mandalas on a spinning canvas synced to a beat."],
  ["breathing","Breathing Garden","creative","Follow four guided breathing patterns and watch a bloom open with every breath."],
@@ -1997,6 +2002,8 @@ function _lwPaintCards(el, items){
    One box over EVERYTHING (satellites + garden games), and it speaks
    classic: searching a famous game's name surfaces our take on it. */
 var ALIASES={
+  "kiln":"pottery potter ceramics ceramic clay wheel throwing throw pot mug vase bowl jug glaze glazing fire firing raku celadon tenmoku kintsugi sculpt craft art relaxing cozy",
+  "sumi":"paper marbling marble suminagashi ebru ink water print prints art pattern comb feather seal hanko stamp calligraphy wallpaper craft relaxing cozy",
   "bight":"knot knots rope tie cord bowline hitch figure eight stopper sheet bend clove cleat round turn dock boat sailing camping scouts learn",
   "mainstreet":"investing money shares stocks savings jar town shops plan kids finance paper trading crypto parrot main street",
   /* ⛔ KEYED ON THE GAME'S CURRENT DISPLAY NAME. searchGames() looks these up with
@@ -2193,7 +2200,7 @@ function searchGames(qraw){
      games by the date their folder landed (git), beta ones left out so a chip
      never dead ends on a passcode; keep this list fresh when a game goes live. */
   var CLASSICS=['Sudoku','Mahjong','Peggle','Wordle','Tetris','Minesweeper','Solitaire','Zuma','Snake','Pong','2048','Crossword'];
-  var NEW_PICKS=['Tomato Man','Tally','Sweet Spot','Sixfold','Letter Launch','HUNCH','Abduct a Chameleon','Sled Vine','Spore Drift','Bridgevine'];
+  var NEW_PICKS=['KILN','SUMI','Tomato Man','Tally','Sweet Spot','Sixfold','Letter Launch','HUNCH','Abduct a Chameleon','Sled Vine','Spore Drift','Bridgevine'];
   var chips=document.getElementById('fg-chips');
   function byName(nm){ var r=searchCore(nm).out; for(var i=0;i<r.length;i++){ if(r[i].nm.toLowerCase()===nm.toLowerCase()) return r[i]; } return r[0]||null; }
   function paintNew(){
