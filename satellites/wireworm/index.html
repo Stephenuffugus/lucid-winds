@@ -2743,7 +2743,7 @@ function frame(t) {
   phase += dt * 0.012;
   if (flash > 0) flash = Math.max(0, flash - dt / 260);
   if (shake > 0) shake = Math.max(0, shake - dt / 120);
-  if (running && st && st.alive) {
+  if (running && st && st.alive && !held) {
     acc += dt;
     var ms = tickMs();
     while (acc >= ms && st.alive) { acc -= ms; doTick(); ms = tickMs(); }
@@ -2793,8 +2793,10 @@ function doTick() {
 /* ===================================================================
    8. INPUT — one small queue, applied at the next SIM tick.
    =================================================================== */
+var held = false; // the first run waits for the first turn, so a new player never meets a game over
 function turn(t) {
   if (!running || !st || !st.alive || replay) return;
+  held = false;
   audio();
   queue.push(t);
 }
@@ -2833,7 +2835,7 @@ function startRun(seed, m) {
   inputLog = [];
   replay = null;
   spark = null; flash = 0; shake = 0; scoreShown = 0; creepFx.length = 0;
-  acc = 0; running = true;
+  acc = 0; running = true; held = false;
   $('sheetOver').className = 'sheet';
   $('sheetOpt').className = 'sheet';
   $('btnStart').textContent = COPY.again;
@@ -3066,12 +3068,13 @@ $('btnOptClose').textContent = COPY.done;
 $('btnCopySeed').textContent = COPY.copySeed;
 
 startRun(curSeed, mode);
+if (!bot) held = true;
 requestAnimationFrame(frame);
 
 /* service worker last: the game is playable before it registers */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    try { navigator.serviceWorker.register('./sw.js?v=20260907a'); } catch (e) {}
+    try { navigator.serviceWorker.register('./sw.js?v=20261114a'); } catch (e) {}
   });
 }
 })();
