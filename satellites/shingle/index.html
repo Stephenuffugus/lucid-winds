@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b1a22">
+<meta name="description" content="SHINGLE: hang roof tiles, bury their studs, bank your own. A one-thumb tile duel by Lucid Winds.">
+<!-- Playtest build: unlisted. Remove noindex at launch (M6). -->
+<meta name="robots" content="noindex, nofollow">
+<!-- Social card: og-1.jpg is the game's own roof, rendered by og.js. A new card takes a new name (the site caches images for a year). -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="SHINGLE">
+<meta property="og:description" content="Hang roof tiles, bury their studs, bank your own. A one-thumb roof-tile duel by Lucid Winds.">
+<meta property="og:url" content="https://lucidwinds.com/satellites/shingle/">
+<meta property="og:image" content="https://lucidwinds.com/satellites/shingle/og-1.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A SHINGLE roof mid-game: clay and slate tiles hung in a staggered lattice, beside the title">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SHINGLE">
+<meta name="twitter:description" content="Hang roof tiles, bury their studs, bank your own. A one-thumb roof-tile duel by Lucid Winds.">
+<meta name="twitter:image" content="https://lucidwinds.com/satellites/shingle/og-1.jpg">
+<title>SHINGLE</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #15141b; --ink: #f3ead9; --dim: #a79d8d; --line: rgba(243,234,217,.14);
+    --copper: #d08a4e; --gold: #e8c27a; --panel: rgba(28,26,36,.94);
+    --clay: #c4623f; --slate: #6c7f94; --patina: #4f9a86; --cedar: #b08a55;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    overflow: hidden; overscroll-behavior: none; user-select: none; -webkit-user-select: none; touch-action: none; }
+  canvas#cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* HUD */
+  #hud { position: fixed; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top) + 8px) 10px 8px;
+    display: flex; gap: 6px; align-items: stretch; pointer-events: none; z-index: 5; }
+  #chips { flex: 1; display: flex; gap: 6px; min-width: 0; }
+  .chip { pointer-events: auto; flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; padding: 6px 8px;
+    border-radius: 12px; background: rgba(0,0,0,.32); border: 1px solid var(--line); transition: transform .2s, background .2s; }
+  .chip.on { background: rgba(255,255,255,.10); border-color: rgba(232,194,122,.65); transform: translateY(1px); }
+  .chip.next { border-color: rgba(232,194,122,.3); border-style: dashed; }
+  .chip .sw { width: 14px; height: 14px; border-radius: 4px; flex: none; box-shadow: inset 0 -2px 0 rgba(0,0,0,.25);
+    font: 800 11px/14px system-ui, sans-serif; text-align: center; color: rgba(15,10,8,.8); }
+  #chips:not(.compact) .chip .sw:not(:empty) { width: 18px; height: 18px; line-height: 18px; font-size: 13px; }
+  .chip .nm { font-size: 11px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; }
+  .chip .sc { font-size: 19px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .chip .meta { display: flex; flex-direction: column; min-width: 0; }
+  .chip .left { margin-left: auto; font-size: 10px; color: var(--dim); text-align: right; line-height: 1.15; }
+  #chips.compact .chip { padding: 6px 6px; gap: 5px; }
+  .chip .scl { display: flex; align-items: center; gap: 4px; }
+  .chip .tr { font: 800 10px/1 system-ui, sans-serif; padding: 2px 4px; border-radius: 5px; background: rgba(255,255,255,.16); color: var(--ink); }
+  .chip .tr:empty { display: none; }
+  #chips.compact .left { display: none; }
+  #chips.compact .sc { font-size: 17px; }
+  #chips.compact .sw { width: 10px; height: 10px; }
+  #chips.compact .chip .sw:not(:empty) { width: 14px; height: 14px; line-height: 14px; font-size: 10px; }
+  .chip { position: relative; }
+  .chip .dl { position: absolute; left: 50%; top: 100%; z-index: 6; pointer-events: none; transform: translate(-50%, -40%);
+    font: 800 15px/1 system-ui, sans-serif; color: #fff4ef; background: #b8372a; border: 1px solid #ff9a85; border-radius: 10px; padding: 4px 9px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.5); animation: chipDl 1.6s ease-out forwards; }
+  @keyframes chipDl { 0% { opacity: 0; transform: translate(-50%, -120%) scale(.6); } 14% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+    28% { transform: translate(-50%, -40%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, 30%); } }
+  .chip.hit { animation: chipHit 1s ease-out; }
+  .chip.hit .sc { color: #ffb4a2; }
+  @keyframes chipHit { 0%, 35% { background: rgba(184,55,42,.55); border-color: #ff9a85; } }
+  #menuBtn { pointer-events: auto; width: 42px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.32); font-size: 18px; }
+
+  /* tray buttons */
+  #trayBar { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 12px calc(env(safe-area-inset-bottom) + 10px);
+    display: flex; gap: 8px; justify-content: center; z-index: 4; pointer-events: none; }
+  #trayBar button { pointer-events: auto; min-width: 76px; height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--line);
+    background: rgba(0,0,0,.35); font-size: 14px; font-weight: 700; letter-spacing: .02em; }
+  #trayBar button:disabled { opacity: .35; }
+  #status { position: fixed; left: 50%; transform: translateX(-50%); z-index: 4; font-size: 13px; color: var(--dim);
+    pointer-events: none; white-space: nowrap; text-shadow: 0 1px 2px #000; max-width: calc(100vw - 20px); overflow: hidden; text-overflow: ellipsis; }
+
+  /* tutorial coach line */
+  #coach { position: fixed; left: 50%; transform: translateX(-50%); top: 92px; z-index: 5; display: none; width: min(92vw, 420px);
+    background: rgba(20,16,26,.92); border: 1px solid rgba(232,194,122,.45); border-radius: 12px; padding: 8px 10px; color: #f3e6cf;
+    font: 600 14px/1.3 system-ui, sans-serif; align-items: center; gap: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+  #coach.show { display: flex; }
+  #coach .n { color: #e8c27a; font-size: 12px; white-space: nowrap; }
+  #coach .t { flex: 1; }
+  #coach button { min-height: 44px; min-width: 52px; border-radius: 9px; border: 1px solid rgba(255,255,255,.2); background: transparent; color: #cbb; font: 600 12px system-ui; }
+  /* toast */
+  #toast { position: fixed; left: 50%; top: 42%; transform: translate(-50%,-50%) scale(.9); opacity: 0; z-index: 8; max-width: 82vw; text-align: center;
+    background: var(--panel); border: 1px solid var(--line); padding: 12px 18px; border-radius: 16px; font-size: 16px; font-weight: 800;
+    pointer-events: none; transition: opacity .2s, transform .2s; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+  #toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+
+  /* overlays */
+  .ov { position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center; padding: 18px;
+    background: radial-gradient(ellipse at 50% 20%, rgba(60,40,50,.55), rgba(10,9,14,.92)); }
+  .ov.show { display: flex; }
+  .card { width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 22px; padding: 20px 18px; box-shadow: 0 20px 60px rgba(0,0,0,.6); touch-action: pan-y; }
+  .title { font-size: 46px; font-weight: 900; letter-spacing: .14em; text-align: center; margin: 4px 0 2px;
+    background: linear-gradient(180deg, #f6dcb2, #c4623f 70%, #7d3a22); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { text-align: center; color: var(--dim); font-size: 14px; margin-bottom: 16px; }
+  .btn { display: block; width: 100%; padding: 14px; margin: 8px 0; border-radius: 14px; border: 1px solid var(--line);
+    background: rgba(255,255,255,.06); font-size: 16px; font-weight: 800; text-align: center; }
+  .btn.pri { background: linear-gradient(180deg, #d9784f, #a84a2c); border-color: #e39a72; color: #fff7ec; box-shadow: 0 6px 18px rgba(196,98,63,.35); }
+  .btn small { display: block; font-weight: 600; font-size: 12px; opacity: .75; margin-top: 2px; }
+  .row { display: flex; gap: 8px; }
+  .row .btn { flex: 1; }
+  h3 { margin: 14px 0 6px; font-size: 13px; color: var(--dim); text-transform: uppercase; letter-spacing: .12em; }
+  .seat { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .seat .sw { width: 18px; height: 18px; border-radius: 5px; }
+  .seat .lbl { width: 64px; font-weight: 700; }
+  .seat.tier { margin: 2px 0 10px; }
+  .seat.tier .lbl { width: 90px; } /* no swatch here: line the picker up with the seat pickers below */
+  .seat.tier .seg button { min-height: 44px; font-size: 14px; }
+  .seg { flex: 1; display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button { flex: 1; border: 0; background: transparent; padding: 8px 0; font-size: 12px; font-weight: 700; color: var(--dim); }
+  .seg button.on { background: rgba(232,194,122,.18); color: var(--ink); }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .tog { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; padding: 8px 2px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .tog .sw2 { flex: none; }
+  .tog small { display: block; font-size: 14px; color: var(--dim); margin-top: 2px; line-height: 1.3; }
+  .tog.tseg { cursor: default; }
+  .tog .seg { flex: none; }
+  .tog .seg button { min-height: 44px; padding: 0 11px; font-size: 14px; }
+  .tog:last-child { border-bottom: 0; }
+  .sw2 { width: 46px; height: 26px; border-radius: 13px; background: rgba(255,255,255,.12); position: relative; border: 0; }
+  .sw2::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #ddd; transition: left .15s; }
+  .sw2.on { background: #a84a2c; } .sw2.on::after { left: 23px; }
+  .rules p, .rules li { font-size: 14px; line-height: 1.45; color: #e7ddcb; }
+  .rules ol { padding-left: 20px; margin: 6px 0; }
+  .rules b { color: var(--gold); }
+  .res { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-size: 14px; }
+  .res td, .res th { padding: 7px 3px; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .res th { color: var(--dim); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  .res td:first-child { white-space: nowrap; }
+  .res td:first-child, .res th:first-child { text-align: left; }
+  .res tr.win td { color: var(--gold); font-weight: 800; }
+  .big { text-align: center; font-size: 26px; font-weight: 900; margin: 6px 0 2px; }
+  .note { text-align: center; color: var(--dim); font-size: 12px; margin-top: 6px; }
+  #pop { position: fixed; z-index: 9; display: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 12px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  #pop canvas { display: block; }
+  input { user-select: text; -webkit-user-select: text; touch-action: manipulation; }
+  .sunbal { display: flex; justify-content: center; align-items: center; gap: 6px; color: var(--gold); font-weight: 800; font-size: 14px; margin: -6px 0 8px; }
+  .sunline { text-align: center; color: var(--gold); font-weight: 800; font-size: 15px; margin: 8px 0 2px; line-height: 1.35; }
+  .sunline:empty { display: none; }
+  .sunline span { display: block; color: var(--dim); font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sunico { display: inline-block; vertical-align: -2px; }
+  .stat { display: flex; justify-content: space-between; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .stat span { color: var(--dim); }
+  .stat b { font-variant-numeric: tabular-nums; text-align: right; }
+  .streak { display: flex; justify-content: space-around; text-align: center; margin: 4px 0 10px; color: var(--dim); font-size: 14px; }
+  .streak b { display: block; color: var(--ink); font-size: 24px; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal .h { text-align: center; color: var(--dim); font-size: 12px; font-weight: 700; }
+  .cal .d { min-height: 42px; border-radius: 8px; background: rgba(255,255,255,.05); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .cal .d i { font-style: normal; font-size: 11px; color: var(--dim); }
+  .cal .d b { font-size: 14px; font-variant-numeric: tabular-nums; }
+  .cal .d.won b { color: #9fd36a; } .cal .d.lost b { color: #ff8f7a; } .cal .d.even b { color: var(--ink); }
+  .cal .d.today { outline: 2px solid rgba(232,194,122,.7); }
+  .badges { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .badge { border: 1px solid var(--line); border-radius: 11px; padding: 5px 8px; background: rgba(255,255,255,.04); }
+  .badge b { display: block; font-size: 14px; line-height: 1.2; }
+  .badge span { display: block; font-size: 12px; line-height: 1.25; color: var(--dim); }
+  .badge i { display: block; font-style: normal; font-size: 12px; line-height: 1.3; color: var(--gold); margin-top: 1px; }
+  .badge.got { border-color: rgba(232,194,122,.6); background: rgba(232,194,122,.10); }
+  .badge:not(.got) b { color: var(--dim); }
+  .item { display: flex; align-items: center; gap: 9px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .item canvas { flex: none; width: 88px; height: 48px; border-radius: 8px; }
+  .item .it { flex: 1; min-width: 0; }
+  .item .it b { display: block; font-size: 15px; line-height: 1.2; }
+  .item .it span { display: block; font-size: 12px; line-height: 1.25; color: var(--dim); }
+  .item button { flex: none; min-width: 82px; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.06); font-weight: 800; font-size: 14px; }
+  .item button.eqd { color: var(--gold); border-color: rgba(232,194,122,.55); background: rgba(232,194,122,.10); }
+  .item button.ask { color: #1b1410; background: var(--gold); border-color: var(--gold); }
+  .item button:disabled { opacity: .45; }
+  .linkmsg { color: #ffb4a2; font-size: 14px; margin: -2px 0 8px; }
+  .climbtot { text-align: center; color: var(--gold); font-weight: 800; margin: 6px 0 2px; }
+  .roofs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 8px 0 4px; }
+  .roofb { min-height: 50px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.05); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px; }
+  .roofb b { font-size: 16px; line-height: 1.1; }
+  .roofb i { font-style: normal; font-size: 12px; color: var(--gold); letter-spacing: .04em; }
+  .roofb.locked { opacity: .35; }
+  .fname { flex: 1; min-width: 0; min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--ink); font: 700 16px system-ui, sans-serif; padding: 0 12px; }
+  .sendmsg { text-align: center; color: var(--gold); font-weight: 800; font-size: 15px; margin: 4px 0 6px; }
+  .linkbox { width: 100%; min-height: 44px; border-radius: 10px; border: 1px solid rgba(232,194,122,.5); background: rgba(0,0,0,.35); color: var(--ink); font: 600 13px ui-monospace, monospace; padding: 0 10px; margin: 0 0 6px; }
+  .achline { text-align: center; font-weight: 800; font-size: 15px; color: #f6e1b0; margin: 4px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .achline:empty { display: none; }
+  .tabs { margin: 0 0 6px; }
+  .tabs button { min-height: 44px; font-size: 14px; }
+  .tnote { margin: 0 0 8px; }
+  .howp ol { margin-top: 4px; }
+  /* narrow phones (360 px): roomier seat pickers */
+  @media (max-width: 380px) {
+    .ov { padding: 10px; }
+    .card { padding-left: 13px; padding-right: 13px; }
+    .seat .lbl { width: 58px; font-size: 15px; }
+    .seat.tier .lbl { width: 84px; }
+    .seg button { padding: 8px 2px; }
+  }
+  /* short phones (640 px tall): the menu and every How to Play page fit without scrolling */
+  @media (max-height: 700px) {
+    .ov { padding: 10px; }
+    .card { padding-top: 12px; padding-bottom: 12px; }
+    .title { font-size: 36px; margin: 0; }
+    .sub { margin-bottom: 8px; }
+    .btn { padding: 10px; margin: 6px 0; }
+    .big { font-size: 22px; margin: 2px 0; }
+    .rules p, .rules li { line-height: 1.38; }
+    .rules p { margin: 8px 0; }
+    .tog { padding: 3px 2px; }
+  }
+  .sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .rm *, .rm *::before, .rm *::after { transition: none !important; animation: none !important; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="hud"><div id="chips"></div><button id="menuBtn" aria-label="Menu">&#9776;</button></div>
+<div id="status"></div>
+<div id="live" class="sr" role="status" aria-live="polite" aria-atomic="true"></div>
+<div id="trayBar">
+  <button id="bFlip" aria-label="Flip tile">Flip</button>
+  <button id="bMirror" aria-label="Mirror tile">Mirror</button>
+  <button id="bUndo" aria-label="Undo">Undo</button>
+</div>
+<div id="toast"></div>
+<div id="coach" role="status" aria-live="polite"><span class="n" id="coachN"></span><span class="t" id="coachT"></span><button id="coachSkip">Skip</button></div>
+<div id="pop"></div>
+
+<!-- Main menu -->
+<div class="ov show" id="ovMenu"><div class="card">
+  <div class="title">SHINGLE</div>
+  <div class="sub">Hang tiles. Bury their studs. Bank your own.</div>
+  <div class="sunbal" id="mSun"></div>
+  <div class="note linkmsg" id="mLinkMsg" hidden></div>
+  <button class="btn pri" id="mQuick">Play vs Bot<small id="mQuickSub">You vs Medium</small></button>
+  <div class="seat tier"><span class="lbl">Bot</span><div class="seg" id="mTier" role="group" aria-label="Bot for Play vs Bot"><button data-v="easy">Easy</button><button data-v="medium">Medium</button><button data-v="hard">Hard</button></div></div>
+  <div class="row"><button class="btn" id="mDaily">Daily Roof<small id="mDailySub"></small></button><button class="btn" id="mBlitz">Blitz<small id="mBlitzSub"></small></button></div>
+  <div class="row"><button class="btn" id="mClimb">Climb<small id="mClimbSub"></small></button><button class="btn" id="mFriends">Friends<small>by link, 2 to 4</small></button></div>
+  <div class="row"><button class="btn" id="mTable">Custom table<small id="mTableSub"></small></button><button class="btn" id="mHow">How to play</button></div>
+  <div class="row" id="mRow2"><button class="btn" id="mSet">Settings</button><button class="btn" id="mShop">Shop</button><button class="btn" id="mStats">Stats</button></div>
+  <button class="btn" id="mResume" style="display:none">Resume match</button>
+  <div class="note">Lucid Winds · v1.1</div>
+</div></div>
+
+<!-- Custom table: 2 to 4 seats, people or bots (pass and play) -->
+<div class="ov" id="ovTable"><div class="card">
+  <div class="big">Custom table</div>
+  <div class="note tnote">2 to 4 seats, each a person or a bot. People pass the phone.</div>
+  <div id="seats"></div>
+  <div class="row"><button class="btn" id="mAddSeat">+ Seat</button><button class="btn" id="mDelSeat">&minus; Seat</button></div>
+  <div class="seat"><span class="lbl" style="width:auto;margin-right:6px">Roof</span><div class="seg" id="mStack"><button data-v="16">Standard · 16</button><button data-v="12">Quick · 12</button></div></div>
+  <button class="btn pri" id="mStart">Start match</button>
+  <button class="btn" data-close>Back</button>
+</div></div>
+
+<!-- Stats: your record, and the Daily Roof calendar -->
+<div class="ov" id="ovStats"><div class="card">
+  <div class="seg tabs" id="statTabs" role="tablist"><button data-p="stats" role="tab">Stats</button><button data-p="daily" role="tab">Daily</button><button data-p="badges" role="tab">Badges</button></div>
+  <div class="statp" id="statStats"></div>
+  <div class="statp" id="statDaily" hidden></div>
+  <div class="statp" id="statBadges" hidden></div>
+  <button class="btn" data-close>Back</button>
+</div></div>
+
+<!-- Shop: roof sets, skies and rain styles, bought with Sunbeams. Looks only. -->
+<div class="ov" id="ovShop"><div class="card">
+  <div class="sunbal" id="shopBal" style="margin:0 0 6px"></div>
+  <div class="seg tabs" id="shopTabs" role="tablist"><button data-p="set" role="tab">Roofs</button><button data-p="backdrop" role="tab">Skies</button><button data-p="rain" role="tab">Rain</button></div>
+  <div id="shopList"></div>
+  <div class="note">Looks only: nothing here changes scoring or the bots.</div>
+  <button class="btn" data-close>Back</button>
+</div></div>
+
+<!-- Climb: thirty solo roofs, each opening the next -->
+<div class="ov" id="ovClimb"><div class="card">
+  <div class="big">Climb</div>
+  <div class="note">Bury as many of Slate's studs as you can with your three tiles. A star on a roof opens the next.</div>
+  <div class="climbtot" id="climbTot"></div>
+  <div class="roofs" id="climbList"></div>
+  <button class="btn" data-close>Back</button>
+</div></div>
+<div class="ov" id="ovClimbEnd"><div class="card">
+  <div class="big" id="cTitle"></div>
+  <div class="note" id="cSub"></div>
+  <div class="sunline" id="cSun"></div>
+  <button class="btn pri" id="cNext">Next roof</button>
+  <div class="row"><button class="btn" id="cAgain">Try again</button><button class="btn" id="cRoofs">Roofs</button></div>
+</div></div>
+
+<!-- Friends by link: each friend plays a turn on their own phone and sends the link on (no accounts, no server) -->
+<div class="ov" id="ovFriends"><div class="card">
+  <div class="big">Friends by link</div>
+  <div class="note tnote">Each friend plays a turn on their own phone, then sends the link to the next. No accounts, no server.</div>
+  <div id="fSeats"></div>
+  <div class="row"><button class="btn" id="fAdd">+ Friend</button><button class="btn" id="fDel">&minus; Friend</button></div>
+  <div class="seat"><span class="lbl" style="width:auto;margin-right:6px">Roof</span><div class="seg" id="fStack"><button data-v="16">Standard · 16</button><button data-v="12">Quick · 12</button></div></div>
+  <button class="btn pri" id="fStart">Start: the first name plays first</button>
+  <button class="btn" data-close>Back</button>
+</div></div>
+<div class="ov" id="ovSend"><div class="card">
+  <div class="big" id="sTitle">Your move is in</div>
+  <div class="note" id="sSub"></div>
+  <button class="btn pri" id="sSend">Send move</button>
+  <div class="sendmsg" id="sMsg" role="status" hidden></div>
+  <input class="linkbox" id="sLink" readonly hidden aria-label="Match link">
+  <div class="row"><button class="btn" id="sUndo">Undo my move</button><button class="btn" id="sMenu">Menu</button></div>
+  <div class="note" id="sNote"></div>
+</div></div>
+
+<!-- How to play -->
+<div class="ov" id="ovHow"><div class="card rules">
+  <div class="seg tabs" id="howTabs" role="tablist"><button data-p="1" role="tab">How to hang</button><button data-p="2" role="tab">Scoring &amp; signs</button></div>
+  <div class="howp" id="howP1"><ol>
+    <li>Every tile has a <b>head</b> (top row) and a <b>tail</b> (bottom row). Each cell carries 0–3 copper <b>studs</b>.</li>
+    <li>Drag a tile up from your tray (in no-drag mode, tap a gold spot, then tap it again). Its head must cover the <b>exposed tail</b> of exactly one tile: straight (both cells) or <b>staggered</b> (one cell, the other over empty roof).</li>
+    <li><b>Strength rule:</b> every head cell must have at least as many studs as the tail cell it covers. A red cell means too weak.</li>
+    <li>Heads can never be covered, so they're banked. Tails stay exposed until someone covers them.</li>
+    <li><b>Tap</b> a tray tile to flip it (head ⇄ tail; in no-drag mode the first tap picks it). <b>Swipe</b> it sideways to mirror it.</li>
+    <li>No legal hang? You <b>drop</b> the tile below the roof to start a new branch.</li>
+  </ol></div>
+  <div class="howp" id="howP2" hidden>
+  <p><b>Scoring:</b> every visible stud of your color. Heads are safe and score ×1. A tail that's still exposed at the end and has <b>weathered</b> a full round (every other player had a turn since it was hung) <b>catches the rain: ×2</b>. A completely filled row (a <b>course</b>) gives +3 to whoever shows the most studs in it. Ties are shared wins.</p>
+  <p><b>Turn order snakes</b> like a roofing crew working back along the roof: 1-2-3, 3-2-1, 1-2-3… so sometimes you hang two in a row.</p>
+  <p>A moss sprout marks a weathered tail. Cracked tails are ones you can cover this turn. A pulsing red edge means one of your tails is at risk. A <b>+3 tag</b> at the left edge marks a full row (a course) in the colour of the player it pays; a grey <b>tie</b> tag pays nobody.</p>
+  </div>
+  <div class="row"><button class="btn" id="hTut">Tutorial</button><button class="btn pri" data-close>Got it</button></div>
+</div></div>
+
+<!-- Settings -->
+<div class="ov" id="ovSet"><div class="card">
+  <div class="big">Settings</div>
+  <div class="tog"><span>Sound effects</span><button class="sw2" id="tSound"></button></div>
+  <div class="tog"><span>Music</span><button class="sw2" id="tMusic"></button></div>
+  <div class="tog"><span>Haptics</span><button class="sw2" id="tHaptic"></button></div>
+  <div class="tog tseg"><span>Hints<small id="tHintNote"></small></span><div class="seg" id="tHintLevel" role="group" aria-label="Hints"><button data-v="full">Full</button><button data-v="minimal">Minimal</button><button data-v="off">Off</button></div></div>
+  <div class="tog"><span>Score preview<small>+N for you, &minus;M for them</small></span><button class="sw2" id="tPreview"></button></div>
+  <div class="tog"><span>No-drag mode<small>Tap a spot, then tap it again</small></span><button class="sw2" id="tNoDrag"></button></div>
+  <div class="tog"><span>Symbols on tiles<small>C / S / P / R in each head corner</small></span><button class="sw2" id="tSymbols"></button></div>
+  <div class="tog"><span>Reduce motion<small>Follows your device until set</small></span><button class="sw2" id="tMotion"></button></div>
+  <div class="tog"><span>Announce each hang<small>Each hang, for screen readers</small></span><button class="sw2" id="tAnnounce"></button></div>
+  <button class="btn pri" data-close>Done</button>
+</div></div>
+
+<!-- Pause -->
+<div class="ov" id="ovPause"><div class="card">
+  <div class="big">Paused</div>
+  <button class="btn pri" data-close>Resume</button>
+  <button class="btn" id="pHow">How to play</button>
+  <button class="btn" id="pSet">Settings</button>
+  <button class="btn" id="pQuit">Quit to menu</button>
+</div></div>
+
+<!-- Results -->
+<div class="ov" id="ovEnd"><div class="card">
+  <div class="big" id="eTitle">Clay wins</div>
+  <div class="note" id="eSub"></div>
+  <table class="res" id="eTable"></table>
+  <div class="sunline" id="eSun"></div>
+  <div class="achline" id="eAch"></div>
+  <button class="btn pri" id="eAgain">Rematch</button>
+  <div class="row"><button class="btn" id="eLink">Share match link</button><button class="btn" id="eShare" style="display:none">Copy result</button></div>
+  <div class="row"><button class="btn" id="eView">View roof</button><button class="btn" id="eMenu">Menu</button></div>
+</div></div>
+
+<!-- Climb roofs: made by climb.js from seeded medium-vs-medium games and checked by it (node climb.js --check).
+     pre = [seat, tile, flip, mirror, row, column, drop] for every tile already on the roof; hand = your 3 tiles;
+     stars = studs of Slate's to bury for 1, 2 and 3 stars (3 = the exact best). -->
+<script type="application/json" id="climb">
+{"roofs": [
+  {"id":"r1","pre":[[0,"hook",1,0,1,0,0],[1,"split",0,0,2,1,0],[1,"split",0,0,3,0,0],[0,"split",0,0,3,2,0],[0,"split",0,1,4,0,0],[1,"split",0,1,4,2,0],[1,"anchor",1,0,5,3,0],[0,"even",0,0,1,4,0],[0,"hook",0,1,6,2,0],[1,"even",0,0,2,4,0],[1,"spike",1,1,7,2,0]],"hand":["even","even","anchor"],"stars":[2,3,4]},
+  {"id":"r2","pre":[[0,"spike",1,1,1,1,0],[1,"spike",0,1,2,1,0],[1,"hook",1,0,1,3,0],[0,"even",0,0,3,0,0],[0,"anchor",0,0,2,3,0],[1,"anchor",0,0,4,0,0],[1,"split",0,0,5,1,0],[0,"split",0,1,6,1,0],[0,"spike",1,0,7,2,0],[1,"split",0,1,7,0,0],[1,"even",0,0,3,4,0]],"hand":["hook","hook","even"],"stars":[2,3,4]},
+  {"id":"r3","pre":[[0,"hook",1,1,1,1,0],[1,"hook",0,1,2,1,0],[1,"even",0,0,1,3,0],[0,"even",0,0,2,3,0],[0,"split",0,1,3,0,0],[1,"even",0,0,3,3,0],[1,"hook",0,0,4,0,0],[0,"even",0,0,4,3,0],[0,"split",0,0,5,1,0],[1,"anchor",0,0,6,1,0],[1,"anchor",0,0,5,3,0],[0,"anchor",1,0,6,4,0],[0,"even",0,0,7,2,0],[1,"split",0,0,7,5,0],[1,"even",0,0,8,2,0]],"hand":["even","spike","split"],"stars":[2,3,4]},
+  {"id":"r4","pre":[[0,"spike",1,0,1,0,0],[1,"spike",0,0,2,0,0],[1,"hook",1,0,1,2,0],[0,"split",0,1,3,0,0],[0,"hook",0,0,2,2,0],[1,"hook",1,1,3,3,0],[1,"hook",0,0,4,0,0],[0,"anchor",0,0,4,3,0],[0,"even",0,0,5,1,0],[1,"even",0,0,6,1,0],[1,"anchor",1,0,5,4,0],[0,"even",0,0,7,1,0],[0,"split",0,1,6,3,0],[1,"even",0,0,8,1,0]],"hand":["even","hook","anchor"],"stars":[2,3,4]},
+  {"id":"r5","pre":[[0,"anchor",1,0,1,4,0],[1,"even",0,0,1,2,0],[1,"hook",0,0,2,5,0],[0,"even",0,0,2,2,0],[0,"even",0,0,1,0,0],[1,"even",0,0,3,2,0],[1,"hook",0,1,2,0,0],[0,"spike",1,0,3,5,0],[0,"anchor",0,0,4,2,0],[1,"hook",1,1,5,1,0]],"hand":["split","even","even"],"stars":[2,3,4]},
+  {"id":"r6","pre":[[0,"spike",1,0,1,0,0],[1,"anchor",1,0,1,2,0],[1,"even",0,0,1,4,0],[0,"hook",0,1,2,4,0],[0,"hook",1,0,3,5,0],[1,"split",0,1,4,4,0],[1,"spike",0,0,2,0,0],[0,"split",0,0,5,4,0],[0,"hook",1,0,3,0,0],[1,"hook",0,0,4,0,0],[1,"split",0,1,6,4,0],[0,"split",0,0,7,4,0],[0,"even",0,0,5,0,0],[1,"even",0,0,6,0,0],[1,"split",0,1,8,4,0],[0,"anchor",0,0,2,2,0]],"hand":["even","anchor","spike"],"stars":[2,3,4]},
+  {"id":"r7","pre":[[0,"hook",1,0,1,0,0],[1,"spike",1,1,2,1,0],[1,"split",0,1,1,4,0],[0,"even",0,0,2,5,0],[0,"even",0,0,3,0,0],[1,"even",0,0,3,5,0],[1,"even",0,0,4,0,0],[0,"even",0,0,5,0,0],[0,"hook",0,1,2,3,0],[1,"hook",1,1,6,1,0],[1,"split",0,0,3,3,0],[0,"hook",0,1,7,1,0],[0,"even",0,0,4,5,0],[1,"even",0,0,5,5,0]],"hand":["hook","anchor","spike"],"stars":[2,3,4]},
+  {"id":"r8","pre":[[0,"anchor",1,0,1,0,0],[1,"hook",0,0,2,1,0],[1,"hook",1,0,3,0,0],[0,"spike",1,1,3,2,0],[0,"hook",0,0,4,0,0],[1,"anchor",1,0,1,3,0],[1,"split",0,0,5,1,0],[0,"even",0,0,6,0,0],[0,"split",0,0,2,4,0],[1,"split",0,0,3,5,0],[1,"even",0,0,7,0,0],[0,"even",0,0,8,0,0],[0,"hook",1,1,4,4,0],[1,"even",0,0,9,0,0]],"hand":["even","hook","hook"],"stars":[2,3,4]},
+  {"id":"r9","pre":[[0,"even",0,0,1,1,0],[1,"hook",0,1,2,1,0],[1,"even",0,0,1,3,0],[0,"spike",1,1,2,4,0],[0,"split",0,0,3,1,0],[1,"spike",0,1,3,4,0],[1,"split",0,1,4,1,0],[0,"split",0,1,5,0,0],[0,"hook",1,0,4,3,0],[1,"hook",0,0,5,3,0],[1,"split",0,0,6,0,0],[0,"hook",1,0,4,5,0],[0,"split",0,1,7,0,0],[1,"split",0,0,8,0,0],[1,"even",0,0,6,2,0]],"hand":["hook","anchor","anchor"],"stars":[3,4,5]},
+  {"id":"r10","pre":[[0,"anchor",1,0,1,3,0],[1,"even",0,0,1,0,0],[1,"even",0,0,2,1,0],[0,"even",0,0,3,1,0],[0,"hook",1,0,4,0,0],[1,"hook",0,0,5,0,0],[1,"split",0,0,2,4,0],[0,"spike",1,0,6,0,0],[0,"hook",0,1,3,4,0],[1,"spike",0,0,7,0,0],[1,"hook",1,0,4,3,0],[0,"hook",0,0,5,3,0],[0,"spike",1,1,4,5,0],[1,"spike",0,1,5,5,0],[1,"even",0,0,6,2,0]],"hand":["even","even","split"],"stars":[2,3,4]},
+  {"id":"r11","pre":[[0,"even",0,0,1,0,0],[1,"split",0,0,2,1,0],[1,"split",0,0,3,0,0],[0,"split",0,0,4,1,0],[0,"spike",1,1,5,0,0],[1,"split",0,0,5,2,0],[1,"even",0,0,1,4,0],[0,"even",0,0,2,4,0],[0,"hook",0,1,6,2,0],[1,"even",0,0,3,4,0],[1,"even",0,0,7,2,0]],"hand":["anchor","split","anchor"],"stars":[2,3,4]},
+  {"id":"r12","pre":[[0,"spike",1,0,1,3,0],[1,"anchor",1,0,1,1,0],[1,"split",0,1,2,4,0],[0,"split",0,1,3,3,0],[0,"hook",0,1,2,0,0],[1,"even",0,0,3,0,0],[1,"hook",0,1,4,2,0],[0,"even",0,0,4,0,0],[0,"hook",1,1,3,5,0],[1,"hook",0,1,4,5,0],[1,"even",0,0,5,0,0]],"hand":["split","even","anchor"],"stars":[2,3,4]},
+  {"id":"r13","pre":[[0,"even",0,0,1,2,0],[1,"even",0,0,2,2,0],[1,"anchor",1,0,1,0,0],[0,"even",0,0,3,2,0],[0,"spike",1,0,1,4,0],[1,"split",0,0,2,5,0],[1,"split",0,1,4,1,0],[0,"even",0,0,5,2,0],[0,"split",0,1,5,0,0],[1,"even",0,0,6,2,0],[1,"split",0,0,6,0,0],[0,"anchor",0,0,2,0,0],[0,"even",0,0,7,2,0],[1,"hook",1,0,3,4,0],[1,"even",0,0,8,2,0]],"hand":["split","split","anchor"],"stars":[4,5,6]},
+  {"id":"r14","pre":[[0,"spike",1,1,1,3,0],[1,"even",0,0,1,1,0],[1,"even",0,0,2,0,0],[0,"even",0,0,3,0,0],[0,"even",0,0,4,1,0],[1,"even",0,0,5,1,0],[1,"even",0,0,6,2,0],[0,"hook",0,0,7,2,0],[0,"split",0,1,6,0,0],[1,"split",0,0,7,0,0],[1,"split",0,0,8,3,0],[0,"hook",0,1,9,3,0],[0,"spike",0,1,8,0,0],[1,"hook",1,1,10,3,0],[1,"hook",1,1,9,0,0]],"hand":["anchor","hook","split"],"stars":[4,5,6]},
+  {"id":"r15","pre":[[0,"anchor",1,0,1,0,0],[1,"split",0,0,2,1,0],[1,"spike",1,0,1,4,0],[0,"split",0,0,3,2,0],[0,"hook",1,0,2,5,0],[1,"anchor",0,0,3,5,0],[1,"split",0,1,4,2,0],[0,"even",0,0,3,0,0],[0,"hook",1,1,4,4,0],[1,"even",0,0,4,0,0],[1,"hook",0,0,5,5,0]],"hand":["even","anchor","even"],"stars":[3,4,5]},
+  {"id":"r16","pre":[[0,"spike",1,1,1,2,0],[1,"anchor",1,0,2,1,0],[1,"hook",1,0,1,4,0],[0,"spike",0,0,3,2,0],[0,"even",0,0,2,5,0],[1,"even",0,0,3,5,0],[1,"even",0,0,4,2,0],[0,"even",0,0,5,2,0],[0,"split",0,1,3,0,0],[1,"split",0,0,4,0,0],[1,"even",0,0,6,2,0]],"hand":["hook","anchor","split"],"stars":[4,5,6]},
+  {"id":"r17","pre":[[0,"hook",1,0,1,0,0],[1,"split",0,0,2,1,0],[1,"spike",1,0,3,0,0],[0,"split",0,0,3,2,0],[0,"anchor",1,0,1,4,0],[1,"split",0,0,2,5,0],[1,"anchor",1,0,3,4,0],[0,"split",0,0,4,5,0],[0,"hook",1,1,5,4,0],[1,"hook",0,1,6,4,0],[1,"split",0,1,4,2,0],[0,"split",0,0,5,2,0],[0,"anchor",1,0,7,5,0],[1,"even",0,0,6,1,0],[1,"hook",0,1,8,4,0]],"hand":["split","spike","hook"],"stars":[4,5,6]},
+  {"id":"r18","pre":[[0,"even",0,0,1,1,0],[1,"even",0,0,2,1,0],[1,"even",0,0,1,4,0],[0,"even",0,0,2,4,0],[0,"hook",0,0,3,1,0],[1,"even",0,0,3,4,0],[1,"hook",1,1,4,2,0],[0,"split",0,0,5,3,0],[0,"spike",1,0,5,1,0],[1,"split",0,1,6,3,0],[1,"hook",1,1,7,4,0],[0,"hook",0,1,8,4,0],[0,"split",0,1,7,2,0],[1,"even",0,0,9,3,0],[1,"split",0,1,8,1,0]],"hand":["spike","hook","anchor"],"stars":[3,4,5]},
+  {"id":"r19","pre":[[0,"hook",1,0,1,0,0],[1,"split",0,0,2,1,0],[1,"split",0,1,1,4,0],[0,"even",0,0,2,5,0],[0,"split",0,1,2,3,0],[1,"even",0,0,3,5,0],[1,"hook",1,0,3,0,0],[0,"even",0,0,4,5,0],[0,"anchor",0,0,4,0,0],[1,"even",0,0,5,5,0],[1,"split",0,0,3,3,0],[0,"split",0,1,4,3,0],[0,"spike",1,0,5,1,0],[1,"hook",0,0,5,3,0],[1,"spike",0,1,6,0,0]],"hand":["split","anchor","split"],"stars":[2,3,4]},
+  {"id":"r20","pre":[[0,"anchor",1,0,1,4,0],[1,"anchor",0,0,2,4,0],[1,"hook",1,1,1,2,0],[0,"spike",1,0,2,1,0],[0,"hook",1,1,3,5,0],[1,"spike",0,1,3,0,0],[1,"hook",0,1,4,5,0],[0,"even",0,0,5,4,0],[0,"even",0,0,4,0,0],[1,"even",0,0,5,0,0],[1,"spike",1,0,3,3,0]],"hand":["anchor","split","spike"],"stars":[3,4,5]},
+  {"id":"r21","pre":[[0,"even",0,0,1,0,0],[1,"even",0,0,2,0,0],[1,"split",0,0,1,2,0],[0,"even",0,0,3,0,0],[0,"split",0,1,2,2,0],[1,"split",0,0,3,2,0],[1,"even",0,0,4,0,0],[0,"hook",0,1,4,2,0],[0,"even",0,0,5,0,0],[1,"even",0,0,6,0,0],[1,"hook",1,1,5,2,0]],"hand":["anchor","split","hook"],"stars":[3,4,5]},
+  {"id":"r22","pre":[[0,"anchor",1,0,1,0,0],[1,"spike",0,0,2,1,0],[1,"hook",1,0,3,0,0],[0,"spike",1,1,3,2,0],[0,"hook",0,0,4,0,0],[1,"hook",1,0,5,0,0],[1,"anchor",1,0,1,4,0],[0,"hook",0,0,6,0,0],[0,"even",0,0,7,0,0],[1,"spike",0,1,4,2,0],[1,"even",0,0,8,0,0]],"hand":["even","split","split"],"stars":[3,4,5]},
+  {"id":"r23","pre":[[0,"anchor",1,0,1,4,0],[1,"anchor",0,0,2,4,0],[1,"split",0,0,3,5,0],[0,"even",0,0,3,3,0],[0,"even",0,0,1,2,0],[1,"even",0,0,4,3,0],[1,"hook",1,0,2,1,0],[0,"hook",0,1,3,0,0],[0,"even",0,0,5,3,0],[1,"anchor",1,0,4,1,0],[1,"even",0,0,6,3,0]],"hand":["spike","spike","hook"],"stars":[4,5,6]},
+  {"id":"r24","pre":[[0,"hook",1,0,1,0,0],[1,"hook",0,0,2,0,0],[1,"split",0,0,1,4,0],[0,"split",0,0,2,5,0],[0,"spike",1,0,1,2,0],[1,"anchor",1,0,3,4,0],[1,"even",0,0,3,1,0],[0,"even",0,0,4,1,0],[0,"hook",0,1,4,3,0],[1,"anchor",1,0,5,4,0],[1,"spike",1,0,5,0,0],[0,"split",0,0,6,5,0],[0,"hook",0,1,6,3,0],[1,"split",0,1,7,5,0],[1,"hook",1,0,6,1,0]],"hand":["hook","anchor","even"],"stars":[2,4,5]},
+  {"id":"r25","pre":[[0,"anchor",1,0,1,0,0],[1,"split",0,0,2,1,0],[1,"spike",1,0,1,4,0],[0,"split",0,1,3,1,0],[0,"hook",1,1,4,2,0],[1,"hook",0,1,5,2,0],[1,"split",0,1,4,0,0],[0,"hook",1,1,6,2,0],[0,"spike",0,1,2,3,0],[1,"even",0,0,7,1,0],[1,"hook",0,0,7,3,0]],"hand":["even","even","hook"],"stars":[2,3,5]},
+  {"id":"r26","pre":[[0,"spike",1,0,1,4,0],[1,"split",0,0,2,5,0],[1,"split",0,1,3,4,0],[0,"split",0,1,4,3,0],[0,"anchor",1,0,1,1,0],[1,"even",0,0,5,4,0],[1,"spike",0,0,2,2,0],[0,"even",0,0,6,4,0],[0,"split",0,1,3,1,0],[1,"split",0,0,4,1,0],[1,"even",0,0,7,4,0]],"hand":["even","even","anchor"],"stars":[1,2,4]},
+  {"id":"r27","pre":[[0,"hook",1,0,1,2,0],[1,"hook",0,0,2,2,0],[1,"spike",1,1,3,1,0],[0,"hook",1,1,3,3,0],[0,"even",0,0,1,0,0],[1,"split",0,0,4,4,0],[1,"even",0,0,1,4,0],[0,"even",0,0,2,5,0],[0,"spike",0,1,4,1,0],[1,"hook",1,1,5,1,0],[1,"even",0,0,5,3,0],[0,"hook",0,1,6,1,0]],"hand":["split","split","anchor"],"stars":[1,2,4]},
+  {"id":"r28","pre":[[0,"spike",1,1,1,1,0],[1,"spike",0,1,2,1,0],[1,"split",0,0,3,2,0],[0,"split",0,0,4,3,0],[0,"hook",1,0,3,0,0],[1,"hook",0,0,4,0,0],[1,"split",0,1,5,3,0],[0,"hook",1,0,5,0,0],[0,"anchor",0,0,6,2,0],[1,"hook",0,0,6,0,0],[1,"anchor",1,0,1,4,0]],"hand":["even","split","anchor"],"stars":[2,3,5]},
+  {"id":"r29","pre":[[0,"even",0,0,1,1,0],[1,"even",0,0,2,1,0],[1,"even",0,0,1,4,0],[0,"hook",1,0,3,0,0],[0,"split",0,0,3,2,0],[1,"split",0,1,4,2,0],[1,"anchor",0,0,4,0,0],[0,"split",0,0,5,2,0],[0,"spike",1,1,2,5,0],[1,"split",0,1,6,2,0],[1,"anchor",1,0,7,3,0]],"hand":["hook","anchor","even"],"stars":[2,4,6]},
+  {"id":"r30","pre":[[0,"even",0,0,1,4,0],[1,"spike",1,0,2,3,0],[1,"anchor",1,0,1,0,0],[0,"split",0,0,2,1,0],[0,"hook",1,0,3,0,0],[1,"split",0,0,2,5,0],[1,"split",0,0,4,1,0],[0,"split",0,1,3,5,0],[0,"hook",0,0,5,2,0],[1,"split",0,1,4,4,0],[1,"spike",1,1,6,3,0],[0,"anchor",1,0,5,0,0],[0,"even",0,0,5,5,0],[1,"even",0,0,6,5,0],[1,"hook",1,1,7,2,0]],"hand":["spike","anchor","split"],"stars":[2,3,5]}
+]}
+</script>
+<!-- Tutorial roof: scripted steps, inline so the game stays one file with no network calls. pre = tiles already on the roof.
+     coach = the step's line; ready = the line once the tile, as turned, fits the glowing spot; notFit = the line when it stops fitting.
+     tailMult 1 = tails count once until step 5 teaches rain-catch. An allow entry with "flip" takes only that orientation. -->
+<script type="application/json" id="tutorial">
+{"steps": [
+  {"coach": "Drag your tile up onto the glowing spot.", "coachTap": "Tap the glowing spot, then tap it again to hang.", "pre": [{"p": 1, "kind": "even", "r": 1, "c": 1}], "hand": ["even"], "allow": [{"r": 2, "c": 1}], "tailMult": 1},
+  {"coach": "Tiles can hang half-over. Try the staggered spot.", "pre": [{"p": 1, "kind": "even", "r": 1, "c": 1}], "hand": ["even"], "allow": [{"r": 2, "c": 2}], "tailMult": 1},
+  {"coach": "The red cell is too weak for that\u00a02. Tap the tile to flip it.", "ready": "Now hang it on the glowing spot.", "pre": [{"p": 1, "kind": "hook", "flip": true, "r": 1, "c": 1}], "hand": ["hook"], "tray": {"flip": true}, "allow": [{"r": 2, "c": 1}], "tailMult": 1},
+  {"coach": "Cover their studs and they stop counting. Bury Slate's 3.", "pre": [{"p": 1, "kind": "spike", "flip": true, "r": 1, "c": 1}], "hand": ["spike"], "allow": [{"r": 2, "c": 1}], "after": "Buried. Slate's score just dropped by 3.", "tailMult": 1},
+  {"coach": "Hang this one tail-heavy, then let Slate move.", "notFit": "Tail-heavy means the studs sit on the tail. Tap to flip it back.", "pre": [], "hand": ["anchor"], "tray": {"flip": true}, "allow": [{"r": 1, "c": 2, "flip": true}], "slate": ["even"], "after": "Moss: it survived a round, so it now scores double."},
+  {"coach": "Turns snake back and forth, so sometimes you go twice. Finish this short roof.", "final": true}
+]}
+</script>
+<script>
+/* ============================================================
+   SHINGLE — single-file PWA. Lucid Winds / SWS Strategic Media LLC.
+   Engine block below is pure and is loaded by harness.js too.
+   ============================================================ */
+
+// ==ENGINE START==
+// SHINGLE rules engine + bots. Pure, deterministic, no DOM. Runs in browser and Node.
+var SH = (function () {
+  'use strict';
+  var W = 7;              // roof width in cells
+  var STACK = 16;         // tiles per player
+  // v1.0 used per-seat starting points to offset the last-seat edge. v1.1 fixes it structurally with
+  // snake turn order (1-2-3-4, 4-3-2-1, ...), so the default bonus is zero. Kept as an option for tuning.
+  var SEAT_BONUS = { 1: [0], 2: [0, 0], 3: [0, 0, 0], 4: [0, 0, 0, 0] };
+
+  // Tile definitions: rows A and B, [left, right] studs. 4 studs per tile.
+  // v1.1 tile set: studs sit on opposite sides of the two rows, so flip + mirror decide which column is strong.
+  var DEFS = {
+    even:   { name: 'Even',   A: [1, 1], B: [1, 1] },
+    split:  { name: 'Split',  A: [2, 0], B: [0, 2] },
+    hook:   { name: 'Hook',   A: [2, 1], B: [0, 1] },
+    spike:  { name: 'Spike',  A: [3, 0], B: [0, 1] },
+    anchor: { name: 'Anchor', A: [2, 2], B: [0, 0] }
+  };
+  var DECK = ['even','even','even','even','split','split','split','split',
+              'hook','hook','hook','hook','spike','spike','anchor','anchor'];
+  // Rain-catch: a tail still exposed at the end of the game scores x2. Heads are safe but pay x1.
+  var TAIL_MULT = 2;
+
+  // mulberry32 seeded PRNG
+  function rng(seed) {
+    var a = seed >>> 0;
+    var f = function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    f.state = function () { return a; };
+    f.set = function (s) { a = s >>> 0; };
+    return f;
+  }
+  function hashStr(s) {
+    var h = 2166136261 >>> 0;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return h >>> 0;
+  }
+  function shuffle(arr, r) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(r() * (i + 1)); var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  // Orientation of a def: flip swaps rows, mirror swaps left/right.
+  var ACTIVE = DEFS;
+  function orient(kind, flip, mirror) {
+    var d = ACTIVE[kind];
+    var h = flip ? d.B : d.A, t = flip ? d.A : d.B;
+    if (mirror) { h = [h[1], h[0]]; t = [t[1], t[0]]; }
+    return { head: [h[0], h[1]], tail: [t[0], t[1]] };
+  }
+  // Distinct orientations (Even has 1, others up to 4) — avoids duplicate moves.
+  function orientations(kind) {
+    var out = [], seen = {};
+    for (var f = 0; f < 2; f++) for (var m = 0; m < 2; m++) {
+      var o = orient(kind, !!f, !!m);
+      var key = o.head.join() + '|' + o.tail.join();
+      if (!seen[key]) { seen[key] = 1; out.push({ flip: !!f, mirror: !!m, head: o.head, tail: o.tail }); }
+    }
+    return out;
+  }
+
+  // ---- State ----
+  // grid: flat array r*W+c -> top-layer cell code, or -1. code = tileIndex*4 + part*2 + i (part 0 head, 1 tail)
+  // tiles: [{owner, kind, r, c, w, head:[..], tail:[..], flip, mirror}]  owner -1 = ridge
+  function newGame(opts) {
+    opts = opts || {};
+    var n = opts.players || 2;
+    var seed = (opts.seed == null ? 1 : opts.seed) >>> 0;
+    var stackSize = opts.stackSize || STACK;
+    if (opts.defs) ACTIVE = opts.defs; else ACTIVE = DEFS;
+    var baseDeck = opts.deck || DECK;
+    var r = rng(seed);
+    var s = {
+      W: W, n: n, seed: seed, rows: 0, grid: [], tiles: [],
+      stacks: [], hands: [], turn: 0, moveNo: 0, over: false,
+      courseBonus: opts.courseBonus !== false, weather: opts.weather !== false, snake: opts.snake !== false, tailMult: opts.tailMult || TAIL_MULT, seatBonus: opts.seatBonus || SEAT_BONUS[n] || [], log: []
+    };
+    // Ridge: 4-wide neutral, head row 0, tail row 1, all zeros.
+    ensureRows(s, 2);
+    var ridge = { owner: -1, kind: 'ridge', r: 0, c: 1, w: 4, head: [0,0,0,0], tail: [0,0,0,0] };
+    s.tiles.push(ridge);
+    for (var i = 0; i < 4; i++) {
+      s.grid[0 * W + 1 + i] = code(0, 0, i);
+      s.grid[1 * W + 1 + i] = code(0, 1, i);
+    }
+    for (var p = 0; p < n; p++) {
+      var deck = baseDeck.slice(0, stackSize);
+      if (stackSize > baseDeck.length) { deck = []; for (var k = 0; k < stackSize; k++) deck.push(baseDeck[k % baseDeck.length]); }
+      shuffle(deck, r);
+      s.stacks.push(deck);
+      s.hands.push([]);
+      refill(s, p);
+    }
+    return s;
+  }
+  // code packs tile index, part, cell index (i up to 3 for ridge)
+  function code(ti, part, i) { return ti * 8 + part * 4 + i; }
+  function cTile(cd) { return cd >> 3; }
+  function cPart(cd) { return (cd >> 2) & 1; }
+  function cIdx(cd) { return cd & 3; }
+
+  function ensureRows(s, rows) {
+    while (s.rows < rows) { for (var c = 0; c < W; c++) s.grid.push(-1); s.rows++; }
+  }
+  function cellAt(s, r, c) {
+    if (r < 0 || c < 0 || c >= W || r >= s.rows) return -1;
+    return s.grid[r * W + c];
+  }
+  function studsOf(s, cd) {
+    var t = s.tiles[cTile(cd)];
+    return cPart(cd) === 0 ? t.head[cIdx(cd)] : t.tail[cIdx(cd)];
+  }
+  function refill(s, p) {
+    while (s.hands[p].length < 2 && s.stacks[p].length) s.hands[p].push(s.stacks[p].shift());
+  }
+  function clone(s) {
+    return {
+      W: s.W, n: s.n, seed: s.seed, rows: s.rows, grid: s.grid.slice(), tiles: s.tiles.slice(),
+      stacks: s.stacks.map(function (a) { return a.slice(); }),
+      hands: s.hands.map(function (a) { return a.slice(); }),
+      turn: s.turn, moveNo: s.moveNo, over: s.over, courseBonus: s.courseBonus, weather: s.weather, snake: s.snake, tailMult: s.tailMult, seatBonus: s.seatBonus, log: s.log.slice()
+    };
+  }
+  function lowestRow(s) {
+    for (var r = s.rows - 1; r >= 0; r--) for (var c = 0; c < W; c++) if (s.grid[r * W + c] !== -1) return r;
+    return -1;
+  }
+
+  // Check a hang of orientation o at head row r, column c. Returns covered tile index or -1 if illegal.
+  function checkHang(s, o, r, c) {
+    if (c < 0 || c > W - 2 || r < 1) return -1;
+    var target = -1, covered = 0;
+    for (var i = 0; i < 2; i++) {
+      var cd = cellAt(s, r, c + i);
+      if (cd === -1) continue;
+      if (cPart(cd) !== 1) return -1;               // heads can't be covered
+      var ti = cTile(cd);
+      if (target !== -1 && ti !== target) return -1; // only one tile
+      target = ti;
+      if (o.head[i] < studsOf(s, cd)) return -1;     // strength rule
+      covered++;
+    }
+    if (!covered) return -1;
+    if (cellAt(s, r + 1, c) !== -1 || cellAt(s, r + 1, c + 1) !== -1) return -1; // tail space empty
+    return target;
+  }
+
+  // Moves: {pick, flip, mirror, r, c, drop}
+  function legalMoves(s) {
+    if (s.over) return [];
+    var p = s.turn, hand = s.hands[p], moves = [];
+    var low = lowestRow(s);
+    for (var pick = 0; pick < hand.length; pick++) {
+      if (pick === 1 && hand[1] === hand[0]) continue; // identical tiles, skip duplicate
+      var os = orientations(hand[pick]);
+      var any = false;
+      for (var k = 0; k < os.length; k++) {
+        var o = os[k];
+        for (var r = 1; r <= low; r++) for (var c = 0; c <= W - 2; c++) {
+          if (checkHang(s, o, r, c) !== -1) {
+            any = true;
+            moves.push({ pick: pick, flip: o.flip, mirror: o.mirror, r: r, c: c, drop: false });
+          }
+        }
+      }
+      if (!any) { // drop: a fresh branch below the lowest row, touching nothing
+        for (var k2 = 0; k2 < os.length; k2++) for (var c2 = 0; c2 <= W - 2; c2++) {
+          moves.push({ pick: pick, flip: os[k2].flip, mirror: os[k2].mirror, r: low + 1, c: c2, drop: true });
+        }
+      }
+    }
+    return moves;
+  }
+
+  function isLegal(s, m) {
+    var ms = legalMoves(s);
+    for (var i = 0; i < ms.length; i++) {
+      var x = ms[i];
+      if (x.pick === m.pick && x.r === m.r && x.c === m.c && x.drop === !!m.drop) {
+        var a = orient(s.hands[s.turn][m.pick], m.flip, m.mirror), b = orient(s.hands[s.turn][x.pick], x.flip, x.mirror);
+        if (a.head.join() === b.head.join() && a.tail.join() === b.tail.join()) return true;
+      }
+    }
+    return false;
+  }
+
+  // Apply move, returning a new state (does not mutate input).
+  function step(s0, m) {
+    var s = clone(s0), p = s.turn;
+    var kind = s.hands[p][m.pick];
+    var o = orient(kind, m.flip, m.mirror);
+    ensureRows(s, m.r + 3);
+    var ti = s.tiles.length;
+    var covered = m.drop ? -1 : checkHang(s, o, m.r, m.c);
+    s.tiles.push({ owner: p, kind: kind, r: m.r, c: m.c, w: 2, head: o.head, tail: o.tail, flip: !!m.flip, mirror: !!m.mirror, mv: s.moveNo });
+    for (var i = 0; i < 2; i++) {
+      s.grid[m.r * W + m.c + i] = code(ti, 0, i);
+      s.grid[(m.r + 1) * W + m.c + i] = code(ti, 1, i);
+    }
+    s.hands[p].splice(m.pick, 1);
+    refill(s, p);
+    s.log.push({ p: p, kind: kind, flip: !!m.flip, mirror: !!m.mirror, r: m.r, c: m.c, drop: !!m.drop, covered: covered });
+    s.moveNo++;
+    // next player with tiles
+    var done = true;
+    for (var q = 0; q < s.n; q++) if (s.hands[q].length) { done = false; break; }
+    if (done) s.over = true;
+    else if (s.snake) {
+      // snake order: 1-2-3-4, 4-3-2-1, 1-2-3-4 ... (equal stacks, so moveNo fixes the position)
+      var rnd = Math.floor(s.moveNo / s.n), pos = s.moveNo % s.n;
+      s.turn = (rnd % 2 === 0) ? pos : (s.n - 1 - pos);
+    } else {
+      var nx = p;
+      for (var k = 0; k < s.n; k++) { nx = (nx + 1) % s.n; if (s.hands[nx].length) break; }
+      s.turn = nx;
+    }
+    return s;
+  }
+
+  // Scoring: visible studs + course bonus (+3 to the strict leader of each completely filled row).
+  // A tail is weathered once every other player has taken a turn since it was hung (it survived a full round).
+  // Only weathered tails get the rain-catch multiplier, so a last-round tail can't double for free.
+  function weathered(s, t, proj) {
+    if (!s.weather) return true;
+    if (t.mv == null) return false;
+    var after = s.moveNo - t.mv - 1;
+    if (proj && !s.over) { // projection: will it still get a full round of exposure before the game ends?
+      var left = 0; for (var q = 0; q < s.n; q++) left += s.hands[q].length + s.stacks[q].length;
+      after += left;
+    }
+    return after >= (s.n - 1);
+  }
+  function rowFull(s, r) { for (var c = 0; c < W; c++) if (s.grid[r * W + c] === -1) return false; return true; }
+  // proj=true: count exposed tails as rain-catch if they still can weather (used for live score + bots).
+  function score(s, proj) {
+    var base = [], bonus = [], courses = [], heads = [], ridge = (s.seatBonus || SEAT_BONUS[s.n] || []).slice();
+    for (var p = 0; p < s.n; p++) { base.push(0); bonus.push(0); heads.push(0); if (ridge[p] == null) ridge[p] = 0; }
+    for (var r = 0; r < s.rows; r++) {
+      var rowS = []; for (p = 0; p < s.n; p++) rowS.push(0);
+      for (var c = 0; c < W; c++) {
+        var cd = s.grid[r * W + c];
+        if (cd === -1) continue;
+        var t = s.tiles[cTile(cd)];
+        if (t.owner < 0) continue;
+        var v = studsOf(s, cd) * (cPart(cd) === 1 && weathered(s, t, proj) ? (s.tailMult || TAIL_MULT) : 1);
+        base[t.owner] += v; rowS[t.owner] += v;
+        if (cPart(cd) === 0) heads[t.owner] += v;
+      }
+      if (s.courseBonus && rowFull(s, r)) {
+        var best = -1, bi = -1, tie = false;
+        for (p = 0; p < s.n; p++) {
+          if (rowS[p] > best) { best = rowS[p]; bi = p; tie = false; } else if (rowS[p] === best) tie = true;
+        }
+        if (!tie && best > 0) { bonus[bi] += 3; courses.push({ r: r, p: bi }); }
+        else courses.push({ r: r, p: -1 });
+      }
+    }
+    var total = base.map(function (b, i) { return b + bonus[i] + ridge[i]; });
+    return { base: base, bonus: bonus, ridge: ridge, heads: heads, total: total, courses: courses };
+  }
+  // Winners: everyone on the top total (a tie is a shared win).
+  function winners(s) {
+    var t = score(s).total, best = Math.max.apply(null, t), w = [];
+    for (var i = 0; i < t.length; i++) if (t[i] === best) w.push(i);
+    return w;
+  }
+  // The seats that play the next k moves (snake-aware), for the UI's "up next".
+  function upcoming(s, k) {
+    var out = [], left = 0;
+    for (var q = 0; q < s.n; q++) left += s.hands[q].length + s.stacks[q].length;
+    for (var i = 0; i < k && i < left; i++) {
+      var mv = s.moveNo + i;
+      if (s.snake) { var rnd = Math.floor(mv / s.n), pos = mv % s.n; out.push(rnd % 2 === 0 ? pos : s.n - 1 - pos); }
+      else out.push((s.turn + i) % s.n);
+    }
+    return out;
+  }
+  function tied(s) {
+    var t = score(s).total, best = Math.max.apply(null, t), c = 0;
+    for (var i = 0; i < t.length; i++) if (t[i] === best) c++;
+    return c > 1;
+  }
+
+  // Exposed tails of player p that some tile in hand of player q could cover now.
+  function threatenedCells(s, q) {
+    var out = {}, hand = s.hands[q], low = lowestRow(s);
+    for (var pick = 0; pick < hand.length; pick++) {
+      var os = orientations(hand[pick]);
+      for (var k = 0; k < os.length; k++) for (var r = 1; r <= low; r++) for (var c = 0; c <= W - 2; c++) {
+        if (checkHang(s, os[k], r, c) === -1) continue;
+        for (var i = 0; i < 2; i++) { var cd = cellAt(s, r, c + i); if (cd !== -1) out[r * W + c + i] = 1; }
+      }
+    }
+    return out;
+  }
+
+  // ---- Bots ----
+  function evalFor(s, p) {
+    var t = score(s, true).total, mine = t[p], other = -1e9;
+    for (var i = 0; i < t.length; i++) if (i !== p && t[i] > other) other = t[i];
+    if (s.n === 1) other = 0;
+    return mine - other;
+  }
+  // Exposure: own tail studs that the next player could cover right now.
+  function exposure(s, p) {
+    if (s.over) return 0;
+    var q = s.turn; if (q === p) return 0;
+    var th = threatenedCells(s, q), e = 0;
+    for (var k in th) {
+      var cd = s.grid[k]; if (cd === -1) continue;
+      var t = s.tiles[cTile(cd)];
+      if (t.owner === p) e += studsOf(s, cd);
+    }
+    return e;
+  }
+  function pickBest(list, r) {
+    var best = -1e9, cands = [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].v > best + 1e-9) { best = list[i].v; cands = [list[i]]; }
+      else if (Math.abs(list[i].v - best) <= 1e-9) cands.push(list[i]);
+    }
+    return cands[Math.floor(r() * cands.length)].m;
+  }
+  function botMove(s, level, r) {
+    var ms = legalMoves(s), p = s.turn;
+    if (!ms.length) return null;
+    if (level === 'easy' && r() < 0.4) level = 'medium'; // easy plays well sometimes, loosely otherwise
+    if (level === 'easy') {
+      // weighted random: straight hangs count double
+      var w = [], tot = 0;
+      for (var i = 0; i < ms.length; i++) {
+        var st = 1;
+        if (!ms[i].drop) { var cd0 = cellAt(s, ms[i].r, ms[i].c), cd1 = cellAt(s, ms[i].r, ms[i].c + 1); if (cd0 !== -1 && cd1 !== -1) st = 2; }
+        w.push(st); tot += st;
+      }
+      var x = r() * tot;
+      for (i = 0; i < ms.length; i++) { x -= w[i]; if (x <= 0) return ms[i]; }
+      return ms[ms.length - 1];
+    }
+    var scored = ms.map(function (m) {
+      var ns = step(s, m);
+      return { m: m, ns: ns, v: evalFor(ns, p) - (level === 'hard' ? 0.6 * exposure(ns, p) : 0.25 * exposure(ns, p)) };
+    });
+    if (level === 'medium') return pickBest(scored, r);
+    // hard: prune to top 10 then look at the next player's best (greedy) reply
+    scored.sort(function (a, b) { return b.v - a.v; });
+    var top = scored.slice(0, 10).map(function (o) {
+      var ns = o.ns;
+      if (ns.over) return { m: o.m, v: evalFor(ns, p) * 1.0 };
+      var q = ns.turn, replies = legalMoves(ns), worst = 1e9;
+      if (q === p) return { m: o.m, v: o.v };
+      var bestQ = -1e9, bestNs = null;
+      for (var j = 0; j < replies.length; j++) {
+        var rs = step(ns, replies[j]);
+        var vq = evalFor(rs, q);
+        if (vq > bestQ) { bestQ = vq; bestNs = rs; }
+      }
+      worst = bestNs ? evalFor(bestNs, p) - 0.4 * exposure(bestNs, p) : o.v;
+      return { m: o.m, v: worst };
+    });
+    return pickBest(top, r);
+  }
+
+  // Daily Roof: date-seeded, pre-built roof, short stacks, you vs Hard bot.
+  function dailyGame(dateStr) {
+    var seed = hashStr('shingle-daily-' + dateStr);
+    var s = newGame({ players: 2, seed: seed, stackSize: 16 });
+    var r = rng(seed ^ 0x9e3779b9);
+    for (var i = 0; i < 20; i++) { var m = botMove(s, 'medium', r); if (!m) break; s = step(s, m); }
+    // trim stacks so each side has 6 tiles left (2 in hand + 4 in stack)
+    for (var p = 0; p < 2; p++) s.stacks[p] = s.stacks[p].slice(0, 4);
+    s.daily = dateStr; s.dailyStartMove = s.moveNo; s.log = s.log.slice();
+    return s;
+  }
+
+  return {
+    W: W, TAIL_MULT: TAIL_MULT, SEAT_BONUS: SEAT_BONUS, DEFS: DEFS, DECK: DECK, rng: rng, hashStr: hashStr, orient: orient, orientations: orientations,
+    newGame: newGame, legalMoves: legalMoves, isLegal: isLegal, step: step, score: score, weathered: weathered, winners: winners, upcoming: upcoming, tied: tied,
+    checkHang: checkHang, cellAt: cellAt, studsOf: studsOf, cTile: cTile, cPart: cPart, cIdx: cIdx,
+    lowestRow: lowestRow, threatenedCells: threatenedCells, botMove: botMove, dailyGame: dailyGame, clone: clone
+  };
+})();
+if (typeof module !== 'undefined') module.exports = SH;
+// ==ENGINE END==
+
+
+(function () {
+'use strict';
+
+// ---------- Config ----------
+// Drop Stephen's own tracks here (relative paths or URLs). Empty = no music.
+var MUSIC_TRACKS = [];
+var MATERIALS = [
+  { key: 'clay',   name: 'Clay',   base: '#c4623f', light: '#dd8058', dark: '#8e3f24', emoji: '🟧', sym: 'C' },
+  { key: 'slate',  name: 'Slate',  base: '#6c7f94', light: '#8b9db0', dark: '#46566a', emoji: '🟦', sym: 'S' },
+  { key: 'patina', name: 'Patina', base: '#4f9a86', light: '#6fb9a3', dark: '#2f6b5b', emoji: '🟩', sym: 'P' },
+  { key: 'cedar',  name: 'Cedar',  base: '#b08a55', light: '#cba873', dark: '#7c5f37', emoji: '🟫', sym: 'R' }
+];
+var BOT_NAMES = { easy: 'Easy bot', medium: 'Medium bot', hard: 'Hard bot' };
+// Roof sets reskin YOUR tiles (the first person at the table): texture, studs and nail sound. Each keeps a texture
+// unlike Clay, Slate, Patina and Cedar, so colourblind play still reads by texture. Looks only.
+var SET_MATS = {
+  thatch:  { key: 'thatch',  name: 'Thatch',  base: '#cfae4c', light: '#e6cb72', dark: '#8c7024', stud: ['#f8e7bd', '#8a5826', '#38220e'], nail: [900, 0.7, 'lowpass', 150, 80, 0] },
+  glass:   { key: 'glass',   name: 'Glass',   base: '#5d4f9c', light: '#7d6fbf', dark: '#3a2f6b', stud: ['#fff2b0', '#d6b13c', '#6c5413'], nail: [4200, 3, 'bandpass', 210, 110, 1900] },
+  snowcap: { key: 'snowcap', name: 'Snowcap', base: '#c3d3e2', light: '#e8f0f8', dark: '#8ea3b8', stud: ['#ffffff', '#a8d5ee', '#4a7fa2'], nail: [3600, 1, 'highpass', 220, 120, 0] },
+  moss:    { key: 'moss',    name: 'Moss',    base: '#5e8a35', light: '#82ad4c', dark: '#3c5c20', stud: ['#ffffff', '#bfe8f7', '#3d7d94'], nail: [700, 0.6, 'lowpass', 120, 70, 0] },
+  night:   { key: 'night',   name: 'Night Copper', base: '#4a2a20', light: '#6e4232', dark: '#2a160f', stud: ['#fff5cf', '#ffb648', '#b0521a'], glow: true, nail: [3000, 2, 'bandpass', 180, 95, 1180] }
+};
+var NAIL_BASE = [2600, 1.2, 'bandpass', 190, 90, 0];
+function youSeat() { return G && !G.replay ? G.seats.indexOf('human') : -1; }
+function matOf(i) { var set = store.equipped && store.equipped.set; return (set && set !== 'base' && SET_MATS[set] && i >= 0 && i === youSeat()) ? SET_MATS[set] : MATERIALS[i]; }
+var courseTags = 0;
+
+// ---------- Storage ----------
+// Cosmetics (v1.2). Sunbeams buy looks only: nothing here touches scoring or bots. Price 0 = owned from the start.
+var SETS = [
+  { id: 'base', name: 'Your material', price: 0, desc: 'Clay, Slate, Patina or Cedar, by seat' },
+  { id: 'thatch', name: 'Thatch', price: 150, desc: 'Straw bundles, twine studs' },
+  { id: 'glass', name: 'Glass', price: 250, desc: 'Stained-glass panes, brass studs' },
+  { id: 'snowcap', name: 'Snowcap', price: 250, desc: 'Frosted slate, ice studs' },
+  { id: 'moss', name: 'Moss', price: 300, desc: 'Living green shingles, dew studs' },
+  { id: 'night', name: 'Night Copper', price: 400, desc: 'Dark copper, glowing studs' }
+];
+var BACKDROPS = [
+  { id: 'dusk', name: 'Dusk', price: 0, desc: 'Warm dusk into night' },
+  { id: 'storm', name: 'Storm', price: 100, desc: 'Slate clouds, far lightning' },
+  { id: 'aurora', name: 'Aurora', price: 150, desc: 'Green and violet lights' },
+  { id: 'city', name: 'City skyline', price: 150, desc: 'Lit windows below the roof' }
+];
+var RAINS = [
+  { id: 'drizzle', name: 'Drizzle', price: 0, desc: 'Fine rain for the sweep' },
+  { id: 'downpour', name: 'Downpour', price: 75, desc: 'Heavy, fast rain' },
+  { id: 'snow', name: 'Snow', price: 100, desc: 'Slow drifting flakes' },
+  { id: 'petals', name: 'Petals', price: 100, desc: 'Blossom on the wind' }
+];
+var SHOP = { set: SETS, backdrop: BACKDROPS, rain: RAINS };
+function shopItem(kind, id) { var l = SHOP[kind]; for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; }
+
+// ---------- Storage: one key, shingle.v1, for every version. Fields are only ever added. ----------
+var STORE_KEY = 'shingle.v1', SAVE_VER = 2; // ver 2 = the v1.2 save (Sunbeams, unlocks, achievements, stats)
+var KINDS = ['human', 'easy', 'medium', 'hard'];
+function freshStore() {
+  return { stack: 16, sound: true, music: true, haptics: true, hints: true, seats: ['human', 'medium'], played: 0, wins: 0, daily: {}, seenHow: false, tutDone: false,
+    preview: true, noDrag: null, symbols: false, reduceMotion: null, announce: true, botTier: 'medium', tierRecord: {}, hintLevel: 'full',
+    friendNames: ['', ''], friendStack: 12,
+    ver: SAVE_VER, sunbeams: 0, owned: [], equipped: { set: 'base', backdrop: 'dusk', rain: 'drizzle' }, achievements: {}, climb: {}, stats: freshStats() };
+}
+function freshStats() {
+  return { byTier: { easy: { p: 0, w: 0 }, medium: { p: 0, w: 0 }, hard: { p: 0, w: 0 } }, solo: 0, studs: 0, bestMargin: null, rain: 0, buried: 0, courses: 0,
+    flips: {}, hardBeats: 0, sunEarned: 0, bestStreak: 0 };
+}
+function isCount(v) { return typeof v === 'number' && isFinite(v) && v >= 0 && Math.floor(v) === v; }
+function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+// Brings any earlier save (v1.1 has no `ver`) up to v1.2: keeps every valid field, repairs any malformed one
+// to its default, and adds the v1.2 fields. Run on every load, so a hand-edited or half-written save still plays.
+function migrateSave(o) {
+  var d = freshStore(), st = isObj(o) ? o : {};
+  if (st.stack !== 12 && st.stack !== 16) st.stack = 16;
+  ['sound', 'music', 'haptics', 'hints', 'seenHow', 'tutDone', 'preview', 'symbols', 'announce'].forEach(function (k) { if (typeof st[k] !== 'boolean') st[k] = d[k]; });
+  ['noDrag', 'reduceMotion'].forEach(function (k) { if (st[k] !== null && typeof st[k] !== 'boolean') st[k] = null; });
+  if (!Array.isArray(st.seats) || st.seats.length < 2 || st.seats.length > 4 || st.seats.some(function (k) { return KINDS.indexOf(k) < 0; })) st.seats = d.seats;
+  if (!isCount(st.played)) st.played = 0;
+  if (!isCount(st.wins)) st.wins = 0;
+  if (st.wins > st.played) st.wins = st.played;
+  var daily = {};
+  if (isObj(st.daily)) for (var k in st.daily) if (/^\d{4}-\d{2}-\d{2}$/.test(k) && typeof st.daily[k] === 'number' && isFinite(st.daily[k])) daily[k] = st.daily[k];
+  st.daily = daily;
+  // round-one fields of 15 Nov (hints level, Play vs Bot tier and its record)
+  if (['full', 'minimal', 'off'].indexOf(st.hintLevel) < 0) st.hintLevel = st.hints === false ? 'off' : 'full';
+  if (['easy', 'medium', 'hard'].indexOf(st.botTier) < 0) st.botTier = 'medium';
+  var tr = {};
+  if (isObj(st.tierRecord)) ['easy', 'medium', 'hard'].forEach(function (t) { var r = st.tierRecord[t]; if (isObj(r) && isCount(r.p) && isCount(r.w) && r.w <= r.p) tr[t] = { p: r.p, w: r.w }; });
+  st.tierRecord = tr;
+  // v1.2
+  if (!isCount(st.sunbeams)) st.sunbeams = 0;
+  st.owned = Array.isArray(st.owned) ? st.owned.filter(function (id, i, a) { return typeof id === 'string' && a.indexOf(id) === i && (shopItem('set', id) || shopItem('backdrop', id) || shopItem('rain', id)); }) : [];
+  var eq = isObj(st.equipped) ? st.equipped : {};
+  st.equipped = { set: owns('set', eq.set, st) ? eq.set : 'base', backdrop: owns('backdrop', eq.backdrop, st) ? eq.backdrop : 'dusk', rain: owns('rain', eq.rain, st) ? eq.rain : 'drizzle' };
+  var ach = {};
+  if (isObj(st.achievements)) for (var a in st.achievements) if (typeof st.achievements[a] === 'string') ach[a] = st.achievements[a];
+  st.achievements = ach;
+  if (!isObj(st.climb)) st.climb = {};
+  var fs = freshStats(), ss = isObj(st.stats) ? st.stats : {};
+  ['solo', 'studs', 'rain', 'buried', 'courses', 'hardBeats', 'sunEarned', 'bestStreak'].forEach(function (k) { fs[k] = isCount(ss[k]) ? ss[k] : 0; });
+  fs.bestMargin = typeof ss.bestMargin === 'number' && isFinite(ss.bestMargin) ? ss.bestMargin : null;
+  if (isObj(ss.byTier)) ['easy', 'medium', 'hard'].forEach(function (t) { var r = ss.byTier[t]; if (isObj(r) && isCount(r.p) && isCount(r.w) && r.w <= r.p) fs.byTier[t] = { p: r.p, w: r.w }; });
+  if (isObj(ss.flips)) for (var f in ss.flips) if (SH.DEFS[f] && isCount(ss.flips[f])) fs.flips[f] = ss.flips[f];
+  st.stats = fs;
+  // Friends by link (round 5): the names and roof last used in the setup
+  if (!Array.isArray(st.friendNames) || st.friendNames.length < 2 || st.friendNames.length > 4 || st.friendNames.some(function (x) { return typeof x !== 'string'; })) st.friendNames = ['', ''];
+  st.friendNames = st.friendNames.map(function (x) { return x.slice(0, 16); });
+  if (st.friendStack !== 12 && st.friendStack !== 16) st.friendStack = 12;
+  st.ver = SAVE_VER;
+  return st;
+}
+function owns(kind, id, st) { var it = shopItem(kind, id); return !!it && (it.price === 0 || (st || store).owned.indexOf(id) > -1); }
+var store = freshStore();
+try { var raw = localStorage.getItem(STORE_KEY); if (raw) store = migrateSave(JSON.parse(raw)); } catch (e) { store = freshStore(); }
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} }
+var HINT_NOTES = { full: 'Cracks, and red edges at risk', minimal: 'Cracks only', off: 'None on the roof' };
+
+// ---------- Reduced motion: the device setting, unless Settings stores a choice ----------
+// On: no falling shingles on the menu, no particles, no settle drop, no pulsing, instant scroll, a 1 s rain sweep.
+var mqRM = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+var RMF = false; // read once per frame by the drawing code
+function rmOn() { return store.reduceMotion != null ? !!store.reduceMotion : !!(mqRM && mqRM.matches); }
+function applyRM() { RMF = rmOn(); document.body.classList.toggle('rm', RMF); if (RMF) { particles = []; anim = null; } }
+if (mqRM) { try { mqRM.addEventListener('change', applyRM); } catch (e) { try { mqRM.addListener(applyRM); } catch (e2) {} } }
+function wave(t, k) { return RMF ? 0 : Math.sin(t * k); }
+
+// ---------- DOM ----------
+var $ = function (id) { return document.getElementById(id); };
+var cv = $('cv'), ctx = cv.getContext('2d');
+var DPR = 1, VW = 0, VH = 0;
+
+// ---------- Audio (Web Audio synth + optional music) ----------
+var AC = null, master = null, rainNode = null, musicEl = null;
+function audio() {
+  if (AC) return AC;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = 0.9; master.connect(AC.destination);
+  } catch (e) { AC = null; }
+  return AC;
+}
+var noiseBuf = null;
+function noise() {
+  if (noiseBuf) return noiseBuf;
+  var len = AC.sampleRate * 2; noiseBuf = AC.createBuffer(1, len, AC.sampleRate);
+  var d = noiseBuf.getChannelData(0); for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  return noiseBuf;
+}
+function env(g, t, a, peak, dec) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + dec); }
+var sfxCount = {};
+function sfx(kind, arg) {
+  sfxCount[kind] = (sfxCount[kind] || 0) + 1;
+  if (!store.sound || !audio()) return;
+  if (AC.state === 'suspended') AC.resume();
+  var t = AC.currentTime, g, o, n, f;
+  if (kind === 'tap') { // nail tap: click + low thunk (arg: a roof set's nail, [filter Hz, Q, type, thunk from, thunk to, ring Hz])
+    var nl = (arg && SET_MATS[arg] && SET_MATS[arg].nail) || NAIL_BASE;
+    n = AC.createBufferSource(); n.buffer = noise(); f = AC.createBiquadFilter(); f.type = nl[2]; f.frequency.value = nl[0]; f.Q.value = nl[1];
+    g = AC.createGain(); env(g, t, 0.002, 0.5, 0.05); n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t + 0.08);
+    o = AC.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(nl[3], t); o.frequency.exponentialRampToValueAtTime(nl[4], t + 0.12);
+    var g2 = AC.createGain(); env(g2, t, 0.003, 0.45, 0.14); o.connect(g2); g2.connect(master); o.start(t); o.stop(t + 0.2);
+    if (nl[5]) { var o3 = AC.createOscillator(); o3.type = 'triangle'; o3.frequency.value = nl[5]; var g3 = AC.createGain(); env(g3, t, 0.002, 0.08, 0.25); o3.connect(g3); g3.connect(master); o3.start(t); o3.stop(t + 0.3); }
+  } else if (kind === 'scrape') { // clay scrape on cover
+    n = AC.createBufferSource(); n.buffer = noise(); f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(1400, t); f.frequency.linearRampToValueAtTime(500, t + 0.18);
+    g = AC.createGain(); env(g, t, 0.02, 0.28, 0.18); n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t + 0.25);
+  } else if (kind === 'flip') {
+    n = AC.createBufferSource(); n.buffer = noise(); f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000;
+    g = AC.createGain(); env(g, t, 0.001, 0.25, 0.03); n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t + 0.05);
+  } else if (kind === 'chime') { // pentatonic chime, arg = index
+    var scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.5, 1567.98, 1760];
+    var fr = scale[Math.abs(arg | 0) % scale.length];
+    [1, 2.01, 3.02].forEach(function (h, i) {
+      var oo = AC.createOscillator(); oo.type = 'sine'; oo.frequency.value = fr * h;
+      var gg = AC.createGain(); env(gg, t, 0.004, [0.09, 0.025, 0.012][i], 0.7); oo.connect(gg); gg.connect(master); oo.start(t); oo.stop(t + 0.8);
+    });
+  } else if (kind === 'deny') {
+    o = AC.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(220, t); o.frequency.linearRampToValueAtTime(160, t + 0.12);
+    g = AC.createGain(); env(g, t, 0.005, 0.12, 0.12); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.2);
+  } else if (kind === 'snap') { // soft wood knock when a tile snaps to a spot
+    o = AC.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(420, t); o.frequency.exponentialRampToValueAtTime(300, t + 0.05);
+    g = AC.createGain(); env(g, t, 0.002, 0.1, 0.05); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.09);
+    n = AC.createBufferSource(); n.buffer = noise(); f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1200; f.Q.value = 2;
+    var gk = AC.createGain(); env(gk, t, 0.001, 0.04, 0.02); n.connect(f); f.connect(gk); gk.connect(master); n.start(t); n.stop(t + 0.04);
+  } else if (kind === 'double') { // two quick taps: you hang twice in a row
+    [0, 0.09].forEach(function (d) {
+      var od = AC.createOscillator(); od.type = 'triangle'; od.frequency.value = 880;
+      var gd = AC.createGain(); env(gd, t + d, 0.003, 0.06, 0.05); od.connect(gd); gd.connect(master); od.start(t + d); od.stop(t + d + 0.08);
+    });
+  } else if (kind === 'course') { // low bell: a row is complete
+    [[196, 0.07], [392.8, 0.03], [589.2, 0.015]].forEach(function (pp) {
+      var ob = AC.createOscillator(); ob.type = 'sine'; ob.frequency.value = pp[0];
+      var gb = AC.createGain(); env(gb, t, 0.005, pp[1], 1.2); ob.connect(gb); gb.connect(master); ob.start(t); ob.stop(t + 1.3);
+    });
+  } else if (kind === 'drip') { // a single drip: a tail has weathered and now catches the rain
+    o = AC.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(1400, t); o.frequency.exponentialRampToValueAtTime(2300, t + 0.06);
+    g = AC.createGain(); env(g, t, 0.003, 0.07, 0.12); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.18);
+  } else if (kind === 'ach') { // music-box figure
+    [1318.5, 1567.98, 2093, 1760].forEach(function (fr3, i) {
+      var oo = AC.createOscillator(); oo.type = 'sine'; oo.frequency.value = fr3;
+      var gg = AC.createGain(); env(gg, t + i * 0.11, 0.004, 0.07, 0.5); oo.connect(gg); gg.connect(master); oo.start(t + i * 0.11); oo.stop(t + i * 0.11 + 0.6);
+    });
+  } else if (kind === 'win') {
+    [523.25, 659.25, 783.99, 1046.5].forEach(function (fr2, i) {
+      var oo = AC.createOscillator(); oo.type = 'triangle'; oo.frequency.value = fr2;
+      var gg = AC.createGain(); env(gg, t + i * 0.09, 0.01, 0.12, 0.6); oo.connect(gg); gg.connect(master); oo.start(t + i * 0.09); oo.stop(t + i * 0.09 + 0.7);
+    });
+  }
+}
+function rain(on) {
+  if (!store.sound || !audio()) return;
+  if (on && !rainNode) {
+    var n = AC.createBufferSource(); n.buffer = noise(); n.loop = true;
+    var f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.4;
+    var vol = { downpour: 0.2, snow: 0.04, petals: 0.06 }[store.equipped.rain] || 0.12; // the rain bed follows the style
+    var g = AC.createGain(); g.gain.value = 0.0001; g.gain.exponentialRampToValueAtTime(vol, AC.currentTime + 0.6);
+    n.connect(f); f.connect(g); g.connect(master); n.start(); rainNode = { n: n, g: g };
+  } else if (!on && rainNode) {
+    var r = rainNode; rainNode = null;
+    r.g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 1.2); setTimeout(function () { try { r.n.stop(); } catch (e) {} }, 1400);
+  }
+}
+function music(on) {
+  if (!MUSIC_TRACKS.length) return;
+  if (on && store.music) {
+    if (!musicEl) { musicEl = new Audio(); musicEl.loop = false; musicEl.volume = 0.45;
+      musicEl.addEventListener('ended', function () { musicEl.src = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)]; musicEl.play().catch(function () {}); }); }
+    if (musicEl.paused) { if (!musicEl.src) musicEl.src = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)]; musicEl.play().catch(function () {}); }
+  } else if (musicEl) musicEl.pause();
+}
+// haptics only after the page has had a tap: a replay opened from a link would otherwise trip Chrome's vibrate block
+function buzz(ms) { if (store.haptics && navigator.vibrate && !(navigator.userActivation && !navigator.userActivation.hasBeenActive)) try { navigator.vibrate(ms); } catch (e) {} }
+
+// ---------- Textures ----------
+var patterns = {};
+function makePatterns() {
+  MATERIALS.forEach(function (m, i) {
+    var c = document.createElement('canvas'); c.width = c.height = 64; var g = c.getContext('2d');
+    g.fillStyle = m.base; g.fillRect(0, 0, 64, 64);
+    var r = SH.rng(77 + i);
+    if (m.key === 'clay') { // fired clay: soft arcs + mottling
+      for (var k = 0; k < 90; k++) { g.fillStyle = 'rgba(' + (r() < .5 ? '255,210,170' : '90,30,15') + ',' + (0.05 + r() * .07) + ')'; g.beginPath(); g.arc(r() * 64, r() * 64, 1 + r() * 4, 0, 6.3); g.fill(); }
+      g.strokeStyle = 'rgba(80,25,10,.18)'; for (k = 0; k < 4; k++) { g.beginPath(); g.arc(32, -20 + k * 22, 44, 0.3, 2.84); g.stroke(); }
+    } else if (m.key === 'slate') { // cleft slate: diagonal cleave lines
+      g.strokeStyle = 'rgba(20,30,45,.28)'; g.lineWidth = 1;
+      for (k = -64; k < 128; k += 7 + r() * 6) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k + 40, 64); g.stroke(); }
+      for (k = 0; k < 40; k++) { g.fillStyle = 'rgba(220,235,255,' + (r() * .06) + ')'; g.fillRect(r() * 64, r() * 64, 2 + r() * 6, 1); }
+    } else if (m.key === 'patina') { // copper verdigris: speckles
+      for (k = 0; k < 160; k++) { g.fillStyle = r() < .3 ? 'rgba(190,120,70,' + (0.18 + r() * .2) + ')' : 'rgba(190,255,230,' + (r() * .12) + ')'; g.beginPath(); g.arc(r() * 64, r() * 64, .6 + r() * 1.8, 0, 6.3); g.fill(); }
+    } else { // cedar shake: vertical grain
+      for (k = 0; k < 64; k += 2 + r() * 3) { g.strokeStyle = 'rgba(70,45,20,' + (0.12 + r() * .2) + ')'; g.lineWidth = .6 + r(); g.beginPath(); g.moveTo(k, 0); g.bezierCurveTo(k + r() * 4 - 2, 20, k + r() * 4 - 2, 44, k, 64); g.stroke(); }
+    }
+    patterns[m.key] = ctx.createPattern(c, 'repeat');
+  });
+  Object.keys(SET_MATS).forEach(function (k, i) {
+    var m = SET_MATS[k], c = document.createElement('canvas'); c.width = c.height = 64; var g = c.getContext('2d'), r = SH.rng(301 + i), j;
+    g.fillStyle = m.base; g.fillRect(0, 0, 64, 64);
+    if (k === 'thatch') { // straw strands lying across, bound by twine every 16 px
+      for (j = 0; j < 90; j++) { var sx = r() * 64, sy = r() * 64, len = 14 + r() * 18, an = (r() - 0.5) * 0.25; g.strokeStyle = r() < 0.5 ? 'rgba(255,240,180,' + (0.25 + r() * 0.3) + ')' : 'rgba(110,80,20,' + (0.2 + r() * 0.25) + ')'; g.lineWidth = 0.8 + r() * 0.8; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + Math.cos(an) * len, sy + Math.sin(an) * len); g.stroke(); }
+      g.strokeStyle = 'rgba(90,60,20,.45)'; g.lineWidth = 2; for (j = 8; j < 64; j += 16) { g.beginPath(); g.moveTo(0, j); g.lineTo(64, j + 1); g.stroke(); }
+    } else if (k === 'glass') { // leaded panes in four colours
+      var cols = ['rgba(200,40,70,.42)', 'rgba(230,160,50,.40)', 'rgba(40,170,150,.40)', 'rgba(140,90,230,.38)'];
+      for (var py = 0; py < 64; py += 21) for (var px = 0; px < 64; px += 21) { g.fillStyle = cols[Math.floor(r() * 4)]; g.fillRect(px, py, 21, 21); }
+      g.strokeStyle = 'rgba(20,14,30,.85)'; g.lineWidth = 2.2; for (j = 0; j <= 64; j += 21) { g.beginPath(); g.moveTo(j, 0); g.lineTo(j, 64); g.moveTo(0, j); g.lineTo(64, j); g.stroke(); }
+      g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(4, 30); g.lineTo(30, 4); g.stroke();
+    } else if (k === 'snowcap') { // frost speckle over faint slate cleaves
+      g.strokeStyle = 'rgba(90,110,135,.22)'; g.lineWidth = 1; for (j = -64; j < 128; j += 9 + r() * 6) { g.beginPath(); g.moveTo(j, 0); g.lineTo(j + 40, 64); g.stroke(); }
+      for (j = 0; j < 140; j++) { g.fillStyle = 'rgba(255,255,255,' + (0.3 + r() * 0.5) + ')'; g.beginPath(); g.arc(r() * 64, r() * 64, 0.5 + r() * 1.3, 0, 6.3); g.fill(); }
+    } else if (k === 'moss') { // soft clumps in three greens
+      for (j = 0; j < 70; j++) { g.fillStyle = ['rgba(130,180,70,.45)', 'rgba(70,110,40,.45)', 'rgba(170,210,90,.35)'][j % 3]; g.beginPath(); g.arc(r() * 64, r() * 64, 2 + r() * 5, 0, 6.3); g.fill(); }
+      for (j = 0; j < 40; j++) { g.fillStyle = 'rgba(220,240,140,.5)'; g.fillRect(r() * 64, r() * 64, 1, 1); }
+    } else { // night copper: hammered dents and a little verdigris
+      for (j = 0; j < 26; j++) { var dx = r() * 64, dy = r() * 64, dr = 3 + r() * 5, gr2 = g.createRadialGradient(dx - dr * 0.3, dy - dr * 0.3, 0.5, dx, dy, dr); gr2.addColorStop(0, 'rgba(255,170,120,.28)'); gr2.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr2; g.beginPath(); g.arc(dx, dy, dr, 0, 6.3); g.fill(); }
+      for (j = 0; j < 30; j++) { g.fillStyle = 'rgba(80,170,145,' + (0.12 + r() * 0.18) + ')'; g.beginPath(); g.arc(r() * 64, r() * 64, 0.6 + r() * 1.4, 0, 6.3); g.fill(); }
+    }
+    patterns[k] = ctx.createPattern(c, 'repeat');
+  });
+}
+
+// ---------- Game state ----------
+var G = null;          // { s, seats:[kind], daily, history:[], rng, mode }
+var view = { cs: 40, z: 1, scroll: 0, target: 0, manual: false, overview: false, top: 70, trayH: 170, x0: 0 };
+var tray = [{ flip: false, mirror: false }, { flip: false, mirror: false }];
+var sel = 0;
+var drag = null;       // { slot, x, y, snap, hover }
+var pend = null;       // no-drag / keys: { r, c, drop, pv } the spot picked for the selected tile, waiting for the second tap
+var weakFlash = null;  // no-drag: a tap where the tile is too weak shows the red ghost briefly
+var anim = null;       // { ti, t0, dur }
+var sweep = null;      // end-of-game tally
+var particles = [];
+var busy = false;      // bot thinking / animating
+var ptr = null;
+var lastTapT = 0;
+var threat = {}, risk = {};
+
+function seatName(i) {
+  if (G.friend && G.friend.names) return G.friend.names[i];
+  var kind = G.seats[i], humans = G.seats.filter(function (k) { return k === 'human'; }).length;
+  if (kind === 'human') return humans > 1 || G.replay ? MATERIALS[i].name : 'You';
+  return G.tut || G.climb ? MATERIALS[i].name : BOT_NAMES[kind]; // the tutorial's and Climb's lines call the other seat Slate
+}
+// In a friend match this phone plays only the seat whose turn it was when the link opened.
+function isHumanTurn() { return G && !G.s.over && !G.replay && G.seats[G.s.turn] === 'human' && !(G.friend && G.s.turn !== G.friend.me); }
+// A friend's name as shown: no control characters or markup, at most 16 characters; empty gives the seat's material.
+function cleanName(nm, i) { nm = String(nm == null ? '' : nm).replace(/[\u0000-\u001f\u007f<>&"'`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16); return nm || MATERIALS[i].name; }
+
+function startMatch(seats, opts) {
+  opts = opts || {}; coachHide();
+  var seed = opts.seed != null ? opts.seed : (Math.random() * 4294967295) >>> 0;
+  var s = opts.daily ? SH.dailyGame(opts.daily) : SH.newGame({ players: seats.length, seed: seed, stackSize: opts.stack || 16 });
+  G = { s: s, stack: opts.stack || 16, seats: seats.slice(), daily: opts.daily || null, history: [], rng: SH.rng((s.seed ^ 0x5bd1e995) >>> 0), seed: seed, trk: newTrack(s.n), friend: opts.friend || null,
+    blitz: opts.blitz ? { limit: BLITZ_MS, left: BLITZ_MS, last: 0, auto: 0, shown: -1 } : null };
+  tray = [{ flip: false, mirror: false }, { flip: false, mirror: false }]; sel = 0;
+  sweep = null; particles = []; drag = null; anim = null; busy = false; pend = null; weakFlash = null;
+  view.manual = false; view.overview = false; view.z = 1; // the rain sweep leaves the overview zoom on: every new match starts at full size
+  hideAll(); buildChips(); updateUI();
+  layout(); followFrontier(true); // measure the HUD once its chips exist, so the roof starts below them
+  refreshHints(); updateUI();
+  music(true); $('mLinkMsg').hidden = true;
+  if (opts.replay) { busy = true; return; } // a replay plays its recorded moves; nobody takes a turn
+  if (!G.seats[G.s.turn] || G.seats[G.s.turn] !== 'human') scheduleBot();
+  else announceTurn();
+}
+
+// ---------- Tutorial roof (M2): six scripted steps, one coach line each ----------
+var TUT = null;
+function tutSteps() { if (!TUT) { try { TUT = JSON.parse($('tutorial').textContent).steps; } catch (e) { TUT = []; } } return TUT; }
+function coach(i, text) { $('coachSkip').textContent = 'Skip'; $('coachSkip').style.display = ''; $('coachN').textContent = (i + 1) + ' / ' + tutSteps().length; $('coachT').textContent = text; $('coach').classList.add('show'); placeCoach(); }
+// The coach line sits just above the tray, clear of the roof where the lesson happens.
+function placeCoach() { var c = $('coach'); c.style.top = Math.max(view.top + 8, view.trayTop - c.offsetHeight - 10) + 'px'; }
+function coachHide() { $('coach').classList.remove('show'); }
+function startTutorial() { tutGo(0); }
+function tutGo(i) {
+  var st = tutSteps()[i];
+  if (!st) { tutEnd(); return; }
+  if (st.final) {
+    store.tutDone = true; save();
+    startMatch(['human', 'easy'], { stack: 6 }); G.tut = { i: i, final: true }; coach(i, st.coach); return;
+  }
+  startMatch(['human', 'easy'], { seed: 1, stack: 1 });
+  var s = G.s; s.snake = false; s.tailMult = st.tailMult || SH.TAIL_MULT;
+  (st.pre || []).forEach(function (m) {
+    s.over = false; s.turn = m.p; s.hands[m.p] = [m.kind]; s.stacks[m.p] = [];
+    s = SH.step(s, { pick: 0, flip: !!m.flip, mirror: !!m.mirror, r: m.r, c: m.c, drop: false });
+  });
+  s.over = false; s.turn = 0;
+  s.hands[0] = st.hand.slice(); s.stacks[0] = []; s.hands[1] = (st.slate || []).slice(); s.stacks[1] = [];
+  G.s = s; G.history = []; G.tut = { i: i, allow: st.allow || null, after: st.after || '' };
+  tray = [{ flip: !!(st.tray && st.tray.flip), mirror: !!(st.tray && st.tray.mirror) }, { flip: false, mirror: false }]; sel = 0; busy = false;
+  coach(i, stepLine(st)); followFrontier(true); refreshHints(); updateUI();
+}
+function stepLine(st) { return noDragOn() && st.coachTap ? st.coachTap : st.coach; }
+// The coach line follows the tile as turned: "ready" once it fits the glowing spot, "notFit" (or the step line) when it doesn't.
+function tutCoachSync() {
+  if (!G || !G.tut || G.tut.final || !G.tut.allow || G.s.over || G.s.turn !== 0) return;
+  var st = tutSteps()[G.tut.i]; if (!st || (!st.ready && !st.notFit)) return;
+  var line = tutFits(sel) ? (st.ready || stepLine(st)) : (st.notFit || stepLine(st));
+  if ($('coachT').textContent !== line) coach(G.tut.i, line);
+}
+function tutFits(i) { var tr = tray[i]; return !!tr && G.s.hands[0][i] != null && tutFilter(slotsFor(G.s, i, tr.flip, tr.mirror), tr).length > 0; }
+// Red studs on the tray tile where its head is too weak for the glowing spot, so "red studs" is visible before any drag.
+function tutWeakHead(i) {
+  if (!G || !G.tut || !G.tut.allow || G.tut.final || G.s.turn !== 0 || tutFits(i)) return null;
+  var a = G.tut.allow[0], tr = tray[i], o = SH.orient(G.s.hands[0][i], tr.flip, tr.mirror), bad = [false, false], any = false;
+  for (var k = 0; k < 2; k++) { var cd = SH.cellAt(G.s, a.r, a.c + k); if (cd !== -1 && SH.cPart(cd) === 1 && o.head[k] < SH.studsOf(G.s, cd)) { bad[k] = true; any = true; } }
+  return any ? bad : null;
+}
+// A step is done when every scripted tile is hung; show the step's closing line, then move on.
+function tutDone() {
+  var t = G.tut; sfx('flip');
+  if (t.after) { coach(t.i, t.after); setTimeout(function () { if (G && G.tut === t) tutGo(t.i + 1); }, 2600); }
+  else setTimeout(function () { if (G && G.tut === t) tutGo(t.i + 1); }, 700);
+}
+function tutEnd() { store.tutDone = true; save(); coachHide(); startMatch(['human', store.botTier]); }
+// While a step runs, only its glowing spots take the tile (and only in the orientation a spot asks for, if it asks).
+function tutFilter(list, tr) {
+  if (!G || !G.tut || !G.tut.allow) return list;
+  tr = tr || tray[sel] || {};
+  return list.filter(function (sl) { return G.tut.allow.some(function (a) { return a.r === sl.r && a.c === sl.c && (a.flip == null || a.flip === !!tr.flip); }); });
+}
+
+// ---------- Layout ----------
+function layout() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  VW = window.innerWidth; VH = window.innerHeight;
+  cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  var hud = $('hud').getBoundingClientRect();
+  view.top = hud.bottom + 6;
+  var w = Math.min(VW - 44, 540);
+  view.cs = Math.floor(w / 7.25);
+  // tray: tile preview 2 cells tall, plus button bar
+  var tcs = Math.min(view.cs, 52);
+  view.tcs = tcs;
+  var barH = 52 + (parseFloat(getComputedStyle(document.body).getPropertyValue('padding-bottom')) || 0);
+  view.trayH = tcs * 2 + 56 + barH;
+  view.trayTop = VH - view.trayH; placeCoach();
+  $('status').style.top = (view.trayTop + 7) + 'px';
+}
+function cellPx() { return view.cs * view.z; }
+function roofX0() { return (VW - SH.W * cellPx()) / 2; }
+function rowY(r) { return view.top + 10 + r * cellPx() - view.scroll; }
+function viewH() { return view.trayTop - view.top - 10; }
+function contentH() { return (G ? G.s.rows + 1 : 4) * cellPx(); }
+function followFrontier(instant) {
+  if (!G) return;
+  var low = SH.lowestRow(G.s);
+  var t = Math.max(0, (low + 2.6) * cellPx() + 10 - viewH());
+  view.target = t; if (instant) view.scroll = t;
+}
+function setOverview(on) {
+  view.overview = on;
+  if (on) {
+    var need = (G.s.rows + 1) * view.cs;
+    view.z = Math.min(1, Math.max(0.35, viewH() / need));
+  } else view.z = 1;
+  view.manual = false; followFrontier(true);
+}
+
+// ---------- Hints ----------
+function refreshHints() {
+  threat = {}; risk = {};
+  if (!G || G.s.over || G.replay || store.hintLevel === 'off') return;
+  var s = G.s, p = s.turn;
+  if (G.seats[p] === 'human') {
+    var th = SH.threatenedCells(s, p);
+    for (var k in th) { var cd = s.grid[k]; if (cd !== -1 && s.tiles[SH.cTile(cd)].owner !== p && s.tiles[SH.cTile(cd)].owner >= 0) threat[k] = 1; }
+    // risk: my tails the next player could cover (full hints only)
+    if (store.hintLevel !== 'full') return;
+    var nx = (p + 1) % s.n, tries = 0;
+    while (!s.hands[nx].length && tries++ < s.n) nx = (nx + 1) % s.n;
+    if (nx !== p) {
+      var tr = SH.threatenedCells(s, nx);
+      for (k in tr) { cd = s.grid[k]; if (cd !== -1 && s.tiles[SH.cTile(cd)].owner === p && SH.studsOf(s, cd) > 0) risk[k] = 1; }
+    }
+  }
+}
+
+// ---------- Slots for the human's current tray tile ----------
+function slotsFor(s, pick, flip, mirror) {
+  var kind = s.hands[s.turn][pick]; if (!kind) return [];
+  var o = SH.orient(kind, flip, mirror), out = [], low = SH.lowestRow(s);
+  for (var r = 1; r <= low; r++) for (var c = 0; c <= SH.W - 2; c++) if (SH.checkHang(s, o, r, c) !== -1) out.push({ r: r, c: c, drop: false });
+  if (!out.length) {
+    // drop allowed only if this tile has no hang in any orientation
+    var any = SH.orientations(kind).some(function (oo) {
+      for (var r2 = 1; r2 <= low; r2++) for (var c2 = 0; c2 <= SH.W - 2; c2++) if (SH.checkHang(s, oo, r2, c2) !== -1) return true;
+      return false;
+    });
+    if (!any) for (c = 0; c <= SH.W - 2; c++) out.push({ r: low + 1, c: c, drop: true });
+  }
+  return out;
+}
+function tileHasAnyHang(s, pick) {
+  var kind = s.hands[s.turn][pick]; if (!kind) return false;
+  var low = SH.lowestRow(s);
+  return SH.orientations(kind).some(function (oo) {
+    for (var r = 1; r <= low; r++) for (var c = 0; c <= SH.W - 2; c++) if (SH.checkHang(s, oo, r, c) !== -1) return true;
+    return false;
+  });
+}
+
+// ---------- No-drag mode: tap a tile to pick it, tap a gold spot, tap that spot again to hang ----------
+// Default: on for a desktop with a mouse, off for touch. Settings stores an explicit choice.
+var mqFine = window.matchMedia ? window.matchMedia('(hover: hover) and (pointer: fine)') : null;
+function noDragOn() { return store.noDrag != null ? !!store.noDrag : !!(mqFine && mqFine.matches); }
+// The selected tile's spots as turned (tutorial-filtered); empty when it is not your turn.
+function tapSlots() {
+  if (!G || !isHumanTurn() || busy || sweep || G.s.hands[G.s.turn][sel] == null) return [];
+  var tr = tray[sel], key = sel + ':' + tr.flip + ':' + tr.mirror;
+  if (tapSlots.s !== G.s || tapSlots.key !== key || tapSlots.tut !== G.tut) { tapSlots.s = G.s; tapSlots.key = key; tapSlots.tut = G.tut; tapSlots.list = tutFilter(slotsFor(G.s, sel, tr.flip, tr.mirror), tr); }
+  return tapSlots.list;
+}
+// The spot under a point: inside its 2x2 area, nearest head row wins where spots overlap.
+function slotAt(x, y) {
+  var cs = cellPx(), x0 = roofX0(), best = null, bd = 1e9;
+  tapSlots().forEach(function (sl) {
+    var sx = x0 + sl.c * cs, sy = rowY(sl.r);
+    if (x < sx - 2 || x > sx + cs * 2 + 2 || y < sy - 2 || y > sy + cs * 2 + 2) return;
+    var d = Math.hypot(x - (sx + cs), y - (sy + cs * 0.5));
+    if (d < bd) { bd = d; best = sl; }
+  });
+  return best;
+}
+// A tap over a tail the tile is too weak for: the hang centred on the tap (head row tapped, or the row above if the
+// tap landed where its tail would go), if any head cell fails the strength rule.
+function weakAt(x, y) {
+  var s = G.s, cs = cellPx(), c = Math.max(0, Math.min(SH.W - 2, Math.round((x - roofX0()) / cs - 1))), r0 = Math.floor((y - rowY(0)) / cs);
+  var o = SH.orient(s.hands[s.turn][sel], tray[sel].flip, tray[sel].mirror);
+  for (var r = r0; r >= r0 - 1; r--) {
+    if (r < 1 || r > SH.lowestRow(s)) continue;
+    var bad = [false, false], weak = false;
+    for (var i = 0; i < 2; i++) { var cd = SH.cellAt(s, r, c + i); if (cd !== -1 && SH.cPart(cd) === 1 && o.head[i] < SH.studsOf(s, cd)) { bad[i] = true; weak = true; } }
+    if (weak) return { r: r, c: c, bad: bad };
+  }
+  return null;
+}
+function pickSpot(sl) { pend = { r: sl.r, c: sl.c, drop: !!sl.drop, pv: previewFor(sel, sl) }; buzz(6); sfx('snap'); updateUI(); }
+function hangPend() { var p = pend, tr = tray[sel]; pend = null; view.manual = false; commit({ pick: sel, flip: tr.flip, mirror: tr.mirror, r: p.r, c: p.c, drop: p.drop }); }
+function tapRoof(x, y) {
+  if (!G || !isHumanTurn() || busy || sweep) return;
+  if (!noDragOn()) { if (pend) { pend = null; updateUI(); } return; }
+  var sl = slotAt(x, y);
+  if (sl && pend && pend.r === sl.r && pend.c === sl.c) { hangPend(); return; }
+  if (sl) { pickSpot(sl); return; }
+  if (pend) { pend = null; updateUI(); return; }
+  var w = weakAt(x, y);
+  if (w) { weakFlash = { r: w.r, c: w.c, bad: w.bad, t0: performance.now() }; sfx('deny'); toast('Too weak: head studs must match or beat the tail', 1300); }
+}
+// Arrow keys walk the selected tile's spots (scrolling to keep the spot in view); Enter hangs it.
+function cyclePend(dir) {
+  var list = tapSlots(); if (!list.length) return;
+  var k = -1; if (pend) list.forEach(function (sl, j) { if (sl.r === pend.r && sl.c === pend.c) k = j; });
+  k = k < 0 ? (dir > 0 ? 0 : list.length - 1) : (k + dir + list.length) % list.length;
+  var cs = cellPx(), y = rowY(list[k].r);
+  if (y < view.top + 6 || y + cs * 2 > view.trayTop - 6) { view.manual = true; view.target = Math.max(0, Math.min(Math.max(0, contentH() - viewH() + cs * 2), 10 + list[k].r * cs + cs - viewH() / 2)); }
+  pickSpot(list[k]);
+}
+
+// +N / -M for hanging tray tile `slot`, as turned, on spot sl: your projected gain and what it costs the others.
+function previewFor(slot, sl) {
+  var s = G.s, tr = tray[slot], me = s.turn;
+  var ns = SH.step(s, { pick: slot, flip: tr.flip, mirror: tr.mirror, r: sl.r, c: sl.c, drop: !!sl.drop });
+  var b4 = SH.score(s, true).total, af = SH.score(ns, true).total, lost = 0, victim = -1, most = 0;
+  for (var q = 0; q < s.n; q++) if (q !== me && af[q] < b4[q]) { lost += b4[q] - af[q]; if (b4[q] - af[q] > most) { most = b4[q] - af[q]; victim = q; } }
+  return { gain: af[me] - b4[me], lost: lost, victim: victim };
+}
+
+// ---------- Moves ----------
+function commit(m) {
+  var s0 = G.s; pend = null; weakFlash = null;
+  if (G.seats[s0.turn] === 'human' && !G.replay) G.history.push({ s: s0, tray: JSON.parse(JSON.stringify(tray)), trk: JSON.parse(JSON.stringify(G.trk)) });
+  var covered = m.drop ? -1 : SH.checkHang(s0, SH.orient(s0.hands[s0.turn][m.pick], m.flip, m.mirror), m.r, m.c);
+  G.s = SH.step(s0, m);
+  var ti = G.s.tiles.length - 1;
+  if (G.trk && !(G.tut && !G.tut.final)) trackMove(s0, m, G.trk);
+  var b4 = SH.score(s0, true).total, af = SH.score(G.s, true).total;
+  if (!G.climb) for (var q = 0; q < G.s.n; q++) if (af[q] < b4[q]) chipDrop(q, b4[q], af[q]);
+  if (SH.score(G.s).courses.length > SH.score(s0).courses.length) setTimeout(function () { sfx('course'); }, 140);
+  else if (wetTails(G.s) > wetTails(s0)) setTimeout(function () { sfx('drip'); }, 260);
+  say(describeHang(s0, m, G.s, b4, af));
+  anim = rmOn() ? null : { ti: ti, t0: performance.now(), dur: 260 };
+  sfx('tap', s0.turn === youSeat() ? store.equipped.set : null); if (covered > 0 && s0.tiles[covered].owner >= 0 && s0.tiles[covered].owner !== s0.turn) setTimeout(function () { sfx('scrape'); }, 70);
+  buzz(12);
+  // dust puff
+  var x = roofX0() + (m.c + 1) * cellPx(), y = rowY(m.r) + cellPx() * 0.15;
+  if (!rmOn()) for (var i = 0; i < 10; i++) particles.push({ x: x + (Math.random() - .5) * cellPx() * 1.8, y: y, vx: (Math.random() - .5) * 60, vy: -20 - Math.random() * 40, life: 0.5, t: 0, kind: 'dust' });
+  // reset tray orientation for the slot that was used (new tile slides in)
+  if (G.seats[s0.turn] === 'human') {
+    if (m.pick === 0) { tray[0] = tray[1]; tray[1] = { flip: false, mirror: false }; } else tray[1] = { flip: false, mirror: false };
+    sel = 0;
+  }
+  if (!view.manual) followFrontier(false);
+  refreshHints(); updateUI();
+  if (G.s.over && G.tut && !G.tut.final) { busy = true; tutDone(); return; }
+  if (G.climb) coachClimb();
+  if (G.s.over && G.climb) { busy = true; var gC = G; setTimeout(function () { if (G === gC) climbDone(); }, 450); return; }
+  if (G.s.over) { busy = true; var gEnd = G; setTimeout(function () { if (G === gEnd) startSweep(); }, 650); return; }
+  if (G.replay) return;
+  // friend match: once the turn passes to another friend, this phone stops and offers Send move
+  if (G.friend && G.s.turn !== G.friend.me) { busy = true; updateUI(); var gS = G; setTimeout(function () { if (G === gS) showSend(); }, 450); return; }
+  if (G.seats[G.s.turn] !== 'human') scheduleBot(); else announceTurn();
+}
+// Every match timer checks it still belongs to the same match and position: starting a new match while a bot
+// thinks (or in the moment before the rain sweep) used to let the old timer act on the new match.
+function scheduleBot() {
+  busy = true; updateUI();
+  var g = G, s0 = G.s;
+  setTimeout(function () {
+    if (!G || G !== g || G.s !== s0 || G.s.over || G.seats[G.s.turn] === 'human') return;
+    var s = G.s, kind = G.seats[s.turn];
+    var t0 = performance.now();
+    var m = SH.botMove(s, kind, G.rng);
+    if (G.tut && !G.tut.final) { // scripted Slate never buries the lesson tile
+      var ok = SH.legalMoves(s).filter(function (mm) { var cv0 = mm.drop ? -1 : SH.checkHang(s, SH.orient(s.hands[s.turn][mm.pick], mm.flip, mm.mirror), mm.r, mm.c); return cv0 === -1 || s.tiles[cv0].owner !== 0; });
+      if (ok.length) m = ok[0];
+    }
+    var wait = Math.max(0, 420 - (performance.now() - t0));
+    setTimeout(function () { if (G !== g || G.s !== s) return; busy = false; if (m) commit(m); }, wait);
+  }, 260);
+}
+function announceTurn() {
+  busy = false;
+  var lgd = G.s.log;
+  if (!G.tut && !G.climb && lgd.length && lgd[lgd.length - 1].p === G.s.turn) sfx('double'); // Climb is all your turns: no cue there
+  if (G.blitz) { G.blitz.left = G.blitz.limit; G.blitz.shown = -1; }
+  var humans = G.seats.filter(function (k) { return k === 'human'; }).length;
+  if (humans > 1) toast(seatName(G.s.turn) + "'s turn");
+  if (G.friend) coachFriend();
+  // tutorial step 6: point out the snake's double turn the moment it happens
+  var lg = G.s.log;
+  if (G.tut && G.tut.final && lg.length && lg[lg.length - 1].p === G.s.turn) { coach(G.tut.i, 'Snake order: you go twice in a row. Hang again.'); toast('Your turn again', 1100); }
+  else if (G.tut && G.tut.final && lg.length) coach(G.tut.i, tutSteps()[G.tut.i].coach);
+  updateUI();
+}
+function undo() {
+  if (!G || !G.history.length || busy || G.s.over || G.blitz) return;
+  var h = G.history.pop(); G.s = h.s; tray = h.tray; sel = 0; drag = null; pend = null; if (h.trk) G.trk = h.trk;
+  sfx('flip'); followFrontier(false); refreshHints(); updateUI(); coachClimb();
+  if (G.seats[G.s.turn] !== 'human') scheduleBot();
+}
+
+// ---------- UI ----------
+function toast(msg, ms) {
+  var t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, ms || 900);
+}
+function buildChips() {
+  chipAnim = {};
+  var box = $('chips'); box.innerHTML = ''; box.classList.toggle('compact', G.s.n >= 3);
+  for (var i = 0; i < G.s.n; i++) {
+    var d = document.createElement('div'); d.className = 'chip'; d.dataset.p = i;
+    d.innerHTML = '<span class="sw" style="background:' + matOf(i).base + '">' + (store.symbols ? MATERIALS[i].sym : '') + '</span><span class="meta"><span class="nm"></span><span class="scl"><span class="sc">0</span><span class="tr"></span></span></span><span class="left"></span>';
+    d.addEventListener('click', onChip);
+    box.appendChild(d);
+  }
+}
+// ---------- Screen readers: one polite line per hang, e.g. "Medium bot hung a Hook staggered over your tail at
+// row 9, columns 3 and 4; you lost 2. Score: You 24, Medium bot 19. Your turn." ----------
+function say(text) { if (store.announce) $('live').textContent = text; }
+function describeHang(s0, m, ns, b4, af) {
+  var p = s0.turn, who = seatName(p), kind = SH.DEFS[s0.hands[p][m.pick]].name, line;
+  var tile = (/^[AEIOU]/.test(kind) ? 'an ' : 'a ') + kind + (m.flip ? ', flipped,' : '');
+  var where = 'row ' + m.r + ', columns ' + (m.c + 1) + ' and ' + (m.c + 2);
+  var whose = function (i) { return seatName(i) === 'You' ? 'your' : seatName(i) + "'s"; };
+  if (m.drop) line = who + ' dropped ' + tile + ' at ' + where + ' to start a branch';
+  else {
+    var cv = SH.checkHang(s0, SH.orient(s0.hands[p][m.pick], m.flip, m.mirror), m.r, m.c), n = 0;
+    for (var i = 0; i < 2; i++) if (SH.cellAt(s0, m.r, m.c + i) !== -1) n++;
+    var owner = cv < 0 ? -1 : s0.tiles[cv].owner;
+    var over = owner < 0 ? 'the ridge' : owner === p ? (who === 'You' ? 'your own tail' : 'its own tail') : whose(owner) + ' tail';
+    line = who + ' hung ' + tile + (n === 2 ? ' straight' : ' staggered') + ' over ' + over + ' at ' + where;
+  }
+  var lost = [];
+  for (var q = 0; q < ns.n; q++) if (af[q] < b4[q]) lost.push((seatName(q) === 'You' ? 'you' : seatName(q)) + ' lost ' + (b4[q] - af[q]));
+  if (lost.length) line += '; ' + lost.join(', ');
+  line += '. Score: ' + af.map(function (v, k) { return seatName(k) + ' ' + v; }).join(', ') + '.';
+  if (!ns.over && G.seats[ns.turn] === 'human') {
+    var humans = G.seats.filter(function (k) { return k === 'human'; }).length;
+    line += humans > 1 ? ' ' + MATERIALS[ns.turn].name + "'s turn." : (ns.turn === p ? ' Your turn again.' : ' Your turn.');
+  }
+  return line;
+}
+
+// A buried score drops on its chip: a red -N badge, a flash, and the number counting down.
+var chipAnim = {};
+function chipDrop(p, from, to) {
+  var ch = $('chips').children[p]; if (!ch) return;
+  Array.prototype.forEach.call(ch.querySelectorAll('.dl'), function (old) { old.parentNode.removeChild(old); }); // one badge per chip
+  var d = document.createElement('span'); d.className = 'dl'; d.textContent = '\u2212' + (from - to);
+  ch.appendChild(d); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 1700);
+  ch.classList.remove('hit'); void ch.offsetWidth; ch.classList.add('hit');
+  clearTimeout(ch._hitT); ch._hitT = setTimeout(function () { ch.classList.remove('hit'); }, 1050);
+  if (!rmOn()) chipAnim[p] = { from: from, t0: performance.now(), dur: 700 };
+}
+// ---------- Blitz: 5 seconds a turn. At zero, the highest-gain legal hang (your projected total, as in the +N
+// preview; first such hang on a tie) is played for you. The design also takes away that hang's course credit:
+// that is a scoring rule and needs the engine, so it is not built (see HANDOFF). ----------
+var BLITZ_MS = 5000;
+function bestGainMove(s) {
+  var ms = SH.legalMoves(s), me = s.turn, b4 = SH.score(s, true).total[me], best = null, bv = -1e9;
+  for (var i = 0; i < ms.length; i++) { var v = SH.score(SH.step(s, ms[i]), true).total[me] - b4; if (v > bv) { bv = v; best = ms[i]; } }
+  return best && { m: best, gain: bv };
+}
+function tickBlitz(now) {
+  var B = G && G.blitz; if (!B) return;
+  var dt = B.last ? Math.min(250, now - B.last) : 0; B.last = now; // real time, even when frames come slowly
+  if (!isHumanTurn() || busy || sweep || G.s.over || anyOverlay()) return;
+  B.left -= dt;
+  var sec = Math.max(0, Math.ceil(B.left / 1000));
+  if (sec !== B.shown) { B.shown = sec; if (!pend) $('status').textContent = 'Blitz · ' + sec + ' s'; if (sec <= 2 && sec > 0) sfx('flip'); }
+  if (B.left <= 0) {
+    var bm = bestGainMove(G.s); if (!bm) return;
+    drag = null; ptr = null; pend = null; B.auto++;
+    commit(bm.m); toast('Time! Hung for you (' + (bm.gain < 0 ? '\u2212' : '+') + Math.abs(bm.gain) + ')', 1300);
+  }
+}
+function tickChips(now) {
+  var sc = null;
+  for (var p in chipAnim) {
+    var a = chipAnim[p], k = Math.min(1, (now - a.t0) / a.dur), ch = $('chips').children[p];
+    sc = sc || displayedScores();
+    if (ch) ch.querySelector('.sc').textContent = k >= 1 ? sc[p] : Math.round(a.from + (sc[p] - a.from) * (1 - Math.pow(1 - k, 2)));
+    if (k >= 1) delete chipAnim[p];
+  }
+}
+// Studs on Slate's exposed tails (what is still there to bury, in Climb).
+function slateTailStuds() {
+  var s = G.s, n = 0;
+  for (var k = 0; k < s.grid.length; k++) { var cd = s.grid[k]; if (cd === -1 || SH.cPart(cd) !== 1) continue; if (s.tiles[SH.cTile(cd)].owner === 1) n += SH.studsOf(s, cd); }
+  return n;
+}
+function displayedScores() {
+  if (G && G.climb) return [climbBuried(), slateTailStuds()]; // Climb counts raw studs: buried, and still on Slate's tails
+  if (sweep) return sweep.shown.map(function (x) { return Math.round(x); });
+  return SH.score(G.s, true).total;
+}
+function updateUI() {
+  if (!G) return;
+  var s = G.s, sc = displayedScores();
+  var chips = $('chips').children;
+  for (var i = 0; i < chips.length; i++) {
+    var ch = chips[i];
+    ch.classList.toggle('on', !s.over && s.turn === i);
+    var up2 = s.over ? [] : SH.upcoming(s, 2);
+    ch.classList.toggle('next', up2.length > 1 && up2[1] === i && s.turn !== i);
+    ch.querySelector('.nm').textContent = seatName(i);
+    if (!chipAnim[i]) ch.querySelector('.sc').textContent = sc[i];
+    var left = s.hands[i].length + s.stacks[i].length;
+    ch.querySelector('.left').innerHTML = left + '<br>tiles';
+    if (s.n >= 3) { // compact: "Patina" with an M badge for a Medium bot; "You" or the material for people
+      var bot = G.seats[i] !== 'human';
+      ch.querySelector('.nm').textContent = bot ? MATERIALS[i].name : seatName(i);
+      ch.querySelector('.tr').textContent = bot ? G.seats[i][0].toUpperCase() : '';
+    }
+    if (G.climb) ch.querySelector('.nm').textContent = i === 0 ? 'You buried' : "Slate's tails";
+    ch.setAttribute('aria-label', G.climb ? (i === 0 ? 'You buried ' + sc[i] + ' studs' : sc[i] + " studs on Slate's tails") : MATERIALS[i].name + ', ' + seatName(i) + ', ' + sc[i] + ' points, ' + left + ' tiles left');
+  }
+  var human = isHumanTurn() && !busy && !sweep;
+  $('bFlip').disabled = !human; $('bMirror').disabled = !human;
+  $('bUndo').disabled = !(human && G.history.length) || !!G.blitz;
+  var st = '';
+  if (sweep) st = 'Rain check…';
+  else if (s.over) st = '';
+  else if (!isHumanTurn()) st = G.friend && !G.replay && G.friend.me >= 0 ? 'Waiting for ' + seatName(s.turn) + "'s move" : seatName(s.turn) + ' is hanging…';
+  else {
+    var noHang = !tileHasAnyHang(s, 0) && (!s.hands[s.turn][1] || !tileHasAnyHang(s, 1));
+    // one line, most useful first: the picked spot, no hang at all, the picked tile fits nowhere as turned,
+    // a snake double turn (it replaces the how-to line so the line fits a phone), then how to play
+    var nd = noDragOn(), nowhere = !noHang && !tapSlots().length, up = SH.upcoming(s, 2), twice = up.length > 1 && up[1] === s.turn;
+    if (pend) st = nd ? 'Tap the same spot again to hang it' : 'Enter hangs it · arrows pick another spot';
+    else if (noHang) st = twice ? 'Twice in a row · no legal hang: drop a tile' : nd ? 'No legal hang: tap a blue spot to drop a tile' : 'No legal hang: drop a tile to start a branch';
+    else if (nowhere) st = 'This way up it fits nowhere: flip or mirror it';
+    else if (twice) st = 'You hang twice in a row';
+    else st = nd ? 'Tap a gold spot, then tap it again to hang' : 'Drag a tile up · tap to flip · swipe to mirror';
+  }
+  $('status').textContent = st;
+  tutCoachSync();
+}
+function onChip(e) {
+  var p = +e.currentTarget.dataset.p, pop = $('pop');
+  if (pop.style.display === 'block' && pop.dataset.p == p) { pop.style.display = 'none'; return; }
+  pop.dataset.p = p; pop.innerHTML = '';
+  var s = G.s, sc = SH.score(s, true);
+  var head = document.createElement('div');
+  head.innerHTML = '<b>' + seatName(p) + '</b> · ' + MATERIALS[p].name + ' · ' + (s.hands[p].length + s.stacks[p].length) + ' tiles left<br><span style="color:var(--dim)">Heads ' + sc.heads[p] + ' · Tails ' + (sc.base[p] - sc.heads[p]) + ' · Courses +' + sc.bonus[p] + '</span><br><span style="color:var(--dim)">Next tiles:</span>';
+  pop.appendChild(head);
+  var c = document.createElement('canvas'), tcs = 22; c.width = (tcs * 2 * 2 + 16) * DPR; c.height = (tcs * 2 + 4) * DPR;
+  c.style.width = (tcs * 4 + 16) + 'px'; c.style.height = (tcs * 2 + 4) + 'px'; c.style.marginTop = '6px';
+  var g = c.getContext('2d'); g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  s.hands[p].forEach(function (kind, i) { var o = SH.orient(kind, false, false); drawTile(g, i * (tcs * 2 + 16), 2, tcs, 2, o.head, o.tail, p, 1, {}); });
+  if (!s.hands[p].length) head.innerHTML += ' none';
+  pop.appendChild(c);
+  var r = e.currentTarget.getBoundingClientRect();
+  pop.style.display = 'block';
+  pop.style.left = Math.max(8, Math.min(VW - pop.offsetWidth - 8, r.left)) + 'px';
+  pop.style.top = (r.bottom + 6) + 'px';
+  clearTimeout(onChip._t); onChip._t = setTimeout(function () { pop.style.display = 'none'; }, 3500);
+}
+
+// ---------- Drawing ----------
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function drawStuds(g, cx, cy, cs, n, bad, M) {
+  if (!n) return;
+  var sty = M && M.stud;
+  var rad = Math.max(3, cs * 0.135), off = cs * 0.215, pts;
+  if (n === 1) pts = [[0, 0]]; else if (n === 2) pts = [[-off, -off * 0.6], [off, off * 0.6]]; else pts = [[0, -off * 0.95], [-off, off * 0.7], [off, off * 0.7]];
+  pts.forEach(function (p) {
+    var x = cx + p[0], y = cy + p[1];
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(x + rad * 0.15, y + rad * 0.3, rad * 1.05, 0, 6.3); g.fill();
+    var gr = g.createRadialGradient(x - rad * 0.35, y - rad * 0.4, rad * 0.1, x, y, rad);
+    if (bad) { gr.addColorStop(0, '#ffb3a3'); gr.addColorStop(1, '#c0281a'); }
+    else if (sty) { gr.addColorStop(0, sty[0]); gr.addColorStop(0.45, sty[1]); gr.addColorStop(1, sty[2]); }
+    else { gr.addColorStop(0, '#ffe2b8'); gr.addColorStop(0.45, '#d9965a'); gr.addColorStop(1, '#7c4523'); }
+    if (M && M.glow && !bad) { g.save(); g.shadowColor = 'rgba(255,180,80,.9)'; g.shadowBlur = rad * 1.8; }
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, rad, 0, 6.3); g.fill();
+    if (M && M.glow && !bad) g.restore();
+  });
+}
+// Draw a w-wide 2-row tile at (x,y) with cell size cs. owner -1 = ridge.
+var symDraws = 0;
+function drawTile(g, x, y, cs, w, head, tail, owner, alpha, o) {
+  o = o || {};
+  var M = o.mat || (owner >= 0 ? matOf(owner) : null);
+  g.save(); g.globalAlpha = alpha == null ? 1 : alpha;
+  var pad = Math.max(1.5, cs * 0.04), rad = cs * 0.14, W2 = w * cs - pad * 2, H2 = cs * 2 - pad * 2;
+  if (!o.flat) { g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = cs * 0.22; g.shadowOffsetY = cs * 0.07; }
+  if (owner < 0) {
+    var gr = g.createLinearGradient(0, y, 0, y + cs * 2); gr.addColorStop(0, '#5a5862'); gr.addColorStop(1, '#2c2b33');
+    g.fillStyle = gr;
+  } else g.fillStyle = M.base;
+  rr(g, x + pad, y + pad, W2, H2, rad); g.fill();
+  g.shadowColor = 'transparent';
+  if (owner >= 0 && patterns[M.key]) { g.save(); rr(g, x + pad, y + pad, W2, H2, rad); g.clip(); g.globalAlpha *= 0.9; g.fillStyle = patterns[M.key]; g.fillRect(x, y, w * cs, cs * 2); g.restore(); }
+  // head vs tail: the head is the raised, lit, nailed row; the tail sits lower in the head's shadow and ends in a drip edge
+  g.save(); rr(g, x + pad, y + pad, W2, H2, rad); g.clip();
+  var L = x + pad, R = x + w * cs - pad, yb = y + cs * 2 - pad;
+  g.fillStyle = 'rgba(255,246,232,.17)'; g.fillRect(x, y, w * cs, cs);
+  var hg = g.createLinearGradient(0, y, 0, y + cs * 0.35); hg.addColorStop(0, 'rgba(255,250,240,.28)'); hg.addColorStop(1, 'rgba(255,250,240,0)');
+  g.fillStyle = hg; g.fillRect(x, y, w * cs, cs * 0.35);
+  var tg = g.createLinearGradient(0, y + cs, 0, y + cs * 2);
+  tg.addColorStop(0, 'rgba(8,4,12,.62)'); tg.addColorStop(0.2, 'rgba(8,4,12,.40)'); tg.addColorStop(1, 'rgba(8,4,12,.30)');
+  g.fillStyle = tg; g.fillRect(x, y + cs, w * cs, cs);
+  // head's lower lip: a bright bevel then a hard step down into the tail
+  g.fillStyle = 'rgba(255,248,236,.40)'; g.fillRect(x, y + cs - Math.max(1.5, cs * 0.045), w * cs, Math.max(1.5, cs * 0.045));
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(x, y + cs, w * cs, Math.max(1.5, cs * 0.04));
+  // drip edge: dark rolled band along the bottom with a drip under each column
+  var de = Math.max(3, cs * 0.12);
+  g.fillStyle = 'rgba(0,0,0,.38)'; g.fillRect(x, yb - de, w * cs, de);
+  g.fillStyle = 'rgba(255,240,220,.38)'; g.fillRect(x, yb - de, w * cs, Math.max(1.2, cs * 0.03));
+  g.restore();
+  // rolled drip bead under each column: a round lip, not a point (points read as arrows on the dark deck)
+  if (!o.tray) {
+    g.save();
+    for (var di = 0; di < w; di++) {
+      var dx = x + (di + 0.5) * cs, dr = Math.max(2.2, cs * 0.07);
+      g.beginPath(); g.ellipse(dx, yb - 0.5, dr * 1.5, dr * 0.95, 0, 0, Math.PI); g.closePath();
+      g.fillStyle = owner < 0 ? '#2a2930' : M.base; g.fill();
+      g.fillStyle = 'rgba(0,0,0,.30)'; g.fill();
+      g.fillStyle = 'rgba(255,245,230,.40)'; g.beginPath(); g.ellipse(dx - dr * 0.4, yb + dr * 0.25, dr * 0.45, dr * 0.2, 0, 0, 6.3); g.fill();
+    }
+    g.restore();
+  }
+  // nail holes along the head (two per cell): only heads are nailed down
+  var nr = Math.max(1.6, cs * 0.05), sym = store.symbols && owner >= 0 && !o.noSym;
+  for (var ni = 0; ni < w; ni++) [0.2, 0.8].forEach(function (f) {
+    if (sym && ni === w - 1 && f === 0.8) return; // the symbol badge sits here
+    var nx = x + (ni + f) * cs, ny = y + cs * 0.17;
+    g.fillStyle = 'rgba(255,245,230,.35)'; g.beginPath(); g.arc(nx + nr * 0.25, ny + nr * 0.3, nr * 1.15, 0, 6.3); g.fill();
+    g.fillStyle = 'rgba(10,6,4,.8)'; g.beginPath(); g.arc(nx, ny, nr, 0, 6.3); g.fill();
+  });
+  g.strokeStyle = owner < 0 ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.35)'; g.lineWidth = 1;
+  rr(g, x + pad, y + pad, W2, H2, rad); g.stroke();
+  // too weak: the head cell turns red; a cell with no studs shows an empty red socket (there is no stud to colour)
+  if (o.badHead) for (var bi = 0; bi < w; bi++) if (o.badHead[bi]) {
+    g.save(); rr(g, x + bi * cs + pad * 2, y + pad * 2, cs - pad * 4, cs - pad * 3, rad);
+    g.fillStyle = 'rgba(214,48,32,.45)'; g.fill(); g.strokeStyle = 'rgba(255,120,100,.95)'; g.lineWidth = Math.max(1.5, cs * 0.045); g.stroke();
+    if (!head[bi]) { g.setLineDash([Math.max(2, cs * 0.06), Math.max(1.5, cs * 0.04)]); g.beginPath(); g.arc(x + (bi + 0.5) * cs, y + cs * 0.52, cs * 0.16, 0, 6.3); g.stroke(); }
+    g.restore();
+  }
+  // symbols mode: the material's letter on a dark badge in the head's top-right corner
+  if (sym) {
+    var bs = Math.max(12, cs * 0.36), bx = x + w * cs - pad - bs - cs * 0.03, by = y + pad + cs * 0.03;
+    g.save(); g.fillStyle = 'rgba(12,9,16,.74)'; rr(g, bx, by, bs, bs, bs * 0.28); g.fill();
+    g.strokeStyle = 'rgba(255,240,220,.35)'; g.lineWidth = 1; g.stroke();
+    g.fillStyle = '#fbf0dc'; g.font = '800 ' + Math.round(bs * 0.78) + 'px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(MATERIALS[owner].sym, bx + bs / 2, by + bs / 2 + bs * 0.04); g.restore(); symDraws++;
+  }
+  for (var i = 0; i < w; i++) {
+    drawStuds(g, x + (i + 0.5) * cs, y + cs * 0.52, cs, head[i], o.badHead && o.badHead[i], M);
+    if (!(o.hideTail && o.hideTail[i])) drawStuds(g, x + (i + 0.5) * cs, y + cs * 1.5, cs, tail[i], false, M);
+  }
+  g.restore();
+}
+// Moss sprout on a weathered tail (it has survived a full round and will catch the rain x2). Cosmetic only.
+// Bright yellow green with a dark rim so it reads on clay, slate, patina and cedar alike.
+function drawMoss(g, x, y, cs, seed) {
+  var r = Math.max(2.6, cs * 0.074), k = (seed % 3) - 1;
+  g.save();
+  // stalks with spore capsules
+  g.lineCap = 'round'; g.lineWidth = Math.max(1.4, cs * 0.032);
+  [[-0.7, -2.3, -1.1], [0.4, -2.7, 0.7], [1.2, -1.8, 1.4]].forEach(function (st, i) {
+    var bx = x + st[0] * r * 0.6, tx = x + (st[2] + k * 0.3) * r * 0.7, ty = y + st[1] * r;
+    g.strokeStyle = 'rgba(12,16,6,.85)'; g.lineWidth = Math.max(2.6, cs * 0.06); g.beginPath(); g.moveTo(bx, y); g.quadraticCurveTo(bx, ty + r * 0.6, tx, ty); g.stroke();
+    g.strokeStyle = i === 1 ? '#e6d36a' : '#c6c25a'; g.lineWidth = Math.max(1.3, cs * 0.03); g.beginPath(); g.moveTo(bx, y); g.quadraticCurveTo(bx, ty + r * 0.6, tx, ty); g.stroke();
+    g.fillStyle = 'rgba(12,16,6,.9)'; g.beginPath(); g.ellipse(tx, ty, r * 0.42, r * 0.3, -0.5, 0, 6.3); g.fill();
+    g.fillStyle = '#d98a3a'; g.beginPath(); g.ellipse(tx, ty, r * 0.28, r * 0.18, -0.5, 0, 6.3); g.fill();
+  });
+  // cushion: dark rim, then two greens, then a highlight
+  var blobs = [[-0.95, 0.25, 0.75], [0, 0, 0.95], [0.95, 0.2, 0.8], [0.4, -0.45, 0.6], [-0.45, -0.35, 0.6]];
+  g.fillStyle = 'rgba(12,16,6,.9)';
+  blobs.forEach(function (b) { g.beginPath(); g.arc(x + b[0] * r, y + b[1] * r, b[2] * r + Math.max(1.2, cs * 0.028), 0, 6.3); g.fill(); });
+  g.fillStyle = '#4f8f1f';
+  blobs.forEach(function (b) { g.beginPath(); g.arc(x + b[0] * r, y + b[1] * r, b[2] * r, 0, 6.3); g.fill(); });
+  g.fillStyle = '#9ccc3a';
+  blobs.forEach(function (b) { g.beginPath(); g.arc(x + b[0] * r - r * 0.12, y + b[1] * r - r * 0.18, b[2] * r * 0.66, 0, 6.3); g.fill(); });
+  g.fillStyle = 'rgba(235,255,170,.75)';
+  g.beginPath(); g.arc(x - r * 0.25, y - r * 0.35, r * 0.22, 0, 6.3); g.fill();
+  g.restore();
+}
+function drawCrack(g, x, y, cs, t) {
+  g.save(); g.strokeStyle = 'rgba(255,245,225,' + (0.55 + 0.25 * wave(t, 4)) + ')'; g.lineWidth = Math.max(1, cs * 0.03); g.lineCap = 'round';
+  g.beginPath(); g.moveTo(x + cs * 0.2, y + cs * 0.12); g.lineTo(x + cs * 0.42, y + cs * 0.4); g.lineTo(x + cs * 0.33, y + cs * 0.6); g.lineTo(x + cs * 0.58, y + cs * 0.88);
+  g.moveTo(x + cs * 0.42, y + cs * 0.4); g.lineTo(x + cs * 0.7, y + cs * 0.34); g.stroke(); g.restore();
+}
+
+function draw(now) {
+  var t = now / 1000; if (rmOn() !== RMF) applyRM(); // also catches a device change whose event came late
+  ctx.clearRect(0, 0, VW, VH);
+  // dusk sky that darkens as the roof grows
+  var depth = G ? Math.min(1, view.scroll / (cellPx() * 30)) : 0;
+  paintSky(ctx, VW, VH, t, depth, store.equipped.backdrop);
+  if (!G) { drawMenuBg(t); return; }
+  var s = G.s, cs = cellPx(), x0 = roofX0();
+  // smooth scroll
+  view.scroll += (view.target - view.scroll) * (RMF ? 1 : 0.16);
+  var maxS = Math.max(0, contentH() - viewH() + cs * 2);
+  if (view.scroll > maxS + 1 && !view.manual) view.target = Math.min(view.target, maxS);
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, view.top - 4, VW, view.trayTop - view.top + 4); ctx.clip();
+  // roof deck (sheathing boards) under the 7 columns
+  var deckTop = rowY(0) + cs * 0.6, deckBot = Math.max(rowY(s.rows + 1), view.trayTop);
+  ctx.fillStyle = '#231c1a'; ctx.fillRect(x0 - 6, deckTop, SH.W * cs + 12, deckBot - deckTop);
+  ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1;
+  for (var r = 1; r <= s.rows + 1; r++) { var yy = rowY(r); if (yy < view.top - cs || yy > view.trayTop + cs) continue; ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x0 + SH.W * cs, yy); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(255,220,190,.035)';
+  for (var c = 0; c <= SH.W; c++) { ctx.beginPath(); ctx.moveTo(x0 + c * cs, deckTop); ctx.lineTo(x0 + c * cs, deckBot); ctx.stroke(); }
+  // eave edges
+  ctx.fillStyle = '#2f2522'; ctx.fillRect(x0 - 8, deckTop, 4, deckBot - deckTop); ctx.fillRect(x0 + SH.W * cs + 4, deckTop, 4, deckBot - deckTop);
+
+  // course tags: a full row (a course) gets one tag at its left edge, in the colour of the player it pays +3
+  // (with their letter in symbols mode); a grey "tie" tag when nobody shows the most studs in it
+  var sc = SH.score(s);
+  sc.courses.forEach(function (co) {
+    var y = rowY(co.r); if (y < view.top - cs || y > view.trayTop) return;
+    var tw = 22, th = 17, tx = x0 - tw - 3, ty = y + cs / 2 - th / 2, sym = store.symbols && co.p >= 0;
+    ctx.save();
+    ctx.fillStyle = co.p >= 0 ? matOf(co.p).base : 'rgba(120,116,130,.85)';
+    rr(ctx, tx, ty, tw, th, 5); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.font = (sym ? '800 9px' : co.p >= 0 ? '800 11px' : '700 9px') + ' system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(0,0,0,.55)'; var label = co.p < 0 ? 'tie' : (sym ? matOf(co.p).sym : '') + '+3';
+    ctx.fillText(label, tx + tw / 2 + 0.6, ty + th / 2 + 1.4);
+    ctx.fillStyle = '#fff8ec'; ctx.fillText(label, tx + tw / 2, ty + th / 2 + 0.8);
+    ctx.restore(); courseTags++;
+  });
+
+  // slots preview for drag
+  var slots = drag ? drag.slots : null;
+  // tiles in placement order
+  for (var i = 0; i < s.tiles.length; i++) {
+    var tl = s.tiles[i], y = rowY(tl.r), x = x0 + tl.c * cs, alpha = 1, dy = 0;
+    if (y > view.trayTop + cs || y + cs * 2 < view.top - cs) continue;
+    if (anim && anim.ti === i) {
+      var k = Math.min(1, (now - anim.t0) / anim.dur); if (k >= 1) anim = null;
+      var e = 1 - Math.pow(1 - k, 3); dy = -cs * 0.7 * (1 - e); alpha = 0.3 + 0.7 * e;
+    }
+    drawTile(ctx, x, y + dy, cs, tl.w, tl.head, tl.tail, tl.owner, alpha);
+  }
+  // moss on weathered exposed tails (they will score x2)
+  for (var ri = 0; ri < s.rows; ri++) {
+    var ryy = rowY(ri); if (ryy < view.top - cs || ryy > view.trayTop) continue;
+    for (var rc = 0; rc < SH.W; rc++) {
+      var rcd = s.grid[ri * SH.W + rc]; if (rcd === -1 || SH.cPart(rcd) !== 1) continue;
+      var rt = s.tiles[SH.cTile(rcd)]; if (rt.owner < 0 || !SH.studsOf(s, rcd) || s.tailMult <= 1 || !SH.weathered(s, rt)) continue;
+      drawMoss(ctx, x0 + rc * cs + cs * 0.82, ryy + cs * 0.2, cs, ri * 7 + rc); // stays inside the cell, clear of the top stud
+    }
+  }
+  // hints over exposed tails
+  if (!drag && !sweep && store.hintLevel !== 'off') {
+    for (var key in threat) { var kk = +key, rr2 = Math.floor(kk / SH.W), cc = kk % SH.W; drawCrack(ctx, x0 + cc * cs, rowY(rr2), cs, t); }
+    for (key in risk) {
+      kk = +key; rr2 = Math.floor(kk / SH.W); cc = kk % SH.W;
+      ctx.strokeStyle = 'rgba(255,90,70,' + (0.35 + 0.3 * wave(t, 3.2)) + ')'; ctx.lineWidth = 2;
+      rr(ctx, x0 + cc * cs + 3, rowY(rr2) + 3, cs - 6, cs - 6, cs * 0.12); ctx.stroke();
+    }
+  }
+  // tutorial: the step's spot glows before you pick the tile up
+  if (!drag && G.tut && G.tut.allow && !s.over && s.turn === 0) {
+    G.tut.allow.forEach(function (a) {
+      ctx.save(); ctx.setLineDash([6, 4]); ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(232,194,122,' + (0.55 + 0.35 * wave(t, 4)) + ')';
+      rr(ctx, x0 + a.c * cs + 3, rowY(a.r) + 3, cs * 2 - 6, cs * 2 - 6, cs * 0.14); ctx.stroke();
+      ctx.fillStyle = 'rgba(232,194,122,' + (0.08 + 0.06 * wave(t, 4)) + ')'; ctx.fill(); ctx.restore();
+    });
+  }
+  // no-drag: the selected tile's spots glow all turn; a picked spot shows its ghost and preview until the second tap
+  if (!drag && !sweep && isHumanTurn() && !busy) {
+    var tsl = noDragOn() ? tapSlots() : [], kind0 = s.hands[s.turn][sel], o2 = kind0 != null ? SH.orient(kind0, tray[sel].flip, tray[sel].mirror) : null;
+    if (o2 && (tsl.length || pend)) {
+      tsl.forEach(function (sl) {
+        var sx = x0 + sl.c * cs, sy = rowY(sl.r);
+        // brighter than the drag outlines: in this mode the spots are the only cue for where a tap lands
+        ctx.save(); ctx.setLineDash([7, 4]); ctx.lineWidth = 2.5;
+        ctx.strokeStyle = sl.drop ? 'rgba(170,210,255,.8)' : 'rgba(240,200,120,' + (0.7 + 0.25 * wave(t, 5)) + ')';
+        rr(ctx, sx + 4, sy + 4, cs * 2 - 8, cs - 8, cs * 0.12); ctx.stroke();
+        ctx.fillStyle = sl.drop ? 'rgba(160,200,255,.14)' : 'rgba(232,194,122,.16)'; ctx.fill(); ctx.restore();
+      });
+      if (pend) {
+        drawTile(ctx, x0 + pend.c * cs, rowY(pend.r), cs, 2, o2.head, o2.tail, s.turn, 0.9);
+        ctx.save(); ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(232,194,122,' + (0.65 + 0.3 * wave(t, 5)) + ')';
+        rr(ctx, x0 + pend.c * cs + 1, rowY(pend.r) + 1, cs * 2 - 2, cs * 2 - 2, cs * 0.14); ctx.stroke(); ctx.restore();
+        if (store.preview && pend.pv) drawPreview(pend, pend.pv);
+      }
+    }
+    if (weakFlash) {
+      if (now - weakFlash.t0 > 900 || !o2) weakFlash = null;
+      else drawTile(ctx, x0 + weakFlash.c * cs, rowY(weakFlash.r), cs, 2, o2.head, o2.tail, s.turn, 0.55, { badHead: weakFlash.bad, flat: true });
+    }
+  }
+  // drag: legal slots + ghost + strength warnings
+  if (drag) {
+    var o = SH.orient(s.hands[s.turn][drag.slot], tray[drag.slot].flip, tray[drag.slot].mirror);
+    slots.forEach(function (sl) {
+      var sx = x0 + sl.c * cs, sy = rowY(sl.r);
+      ctx.save(); ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+      ctx.strokeStyle = sl.drop ? 'rgba(160,200,255,.55)' : 'rgba(232,194,122,' + (0.45 + 0.25 * wave(t, 5)) + ')';
+      rr(ctx, sx + 4, sy + 4, cs * 2 - 8, cs - 8, cs * 0.12); ctx.stroke();
+      ctx.fillStyle = sl.drop ? 'rgba(160,200,255,.06)' : 'rgba(232,194,122,.07)'; ctx.fill(); ctx.restore();
+    });
+    if (drag.snap) drawTile(ctx, x0 + drag.snap.c * cs, rowY(drag.snap.r), cs, 2, o.head, o.tail, s.turn, 0.88);
+    else if (drag.hover) {
+      // ghost at hovered illegal spot with red studs where too weak
+      drawTile(ctx, x0 + drag.hover.c * cs, rowY(drag.hover.r), cs, 2, o.head, o.tail, s.turn, 0.35, { badHead: drag.hover.bad, flat: true });
+    }
+    // the tile under the finger
+    var fcs = cs;
+    drawTile(ctx, drag.x - fcs, drag.y - fcs * 2.35, fcs, 2, o.head, o.tail, s.turn, drag.snap ? 0.35 : 0.95, { badHead: drag.hover ? drag.hover.bad : null });
+    if (drag.hover) { ctx.strokeStyle = 'rgba(255,80,60,.85)'; ctx.lineWidth = 2; rr(ctx, drag.x - fcs + 2, drag.y - fcs * 2.35 + 2, fcs * 2 - 4, fcs - 4, fcs * 0.12); ctx.stroke(); }
+    if (drag.snap && drag.pv && store.preview) drawPreview(drag.snap, drag.pv);
+  }
+  ctx.restore();
+
+  // particles
+  for (i = particles.length - 1; i >= 0; i--) {
+    var p = particles[i]; p.t += 1 / 60;
+    if (p.t > p.life) { particles.splice(i, 1); continue; }
+    var drift = p.kind === 'rain' || p.kind === 'snow' || p.kind === 'petal';
+    p.x += p.vx / 60; p.y += p.vy / 60; if (!drift) p.vy += 160 / 60;
+    var a = 1 - p.t / p.life;
+    if (p.kind === 'rain') { ctx.strokeStyle = 'rgba(180,210,255,' + (0.35 * a) + ')'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - 2, p.y - (p.len || 12)); ctx.stroke(); }
+    else if (p.kind === 'snow') { p.vx += Math.sin(p.t * 3 + p.r) * 0.6; ctx.fillStyle = 'rgba(245,250,255,' + (0.85 * Math.min(1, a * 3, p.t * 4)) + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3); ctx.fill(); }
+    else if (p.kind === 'petal') { p.a += 0.06; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = 'rgba(255,170,200,' + (0.9 * Math.min(1, a * 3, p.t * 4)) + ')'; ctx.beginPath(); ctx.ellipse(0, 0, 4.5, 2.4, 0, 0, 6.3); ctx.fill(); ctx.restore(); }
+    else if (p.kind === 'spark') { ctx.fillStyle = 'rgba(255,220,160,' + a + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, 2.2 * a + .5, 0, 6.3); ctx.fill(); }
+    else { ctx.fillStyle = 'rgba(210,180,150,' + (0.4 * a) + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, 2 + 3 * (1 - a), 0, 6.3); ctx.fill(); }
+  }
+  if (sweep) stepSweep(now);
+
+  drawTray(now);
+}
+// The +N / -M pill: gold gain, then a dot in the buried player's colour and the red loss. Sits above the
+// ghost, or under it when the spot is at the top of the view.
+var pvDraws = 0;
+function drawPreview(sl, pv) {
+  var cs = cellPx(), x0 = roofX0(), top = rowY(sl.r);
+  var a = (pv.gain < 0 ? '\u2212' : '+') + Math.abs(pv.gain), b = pv.lost ? '\u2212' + pv.lost : '';
+  ctx.save(); ctx.font = '800 15px system-ui, sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  var wa = ctx.measureText(a).width, wb = b ? ctx.measureText(b).width : 0, dot = b && pv.victim >= 0 ? 12 : 0;
+  var padX = 10, gap = b ? 10 : 0, h = 26, w = padX * 2 + wa + gap + dot + wb;
+  var x = Math.max(4, Math.min(VW - w - 4, x0 + (sl.c + 1) * cs - w / 2)), y = top - h - 6;
+  if (y < view.top + 2) y = top + cs * 2 + 6;
+  ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 2;
+  ctx.fillStyle = 'rgba(18,14,24,.94)'; rr(ctx, x, y, w, h, h / 2); ctx.fill();
+  ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(232,194,122,.6)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = pv.gain < 0 ? '#ff8f7a' : '#f2cf86'; ctx.fillText(a, x + padX, y + h / 2 + 1);
+  if (b) {
+    var bx = x + padX + wa + gap;
+    if (dot) { ctx.fillStyle = matOf(pv.victim).base; ctx.beginPath(); ctx.arc(bx + 4, y + h / 2, 4.5, 0, 6.3); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.stroke(); }
+    ctx.fillStyle = '#ff8f7a'; ctx.fillText(b, bx + dot, y + h / 2 + 1);
+  }
+  ctx.restore(); pvDraws++;
+}
+// Skies: dusk (the original), storm, aurora, city skyline. Drawn in code; motion stops under reduced motion.
+function paintSky(g, w, h, t, depth, id) {
+  var sky = g.createLinearGradient(0, 0, 0, h), still = RMF;
+  var stops = id === 'storm' ? [['#2c3542', '#141a22'], ['#1f2630', '#0e1218'], '#0b0d11'] : id === 'aurora' ? [['#10213a', '#0b1426'], ['#0b1522', '#090e18'], '#07080e']
+    : id === 'city' ? [['#4a2f45', '#1c1426'], ['#2b2236', '#110f19'], '#0e0d13'] : [['#3b2a3f', '#141320'], ['#2a2234', '#100f18'], '#0e0d13'];
+  sky.addColorStop(0, mix(stops[0][0], stops[0][1], depth)); sky.addColorStop(0.5, mix(stops[1][0], stops[1][1], depth)); sky.addColorStop(1, stops[2]);
+  g.fillStyle = sky; g.fillRect(0, 0, w, h);
+  var r, i;
+  if (id === 'storm') {
+    r = SH.rng(51); // soft cloud banks: three overlapping puffs each, lit a little from above
+    for (i = 0; i < 8; i++) {
+      var cx = r() * w, cy = h * (0.03 + r() * 0.15), rw = w * (0.10 + r() * 0.12);
+      for (var k = 0; k < 3; k++) {
+        var px = cx + (k - 1) * rw * 0.7, py = cy - (k === 1 ? rw * 0.12 : 0), pr = rw * (k === 1 ? 0.8 : 0.6);
+        var cg = g.createRadialGradient(px, py - pr * 0.3, pr * 0.1, px, py, pr);
+        cg.addColorStop(0, 'rgba(96,108,128,.30)'); cg.addColorStop(0.6, 'rgba(60,70,88,.20)'); cg.addColorStop(1, 'rgba(40,48,62,0)');
+        g.fillStyle = cg; g.beginPath(); g.ellipse(px, py, pr, pr * 0.42, 0, 0, 6.3); g.fill();
+      }
+    }
+    var flash = still ? 0 : (t % 7) < 0.12 ? 0.22 : (t % 7) < 0.2 ? 0.08 : 0;
+    if (flash) { g.fillStyle = 'rgba(200,220,255,' + flash + ')'; g.fillRect(0, 0, w, h); }
+  } else if (id === 'aurora') {
+    for (i = 0; i < 3; i++) {
+      g.strokeStyle = i === 1 ? 'rgba(170,110,255,.16)' : 'rgba(80,230,160,.18)'; g.lineWidth = h * (0.05 + i * 0.015); g.lineCap = 'round'; g.beginPath();
+      for (var x = -10; x <= w + 10; x += 10) { var y = h * (0.12 + i * 0.06) + Math.sin(x / (w * 0.22) + i * 1.7 + (still ? 0 : t * 0.25)) * h * 0.03; if (x < 0) g.moveTo(x, y); else g.lineTo(x, y); }
+      g.stroke();
+    }
+    r = SH.rng(53); g.fillStyle = 'rgba(255,255,255,.55)'; for (i = 0; i < 40; i++) g.fillRect(r() * w, r() * h * 0.5, 1, 1);
+  } else if (id === 'city') {
+    r = SH.rng(57); var base = h * 0.34, bx = -4;
+    while (bx < w) {
+      var bw = w * (0.05 + r() * 0.08), bh = h * (0.06 + r() * 0.16);
+      g.fillStyle = '#16111d'; g.fillRect(bx, base - bh, bw + 1, bh + h);
+      g.fillStyle = 'rgba(255,205,120,.55)';
+      for (var wy = base - bh + 5; wy < base - 4; wy += 7) for (var wx = bx + 3; wx < bx + bw - 3; wx += 6) if (r() < 0.32) g.fillRect(wx, wy, 2, 3);
+      bx += bw + 2;
+    }
+    g.fillStyle = '#16111d'; g.fillRect(0, base, w, h - base);
+  }
+}
+function mix(a, b, k) {
+  var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  var r = ((pa >> 16) & 255) * (1 - k) + ((pb >> 16) & 255) * k, g = ((pa >> 8) & 255) * (1 - k) + ((pb >> 8) & 255) * k, bl = (pa & 255) * (1 - k) + (pb & 255) * k;
+  return 'rgb(' + (r | 0) + ',' + (g | 0) + ',' + (bl | 0) + ')';
+}
+function trayRect(i) {
+  var tcs = view.tcs, gap = 26, w = tcs * 2, total = w * 2 + gap;
+  return { x: (VW - total) / 2 + i * (w + gap), y: view.trayTop + 30, w: w, h: tcs * 2, cs: tcs };
+}
+function drawTray(now) {
+  var s = G.s;
+  // tray panel
+  var g = ctx.createLinearGradient(0, view.trayTop, 0, VH); g.addColorStop(0, 'rgba(20,18,26,.96)'); g.addColorStop(1, '#0c0b10');
+  ctx.fillStyle = g; ctx.fillRect(0, view.trayTop, VW, VH - view.trayTop);
+  ctx.fillStyle = 'rgba(232,194,122,.18)'; ctx.fillRect(0, view.trayTop, VW, 1);
+  var p = s.turn, human = isHumanTurn(), owner = human ? p : (G.friend && G.friend.me >= 0 ? G.friend.me : G.seats.indexOf('human') >= 0 ? G.seats.indexOf('human') : p);
+  var hand = s.hands[owner] || [];
+  for (var i = 0; i < 2; i++) {
+    var R = trayRect(i);
+    if (!hand[i]) { ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.setLineDash([4, 4]); rr(ctx, R.x + 2, R.y + 2, R.w - 4, R.h - 4, 8); ctx.stroke(); ctx.setLineDash([]); continue; }
+    var tr = (human && owner === p) ? tray[i] : { flip: false, mirror: false };
+    var o = SH.orient(hand[i], tr.flip, tr.mirror);
+    var dragging = drag && drag.slot === i;
+    var a = human ? (dragging ? 0.25 : 1) : 0.4;
+    if (human && sel === i && !dragging) { ctx.strokeStyle = 'rgba(232,194,122,.7)'; ctx.lineWidth = 2; rr(ctx, R.x - 4, R.y - 4, R.w + 8, R.h + 8, 12); ctx.stroke(); }
+    drawTile(ctx, R.x, R.y, R.cs, 2, o.head, o.tail, owner, a, { tray: true, badHead: human && !dragging ? tutWeakHead(i) : null });
+    ctx.fillStyle = 'rgba(243,234,217,.6)'; ctx.font = '600 10px system-ui'; ctx.textAlign = 'center';
+    var label = SH.DEFS[hand[i]].name + (tr.flip ? ' · flipped' : '');
+    if (human && !tileHasAnyHang(s, i)) label = 'drop · ' + label;
+    ctx.fillText(label, R.x + R.w / 2, R.y + R.h + 13);
+  }
+  if (G.blitz && human && !s.over) {
+    var fr = Math.max(0, Math.min(1, G.blitz.left / G.blitz.limit));
+    ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(0, view.trayTop, VW, 5);
+    ctx.fillStyle = G.blitz.left < 2000 ? '#ff6b52' : '#e8c27a'; ctx.fillRect(0, view.trayTop, VW * fr, 5);
+  }
+  var left = s.stacks[owner] ? s.stacks[owner].length : 0;
+  ctx.fillStyle = 'rgba(243,234,217,.45)'; ctx.font = '600 10px system-ui'; ctx.textAlign = 'right';
+  var R0 = trayRect(0); ctx.fillText(left + ' left', VW - 10, R0.y + R0.h / 2 + 4);
+}
+function drawMenuBg(t) {
+  if (RMF) t = 0; // reduced motion: the shingles hold still
+  // decorative falling shingles on the menu
+  var cs = Math.min(46, VW / 9);
+  for (var i = 0; i < 14; i++) {
+    var r = SH.rng(i * 97 + 1), x = r() * VW, sp = 18 + r() * 22, y = ((t * sp + r() * VH * 1.5) % (VH + cs * 3)) - cs * 2;
+    var o = SH.orient(SH.DECK[i % 16], r() < .5, r() < .5);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * 0.5 + i) * 0.25); drawTile(ctx, -cs, -cs, cs, 2, o.head, o.tail, i % 4, 0.22, { flat: true, noSym: true }); ctx.restore();
+  }
+}
+
+// ---------- Sunbeams: local only, earned only by playing, cosmetic only ----------
+// Finish a match 5 (any match with a person in it); win vs Medium +5 or vs Hard +10 (one person against bots, by the
+// strongest bot). Daily Roof first run 10, +10 for beating the bot, +25 on every 7th day of a streak; replays earn
+// nothing. The scripted tutorial steps earn nothing (its last, real roof does). Achievements add their own (M3).
+var SUN = '<svg class="sunico" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="8" cy="8" r="3.3" fill="#f2cf86"/><path d="M8 1.3v2M8 12.7v2M1.3 8h2M12.7 8h2M3.3 3.3l1.4 1.4M11.3 11.3l1.4 1.4M3.3 12.7l1.4-1.4M11.3 4.7l1.4-1.4" stroke="#f2cf86" stroke-width="1.6" stroke-linecap="round"/></svg>';
+function sunbeamsFor(o) {
+  var out = [];
+  if (o.scripted || !(o.humans >= 1)) return out;
+  if (o.daily) {
+    if (!o.firstDaily) return out;
+    out.push({ n: 10, why: 'Daily Roof' });
+    if (o.margin > 0) out.push({ n: 10, why: 'beat the bot' });
+    if (o.streak > 0 && o.streak % 7 === 0) out.push({ n: 25, why: o.streak + '-day streak' });
+    return out;
+  }
+  out.push({ n: 5, why: 'match' });
+  if (o.humans === 1 && o.won) { if (o.top === 'hard') out.push({ n: 10, why: 'win vs Hard' }); else if (o.top === 'medium') out.push({ n: 5, why: 'win vs Medium' }); }
+  return out;
+}
+function topBot(seats) { return seats.indexOf('hard') > -1 ? 'hard' : seats.indexOf('medium') > -1 ? 'medium' : seats.indexOf('easy') > -1 ? 'easy' : null; }
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function dayOffset(d, n) { var t = new Date(d + 'T12:00:00'); t.setDate(t.getDate() + n); return t.getFullYear() + '-' + pad2(t.getMonth() + 1) + '-' + pad2(t.getDate()); }
+// Days in a row with a recorded Daily Roof, ending on `end` (a YYYY-MM-DD string).
+function dailyStreak(end) { var n = 0; while (store.daily[dayOffset(end, -n)] != null) n++; return n; }
+function creditSun(lines) {
+  var t = 0; lines.forEach(function (l) { t += l.n; });
+  if (t) { store.sunbeams += t; store.stats.sunEarned += t; save(); }
+  return t;
+}
+function sunLineHTML(lines) {
+  var t = 0, parts = [], bn = 0, bs = 0;
+  lines.forEach(function (l) { t += l.n; if (l.badge) { bn++; bs += l.n; } else parts.push(l.why + ' ' + l.n); });
+  if (!t) return '';
+  if (bn) parts.push((bn === 1 ? '1 badge ' : bn + ' badges ') + bs); // badges fold into one count; their names are on the next line
+  return SUN + ' +' + t + ' Sunbeams · balance ' + store.sunbeams + '<span>' + parts.join(' · ') + '</span>';
+}
+
+// ---------- Stats (v1.2): recorded for single-player matches (not the Daily Roof, not the scripted tutorial steps) ----------
+// Rain-catch: the points a player's weathered, exposed tails score at the end (studs x the tail multiplier).
+function rainCatch(s, p) {
+  var t = 0;
+  for (var k = 0; k < s.grid.length; k++) {
+    var cd = s.grid[k]; if (cd === -1 || SH.cPart(cd) !== 1) continue;
+    var tl = s.tiles[SH.cTile(cd)]; if (tl.owner !== p) continue;
+    if (SH.weathered(s, tl)) t += SH.studsOf(s, cd) * (s.tailMult || SH.TAIL_MULT);
+  }
+  return t;
+}
+function recordStats(me, ws, sc) {
+  var st = store.stats, s = G.s, top = topBot(G.seats), won = ws.indexOf(me) > -1;
+  st.solo++; st.studs += sc.total[me];
+  if (top) { st.byTier[top].p++; if (won) st.byTier[top].w++; }
+  if (won && ws.length === 1) {
+    var other = -1e9; for (var i = 0; i < sc.total.length; i++) if (i !== me && sc.total[i] > other) other = sc.total[i];
+    if (st.bestMargin == null || sc.total[me] - other > st.bestMargin) st.bestMargin = sc.total[me] - other;
+  }
+  st.rain += rainCatch(s, me);
+  sc.courses.forEach(function (c) { if (c.p === me) st.courses++; });
+  s.log.forEach(function (e) { if (e.p === me && e.flip && e.kind !== 'even') st.flips[e.kind] = (st.flips[e.kind] || 0) + 1; });
+  save();
+}
+function renderStats() {
+  var st = store.stats, rows = [], fav = null;
+  for (var k in st.flips) if (!fav || st.flips[k] > st.flips[fav]) fav = k;
+  var tier = function (t) { var r = st.byTier[t]; return r.p ? r.w + ' won / ' + r.p : 'not played'; };
+  rows.push(['Games played', store.played], ['Wins', store.wins], ['vs Easy', tier('easy')], ['vs Medium', tier('medium')], ['vs Hard', tier('hard')],
+    ['Best winning margin', st.bestMargin == null ? 'none yet' : '+' + st.bestMargin],
+    ['Average score', st.solo ? Math.round(st.studs / st.solo) : 'none yet'], ['Rain-catch total', st.rain], ['Courses won', st.courses],
+    ['Favourite tile (most flipped)', fav ? SH.DEFS[fav].name + ' · ' + st.flips[fav] + '×' : 'none yet'],
+    ['Sunbeams earned', st.sunEarned + ' (' + store.sunbeams + ' to spend)']);
+  $('statStats').innerHTML = rows.map(function (r) { return '<div class="stat"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join('') +
+    '<div class="note">Averages and records count your games against bots. Daily Roof results are under Daily.</div>';
+  // Daily: streaks and the last four weeks, Monday first
+  var d = today(), cur = dailyStreak(d) || dailyStreak(dayOffset(d, -1)), html = '<div class="streak"><div><b>' + cur + '</b>day streak</div><div><b>' + Math.max(st.bestStreak, cur) + '</b>best streak</div><div><b>' + Object.keys(store.daily).length + '</b>days played</div></div><div class="cal">';
+  ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(function (h) { html += '<div class="h">' + h + '</div>'; });
+  var dow = (new Date(d + 'T12:00:00').getDay() + 6) % 7, start = dayOffset(d, -(21 + dow));
+  for (var i = 0; i < 28; i++) {
+    var day = dayOffset(start, i), m = store.daily[day], future = day > d;
+    var cls = 'd' + (day === d ? ' today' : '') + (m == null ? '' : m > 0 ? ' won' : m < 0 ? ' lost' : ' even');
+    html += '<div class="' + cls + '" aria-label="' + day + (m == null ? ', not played' : ', margin ' + m) + '"' + (future ? ' style="opacity:.35"' : '') + '><i>' + (+day.slice(8)) + '</i><b>' + (m == null ? '·' : (m > 0 ? '+' : m < 0 ? '\u2212' : '') + Math.abs(m)) + '</b></div>';
+  }
+  $('statDaily').innerHTML = html + '</div><div class="note">Green: you beat the Hard bot that day. Red: it beat you.</div>';
+}
+// ---------- Shop ----------
+var shopKind = 'set', askBuy = null;
+function shopPreview(cv2, kind, id) {
+  var w = 88, h = 48, g = cv2.getContext('2d'); cv2.width = w * DPR; cv2.height = h * DPR; g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (kind === 'set') {
+    g.fillStyle = '#231c1a'; g.fillRect(0, 0, w, h);
+    var M = id === 'base' ? MATERIALS[0] : SET_MATS[id], a = SH.orient('hook', false, false), b = SH.orient('split', true, false);
+    drawTile(g, 1, 2, 21.5, 2, a.head, a.tail, 0, 1, { mat: M, noSym: true, flat: true });
+    drawTile(g, 45, 2, 21.5, 2, b.head, b.tail, 0, 1, { mat: M, noSym: true, flat: true });
+  } else if (kind === 'backdrop') {
+    paintSky(g, w, h * 2.6, 0, 0, id);
+    g.fillStyle = '#5a5862'; g.fillRect(w * 0.2, h - 10, w * 0.6, 10); g.fillStyle = '#231c1a'; g.fillRect(w * 0.1, h - 3, w * 0.8, 3);
+  } else {
+    var sk = g.createLinearGradient(0, 0, 0, h); sk.addColorStop(0, '#22202e'); sk.addColorStop(1, '#0e0d13'); g.fillStyle = sk; g.fillRect(0, 0, w, h);
+    var r = SH.rng(71), i;
+    if (id === 'snow') { g.fillStyle = 'rgba(245,250,255,.9)'; for (i = 0; i < 22; i++) { g.beginPath(); g.arc(r() * w, r() * h, 1 + r() * 1.6, 0, 6.3); g.fill(); } }
+    else if (id === 'petals') { g.fillStyle = 'rgba(255,170,200,.9)'; for (i = 0; i < 12; i++) { g.save(); g.translate(r() * w, r() * h); g.rotate(r() * 6.3); g.beginPath(); g.ellipse(0, 0, 4, 2.2, 0, 0, 6.3); g.fill(); g.restore(); } }
+    else { var heavy = id === 'downpour', len = heavy ? 14 : 8; g.strokeStyle = 'rgba(180,210,255,.75)'; g.lineWidth = 1; for (i = 0; i < (heavy ? 30 : 14); i++) { var x = r() * w, y = r() * h; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 2, y - len); g.stroke(); } }
+  }
+}
+function renderShop() {
+  $('shopBal').innerHTML = SUN + ' ' + store.sunbeams + ' Sunbeams';
+  Array.prototype.forEach.call($('shopTabs').children, function (b) { var on = b.dataset.p === shopKind; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  var box = $('shopList'); box.innerHTML = '';
+  SHOP[shopKind].forEach(function (it) {
+    var row = document.createElement('div'); row.className = 'item'; row.dataset.id = it.id;
+    var cv2 = document.createElement('canvas'); cv2.setAttribute('aria-hidden', 'true'); row.appendChild(cv2);
+    var tx = document.createElement('div'); tx.className = 'it'; tx.innerHTML = '<b>' + it.name + '</b><span>' + it.desc + '</span>'; row.appendChild(tx);
+    var bt = document.createElement('button'), own = owns(shopKind, it.id), eq = store.equipped[shopKind] === it.id;
+    if (eq) { bt.textContent = 'Equipped'; bt.className = 'eqd'; bt.setAttribute('aria-pressed', 'true'); }
+    else if (own) { bt.textContent = 'Equip'; bt.onclick = function () { store.equipped[shopKind] = it.id; save(); afterLook(); renderShop(); }; }
+    else if (askBuy === shopKind + ':' + it.id) { bt.innerHTML = 'Buy? ' + it.price; bt.className = 'ask'; bt.onclick = function () { buyItem(shopKind, it.id); }; }
+    else {
+      bt.innerHTML = SUN + ' ' + it.price; bt.setAttribute('aria-label', 'Buy ' + it.name + ' for ' + it.price + ' Sunbeams');
+      bt.disabled = store.sunbeams < it.price;
+      bt.onclick = function () { askBuy = shopKind + ':' + it.id; renderShop(); clearTimeout(renderShop._t); renderShop._t = setTimeout(function () { askBuy = null; if ($('ovShop').classList.contains('show')) renderShop(); }, 3500); };
+    }
+    row.appendChild(bt); box.appendChild(row);
+    shopPreview(cv2, shopKind, it.id);
+  });
+}
+function buyItem(kind, id) {
+  var it = shopItem(kind, id); askBuy = null;
+  if (!it || owns(kind, id) || store.sunbeams < it.price) { renderShop(); return false; }
+  store.sunbeams -= it.price; store.owned.push(id); store.equipped[kind] = id; save();
+  sfx('ach'); toast(it.name + ' is yours. Equipped.', 1400); afterLook(); renderShop(); renderSeats();
+  return true;
+}
+// a new look shows at once, even in a paused match (chips carry your colour)
+function afterLook() { if (G) { buildChips(); updateUI(); } }
+
+function statPage(id) {
+  if (id === 'badges') renderBadges();
+  Array.prototype.forEach.call($('statTabs').children, function (b) { var on = b.dataset.p === id; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  Array.prototype.forEach.call(document.querySelectorAll('#ovStats .statp'), function (p) { p.hidden = p.id !== 'stat' + id[0].toUpperCase() + id.slice(1); });
+}
+
+// ---------- Achievements (12, DESIGN.md §Progression). Each pays Sunbeams once. ----------
+var ACH = [
+  { id: 'apprentice', name: 'Apprentice', sun: 10, how: 'Finish the tutorial' },
+  { id: 'cleanSweep', name: 'Clean Sweep', sun: 25, how: 'Win, all your tails weathered' },
+  { id: 'undertow', name: 'Undertow', sun: 20, how: 'Bury 9+ of their studs in a game' },
+  { id: 'gutterBall', name: 'Gutter Ball', sun: 20, how: 'Win without a course' },
+  { id: 'keystone', name: 'Keystone', sun: 15, how: 'Win a course by 1 point' },
+  { id: 'rainDance', name: 'Rain Dance', sun: 25, how: '20+ rain-catch in a game' },
+  { id: 'foreman', name: 'Foreman', sun: 50, how: 'Beat Hard 10 times' },
+  { id: 'doubleShift', name: 'Double Shift', sun: 20, how: 'Bury with both turns of a double' },
+  { id: 'weatherproof', name: 'Weatherproof', sun: 15, how: 'Lose no tail in the last round' },
+  { id: 'longRoof', name: 'Long Roof', sun: 10, how: 'Play a 4-player game' },
+  { id: 'sevenDays', name: 'Seven Days', sun: 40, how: 'Daily streak of 7' },
+  { id: 'spikeHeel', name: 'Spike Heel', sun: 15, how: 'Break a 3 with a Spike' }
+];
+function newTrack(n) { var z = []; for (var i = 0; i < n; i++) z.push(0); return { buried: z.slice(), dbl: z.map(function () { return false; }), spike: z.map(function () { return false; }), last: null }; }
+// Per move, read from the state before it: opponent studs buried, a Spike breaking a 3, both turns of a snake
+// double burying (two moves in a row by one player only happen at the snake's turn).
+function trackMove(s0, m, trk) {
+  var p = s0.turn, kind = s0.hands[p][m.pick], n = 0, three = false;
+  if (!m.drop) for (var i = 0; i < 2; i++) {
+    var cd = SH.cellAt(s0, m.r, m.c + i); if (cd === -1) continue;
+    var ow = s0.tiles[SH.cTile(cd)].owner, st = SH.studsOf(s0, cd);
+    if (ow >= 0 && ow !== p && st > 0) { n += st; if (st === 3) three = true; }
+  }
+  trk.buried[p] += n;
+  if (three && kind === 'spike') trk.spike[p] = true;
+  if (n) { if (trk.last && trk.last.p === p && trk.last.mv === s0.moveNo - 1) trk.dbl[p] = true; trk.last = { p: p, mv: s0.moveNo }; }
+  return trk;
+}
+// A full row that `me` leads by exactly one point (the course rule as the engine scores it at the end).
+function courseByOne(s, me) {
+  for (var r = 0; r < s.rows; r++) {
+    var full = true, rowS = [];
+    for (var q = 0; q < s.n; q++) rowS.push(0);
+    for (var c = 0; c < SH.W && full; c++) {
+      var cd = s.grid[r * SH.W + c]; if (cd === -1) { full = false; break; }
+      var tl = s.tiles[SH.cTile(cd)]; if (tl.owner < 0) continue;
+      rowS[tl.owner] += SH.studsOf(s, cd) * (SH.cPart(cd) === 1 && SH.weathered(s, tl) ? (s.tailMult || SH.TAIL_MULT) : 1);
+    }
+    if (!full) continue;
+    var second = -1, lead = true;
+    for (q = 0; q < s.n; q++) if (q !== me) { if (rowS[q] >= rowS[me]) lead = false; second = Math.max(second, rowS[q]); }
+    if (lead && rowS[me] - second === 1) return true;
+  }
+  return false;
+}
+// The achievements a finished match earns for the one person playing (Apprentice and Long Roof for any match with a person).
+function achievementsFor(o) {
+  var s = o.s, me = o.me, got = [], add = function (id) { if (!store.achievements[id] && got.indexOf(id) < 0) got.push(id); };
+  if (o.tutorialDone) add('apprentice');
+  if (o.streak >= 7) add('sevenDays');
+  if (!o.full) return got; // the rest need a full roof (12 or 16 tiles) or a first Daily run
+  if (s.n === 4 && o.humans >= 1) add('longRoof');
+  if (o.humans !== 1 || me < 0) return got;
+  var won = o.ws.indexOf(me) > -1, t = o.trk;
+  if (t && t.buried[me] >= 9) add('undertow');
+  if (t && t.dbl[me]) add('doubleShift');
+  if (t && t.spike[me]) add('spikeHeel');
+  if (rainCatch(s, me) >= 20) add('rainDance');
+  var hit = false, lg = s.log;
+  for (var i = Math.max(0, lg.length - s.n); i < lg.length; i++) { var e = lg[i]; if (e.covered >= 0 && e.p !== me && s.tiles[e.covered].owner === me) hit = true; }
+  if (!hit) add('weatherproof');
+  if (won) {
+    if (o.sc.bonus[me] === 0) add('gutterBall');
+    var tails = 0, wet = 0;
+    for (var k = 0; k < s.grid.length; k++) { var cd = s.grid[k]; if (cd === -1 || SH.cPart(cd) !== 1) continue; var tl = s.tiles[SH.cTile(cd)]; if (tl.owner !== me || !SH.studsOf(s, cd)) continue; tails++; if (SH.weathered(s, tl)) wet++; }
+    if (tails && tails === wet) add('cleanSweep');
+    if (courseByOne(s, me)) add('keystone');
+  }
+  if (o.hardBeats >= 10) add('foreman');
+  return got;
+}
+function achLine(ids) { return !ids.length ? '' : (ids.length === 1 ? 'New badge: ' : ids.length + ' new badges: ') + ids.map(function (id) { return achOf(id).name; }).join(' · '); }
+function achOf(id) { for (var i = 0; i < ACH.length; i++) if (ACH[i].id === id) return ACH[i]; return null; }
+function renderBadges() {
+  $('statBadges').innerHTML = '<div class="badges">' + ACH.map(function (a) {
+    var got = store.achievements[a.id], extra = '';
+    if (!got && a.id === 'foreman') extra = ' · ' + Math.min(10, store.stats.hardBeats) + ' / 10';
+    if (!got && a.id === 'sevenDays') extra = ' · best ' + Math.min(7, store.stats.bestStreak) + ' / 7';
+    return '<div class="badge' + (got ? ' got' : '') + '"><b>' + a.name + '</b><span>' + a.how + '</span><i>' + (got ? 'Earned ' + got : SUN + ' ' + a.sun + extra) + '</i></div>';
+  }).join('') + '</div>';
+}
+function badgeTab() { var b = document.querySelector('#statTabs button[data-p="badges"]'); if (b) b.textContent = 'Badges ' + Object.keys(store.achievements).length + '/12'; }
+
+// ---------- Play by link: #g=<code> holds a finished match (seed or Daily date, seats, stack, every move) ----------
+// Bytes: version, players << 4 | daily, 4 bytes seed (or the Daily date as YYYYMMDD), stack, seat kinds (2 bits each:
+// human, easy, medium, hard), then 2 bytes per move (pick 1 bit, flip 1, mirror 1, drop 1, column 3, row 9), then a
+// 2-byte FNV-1a checksum against typos. Base64url, no padding: a 2-player 16-tile match is about 100 characters.
+var LINK_VER = 2, lastLink = null, linkError = '';
+var LINK_ERR = { damaged: 'That match link is damaged.', version: 'That link comes from a newer SHINGLE. Reload the page, then open it again.',
+  rules: 'That match link is from an older build of SHINGLE: its moves no longer fit the rules, so it cannot be replayed.' };
+function fnv(b, n) { var h = 2166136261 >>> 0; for (var i = 0; i < n; i++) { h ^= b[i]; h = Math.imul(h, 16777619) >>> 0; } return h; }
+function b64u(b) { var t = ''; for (var i = 0; i < b.length; i++) t += String.fromCharCode(b[i]); return btoa(t).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function unb64u(str) { var t = atob(str.replace(/-/g, '+').replace(/_/g, '/')), out = []; for (var i = 0; i < t.length; i++) out.push(t.charCodeAt(i)); return out; }
+function utf8(str) { var u = unescape(encodeURIComponent(str)), out = []; for (var i = 0; i < u.length; i++) out.push(u.charCodeAt(i)); return out; }
+function fromUtf8(bytes) { var t = ''; for (var i = 0; i < bytes.length; i++) t += String.fromCharCode(bytes[i]); return decodeURIComponent(escape(t)); }
+function linkStart(meta) { return meta.daily ? SH.dailyGame(meta.daily) : SH.newGame({ players: meta.seats.length, seed: meta.seed, stackSize: meta.stack }); }
+// Version 1: a finished match. Version 2 adds each player's name and a friend flag, so a friend match can travel by
+// link while it is played. Bytes: version, players << 4 | daily | friend << 1, 4 bytes seed (or the Daily date as
+// YYYYMMDD), stack, seat kinds (2 bits each), [v2: each name as a length byte and up to 24 bytes of UTF-8], 2 bytes per
+// move (pick 1 bit, flip 1, mirror 1, drop 1, column 3, row 9), then a 2-byte FNV-1a checksum. Base64url, no padding.
+function packLink(meta, moves) {
+  var ver = meta.names ? 2 : 1, num = meta.daily ? +meta.daily.replace(/-/g, '') : meta.seed >>> 0, kinds = 0, b = [];
+  meta.seats.forEach(function (k, i) { kinds |= KINDS.indexOf(k) << (i * 2); });
+  b.push(ver, (meta.seats.length << 4) | (meta.daily ? 1 : 0) | (meta.friend ? 2 : 0), (num >>> 24) & 255, (num >>> 16) & 255, (num >>> 8) & 255, num & 255, meta.stack & 255, kinds);
+  if (ver === 2) meta.names.forEach(function (nm) { var u = utf8(nm); while (u.length > 24) { nm = nm.slice(0, -1); u = utf8(nm); } b.push(u.length); u.forEach(function (x) { b.push(x); }); });
+  moves.forEach(function (m) { var v = (m.pick << 15) | ((m.flip ? 1 : 0) << 14) | ((m.mirror ? 1 : 0) << 13) | ((m.drop ? 1 : 0) << 12) | ((m.c & 7) << 9) | (m.r & 511); b.push((v >> 8) & 255, v & 255); });
+  var h = fnv(b, b.length); b.push((h >>> 8) & 255, h & 255);
+  return b64u(b);
+}
+// A match's moves so far, recovered from its log (replaying from the start gives each move's tile in hand).
+function movesOf(g) {
+  var s = linkStart({ daily: g.daily, seed: g.s.seed, stack: g.stack, seats: g.seats }), log = g.s.log.slice(s.moveNo), out = [];
+  for (var i = 0; i < log.length; i++) {
+    var e = log[i], pick = s.hands[s.turn].indexOf(e.kind);
+    if (pick < 0 || e.p !== s.turn) return null;
+    var m = { pick: pick, flip: e.flip, mirror: e.mirror, r: e.r, c: e.c, drop: e.drop };
+    out.push(m); s = SH.step(s, m);
+  }
+  return out;
+}
+function encodeMatch(g) {
+  if (!g || g.tut || g.climb || (!g.s.over && !g.friend)) return null;
+  var moves = movesOf(g); if (!moves) return null;
+  return packLink({ daily: g.daily, seed: g.s.seed, stack: g.stack, seats: g.seats, names: g.friend ? g.friend.names : null, friend: !!g.friend }, moves);
+}
+// A sound link gives { meta, moves, final }. Anything else gives null and sets linkError: 'damaged' (bad characters,
+// checksum or layout), 'version' (made by a newer build), or 'rules' (sound, but its moves do not replay here: an older build).
+function decodeMatch(code) {
+  linkError = 'damaged';
+  var b; try { b = unb64u(code); } catch (e) { return null; }
+  if (b.length < 10) return null;
+  var h = fnv(b, b.length - 2); if (b[b.length - 2] !== ((h >>> 8) & 255) || b[b.length - 1] !== (h & 255)) return null;
+  if (b[0] < 1 || b[0] > LINK_VER) { if (b[0] > LINK_VER) linkError = 'version'; return null; }
+  var ver = b[0], n = b[1] >> 4, daily = b[1] & 1, friend = !!(b[1] & 2), num = ((b[2] << 24) | (b[3] << 16) | (b[4] << 8) | b[5]) >>> 0, seats = [], k = 8, i;
+  if (n < 2 || n > 4 || b[6] < 1 || b[6] > 16 || (daily && n !== 2) || (friend && ver < 2)) return null;
+  for (i = 0; i < n; i++) seats.push(KINDS[(b[7] >> (i * 2)) & 3]);
+  if (friend && seats.some(function (x) { return x !== 'human'; })) return null;
+  var meta = { seats: seats, stack: b[6], seed: daily ? 0 : num, daily: null, names: null, friend: friend };
+  if (daily) { var ds = String(num); if (!/^20\d{6}$/.test(ds)) return null; meta.daily = ds.slice(0, 4) + '-' + ds.slice(4, 6) + '-' + ds.slice(6); }
+  if (ver === 2) {
+    meta.names = [];
+    for (i = 0; i < n; i++) {
+      var len = b[k++]; if (len == null || len > 24 || k + len > b.length - 2) return null;
+      try { meta.names.push(cleanName(fromUtf8(b.slice(k, k + len)), i)); } catch (e) { return null; }
+      k += len;
+    }
+  }
+  if ((b.length - 2 - k) % 2) return null;
+  var s, moves = [];
+  try { s = linkStart(meta); } catch (e) { return null; }
+  linkError = 'rules';
+  for (; k < b.length - 2; k += 2) {
+    var v = (b[k] << 8) | b[k + 1], m = { pick: (v >> 15) & 1, flip: !!((v >> 14) & 1), mirror: !!((v >> 13) & 1), drop: !!((v >> 12) & 1), c: (v >> 9) & 7, r: v & 511 };
+    if (s.over || !SH.isLegal(s, m)) return null;
+    moves.push(m); s = SH.step(s, m);
+  }
+  if (!s.over && !friend) return null; // a finished-match link must end in a finished match
+  linkError = '';
+  return { meta: meta, moves: moves, final: s, code: code };
+}
+function linkURL(code) { return location.href.split('#')[0] + '#g=' + code; }
+function matchLink(g) { var c = encodeMatch(g); return c ? linkURL(c) : null; }
+function coachReplay() {
+  if (!G || !G.replay) return;
+  $('coachSkip').textContent = 'Skip'; $('coachSkip').style.display = ''; $('coachN').textContent = 'Replay';
+  $('coachT').textContent = G.replay.friend ? 'Since ' + seatName(G.friend.me) + "'s turn: " + G.replay.i + ' of ' + G.replay.moves.length + ' moves'
+    : 'A shared match: move ' + G.replay.i + ' of ' + G.replay.moves.length;
+  $('coach').classList.add('show'); placeCoach();
+}
+function startReplay(link) {
+  backTo = null;
+  startMatch(link.meta.seats, { seed: link.meta.seed, stack: link.meta.stack, daily: link.meta.daily, replay: true, friend: link.meta.names ? { names: link.meta.names, me: -1 } : null });
+  G.replay = { link: link, moves: link.moves, i: 0, t: null };
+  buildChips(); updateUI(); coachReplay(); replayNext();
+}
+// One recorded move every 0.65 s (0.3 s with reduced motion), with the usual settle, sounds and chip drops; it waits while a menu is open.
+function replayNext() {
+  var R = G && G.replay; if (!R || R.i >= R.moves.length) return;
+  clearTimeout(R.t);
+  R.t = setTimeout(function () {
+    if (!G || G.replay !== R) return;
+    if (anyOverlay()) { replayNext(); return; }
+    commit(R.moves[R.i++]); coachReplay();
+    if (R.friend && R.i >= R.moves.length) { var gF = G; setTimeout(function () { if (G === gF && G.replay === R) friendReady(); }, 600); return; }
+    replayNext();
+  }, R.i === 0 ? 800 : RMF ? 300 : 650);
+}
+function skipReplay() {
+  var R = G.replay; clearTimeout(R.t); if (G.s.over) return;
+  var s = G.s; while (R.i < R.moves.length) s = SH.step(s, R.moves[R.i++]);
+  if (R.friend) { G.s = s; anim = null; followFrontier(true); buildChips(); friendReady(); return; }
+  G.s = s; anim = null; coachHide(); followFrontier(true); updateUI(); busy = true; var gEnd = G; setTimeout(function () { if (G === gEnd) startSweep(); }, 300);
+}
+// On open (and on a pasted link): a sound link replays; a damaged one leaves you at the menu with one plain line.
+function openLink() {
+  var h = location.hash || ''; if (h.indexOf('#g=') !== 0) return false;
+  history.replaceState(null, '', location.pathname + location.search);
+  var link = /^[A-Za-z0-9_-]+$/.test(h.slice(3)) ? decodeMatch(h.slice(3)) : (linkError = 'damaged', null);
+  if (!link) { renderSeats(); show('ovMenu'); $('mLinkMsg').textContent = LINK_ERR[linkError] || LINK_ERR.damaged; $('mLinkMsg').hidden = false; return true; }
+  if (link.meta.friend && !link.final.over) startFriendTurn(link); else startReplay(link);
+  return true;
+}
+// ---------- Friends by link: one turn per phone ----------
+// The phone that opens a link plays the seat whose turn it is (no accounts: whoever holds the link can play it). It
+// first watches the moves since that seat last hung, then hangs, then sends the link on. Friend matches are unscored.
+function startFriend(names, stack) {
+  backTo = null;
+  var seats = names.map(function () { return 'human'; });
+  startMatch(seats, { stack: stack, friend: { names: names.map(cleanName), me: 0 } });
+  coachFriend();
+}
+function startFriendTurn(link) {
+  var meta = link.meta, moves = link.moves, me = link.final.turn, s = linkStart(meta), from = 0, i;
+  for (i = 0; i < moves.length; i++) { if (s.turn === me) from = i + 1; s = SH.step(s, moves[i]); }
+  backTo = null;
+  startMatch(meta.seats, { seed: meta.seed, stack: meta.stack, replay: true, friend: { names: meta.names, me: me } });
+  var s0 = linkStart(meta); for (i = 0; i < from; i++) s0 = SH.step(s0, moves[i]);
+  G.s = s0; G.replay = { link: link, moves: moves.slice(from), i: 0, t: null, friend: true };
+  followFrontier(true); buildChips(); updateUI(); coachReplay();
+  if (!G.replay.moves.length) friendReady(); else replayNext();
+}
+function friendReady() {
+  if (!G || !G.friend) return;
+  G.replay = null; busy = false; G.history = [];
+  refreshHints(); announceTurn();
+}
+function coachFriend() {
+  if (!G || !G.friend || G.replay || G.s.over) return;
+  var mine = G.s.turn === G.friend.me;
+  $('coachN').textContent = 'Friends'; $('coachSkip').style.display = 'none';
+  $('coachT').textContent = mine ? seatName(G.s.turn) + "'s turn: hang a tile, then send the move." : 'Waiting for ' + seatName(G.s.turn) + '.';
+  $('coach').classList.add('show'); placeCoach();
+}
+function showSend() {
+  var nx = G.s.turn, name = seatName(nx), url = matchLink(G);
+  G.friend.url = url; lastLink = url;
+  $('sTitle').textContent = 'Your move is in';
+  $('sSub').textContent = 'Send it to ' + name + ': it is their turn now.';
+  $('sNote').textContent = 'Anyone with the link can play ' + name + "'s turn: there are no accounts.";
+  $('sMsg').hidden = true; $('sLink').hidden = true; $('sLink').value = url || '';
+  say('Your move is in. Send the link to ' + name + '.');
+  show('ovSend');
+}
+function sendLink(url, name) {
+  var done = function (txt, box) { $('sMsg').textContent = txt; $('sMsg').hidden = false; if (box) { $('sLink').hidden = false; try { $('sLink').select(); } catch (e) {} } };
+  if (navigator.share) { navigator.share({ title: 'SHINGLE', text: name + ', your turn in SHINGLE.', url: url }).then(function () { done('Sent. It is ' + name + "'s turn now."); }, function () {}); return; }
+  copyText(url, function (ok) { done(ok ? 'Link copied. Paste it to ' + name + '.' : 'Copy did not work: copy the link below and send it to ' + name + '.', !ok); });
+}
+window.addEventListener('hashchange', openLink);
+
+// ---------- Climb (M4): solo roofs. Your three tiles, Slate's tiles on the roof, and one goal: bury as many of
+// Slate's studs as you can (raw studs covered). Slate does not move. 3 Sunbeams per new star (DESIGN.md). ----------
+var CLIMB = null;
+function climbRoofs() { if (!CLIMB) { try { CLIMB = JSON.parse($('climb').textContent).roofs; } catch (e) { CLIMB = []; } } return CLIMB; }
+function climbStars(id) { var v = store.climb[id]; return typeof v === 'number' && v >= 0 && v <= 3 ? Math.floor(v) : 0; }
+function climbOpen(i) { return i === 0 || climbStars(climbRoofs()[i - 1].id) > 0; }
+function climbTotal() { var t = 0; climbRoofs().forEach(function (r) { t += climbStars(r.id); }); return t; }
+function starStr(n) { return '\u2605\u2605\u2605'.slice(0, n) + '\u2606\u2606\u2606'.slice(0, 3 - n); }
+function renderClimb() {
+  var html = '';
+  climbRoofs().forEach(function (r, i) {
+    var st = climbStars(r.id), open = climbOpen(i);
+    html += '<button class="roofb' + (open ? '' : ' locked') + '" data-i="' + i + '"' + (open ? '' : ' disabled') + ' aria-label="Roof ' + (i + 1) + (open ? ', ' + st + ' of 3 stars' : ', locked') + '"><b>' + (i + 1) + '</b><i>' + (open ? starStr(st) : '\u00b7') + '</i></button>';
+  });
+  $('climbList').innerHTML = html;
+  $('climbTot').textContent = '\u2605 ' + climbTotal() + ' of ' + climbRoofs().length * 3;
+  Array.prototype.forEach.call($('climbList').children, function (b) { b.onclick = function () { startClimb(+b.dataset.i); }; });
+}
+function climbState(roof) {
+  var s = SH.newGame({ players: 2, seed: 1, stackSize: 1 }); s.snake = false;
+  roof.pre.forEach(function (mv) { s.over = false; s.turn = mv[0]; s.hands[mv[0]] = [mv[1]]; s.stacks[mv[0]] = []; s = SH.step(s, { pick: 0, flip: !!mv[2], mirror: !!mv[3], r: mv[4], c: mv[5], drop: !!mv[6] }); });
+  s.over = false; s.turn = 0; s.hands[0] = roof.hand.slice(0, 2); s.stacks[0] = roof.hand.slice(2); s.hands[1] = []; s.stacks[1] = [];
+  return s;
+}
+function startClimb(i) {
+  var roof = climbRoofs()[i]; if (!roof || !climbOpen(i)) return;
+  backTo = null;
+  startMatch(['human', 'medium'], { seed: 1, stack: 1 });
+  G.s = climbState(roof); G.history = []; G.trk = newTrack(2); G.climb = { i: i, roof: roof };
+  tray = [{ flip: false, mirror: false }, { flip: false, mirror: false }]; sel = 0; busy = false;
+  buildChips(); followFrontier(true); refreshHints(); updateUI(); coachClimb();
+}
+// Weathered exposed tails with studs (they show moss and pay x2): a new one plays the drip.
+function wetTails(s) {
+  if (s.tailMult <= 1) return 0;
+  var n = 0;
+  for (var k = 0; k < s.grid.length; k++) { var cd = s.grid[k]; if (cd === -1 || SH.cPart(cd) !== 1) continue; var t = s.tiles[SH.cTile(cd)]; if (t.owner >= 0 && SH.studsOf(s, cd) && SH.weathered(s, t)) n++; }
+  return n;
+}
+function climbBuried() { return G && G.trk ? G.trk.buried[0] : 0; }
+function coachClimb() {
+  if (!G || !G.climb) return;
+  var t = G.climb.roof.stars;
+  $('coachN').textContent = 'Roof ' + (G.climb.i + 1); $('coachSkip').textContent = 'Roofs';
+  $('coachT').textContent = "Bury Slate's studs: " + climbBuried() + ' so far \u00b7 \u2605 at ' + t[0] + ', ' + t[1] + ', ' + t[2];
+  $('coach').classList.add('show'); placeCoach();
+}
+function climbDone() {
+  var c = G.climb, b = climbBuried(), t = c.roof.stars, stars = (b >= t[0] ? 1 : 0) + (b >= t[1] ? 1 : 0) + (b >= t[2] ? 1 : 0), prev = climbStars(c.roof.id), lines = [];
+  if (stars > prev) { store.climb[c.roof.id] = stars; lines.push({ n: 3 * (stars - prev), why: (stars - prev) + (stars - prev === 1 ? ' new star' : ' new stars') }); save(); creditSun(lines); }
+  $('cTitle').textContent = starStr(stars) + '  Roof ' + (c.i + 1);
+  $('cSub').textContent = 'You buried ' + b + " of Slate's studs. Stars at " + t[0] + ', ' + t[1] + ' and ' + t[2] + (b >= t[2] ? ': the best there is.' : '.');
+  $('cSun').innerHTML = sunLineHTML(lines);
+  var nextOk = c.i + 1 < climbRoofs().length && climbOpen(c.i + 1);
+  $('cNext').style.display = nextOk ? 'block' : 'none'; $('cAgain').className = 'btn' + (nextOk ? '' : ' pri');
+  say(stars + ' of 3 stars on roof ' + (c.i + 1) + '. You buried ' + b + '.');
+  if (stars) sfx('win');
+  show('ovClimbEnd');
+}
+function openClimbList() { backTo = 'ovMenu'; renderClimb(); show('ovClimb'); }
+
+// ---------- End-of-game rain sweep ----------
+function startSweep() {
+  var s = G.s, sc = SH.score(s);
+  sweep = { t0: performance.now(), row: -1, shown: sc.ridge.slice(), final: sc, chimeN: 0 }; chipAnim = {};
+  Array.prototype.forEach.call(document.querySelectorAll('#chips .dl'), function (d) { d.parentNode.removeChild(d); }); // the sweep counts from 0: no leftover drop badges
+  view.manual = false;
+  setOverview(true);
+  view.target = 0; view.scroll = 0;
+  rain(true); buzz(20);
+  updateUI();
+}
+function stepSweep(now) {
+  var s = G.s, cs = cellPx(), x0 = roofX0();
+  var rowsTotal = SH.lowestRow(s) + 1, dur = RMF ? 1000 : Math.max(2200, Math.min(4200, rowsTotal * 140)); sweep.dur = dur;
+  var k = (now - sweep.t0) / dur, targetRow = Math.floor(k * (rowsTotal + 1));
+  // rain particles
+  if (!RMF) spawnWeather(store.equipped.rain);
+  // sweep line
+  var ly = rowY(Math.min(rowsTotal, k * (rowsTotal + 1)));
+  ctx.fillStyle = 'rgba(160,200,255,.10)'; ctx.fillRect(x0, view.top, SH.W * cs, ly - view.top);
+  ctx.fillStyle = 'rgba(200,225,255,.5)'; ctx.fillRect(x0 - 6, ly - 1, SH.W * cs + 12, 2);
+  while (sweep.row < targetRow && sweep.row < rowsTotal) {
+    sweep.row++;
+    var r = sweep.row; if (r >= rowsTotal) break;
+    for (var c = 0; c < SH.W; c++) {
+      var cd = SH.cellAt(s, r, c); if (cd === -1) continue;
+      var tl = s.tiles[SH.cTile(cd)]; if (tl.owner < 0) continue;
+      var v = SH.studsOf(s, cd); if (!v) continue;
+      if (SH.cPart(cd) === 1 && SH.weathered(s, tl)) v *= s.tailMult;
+      sweep.shown[tl.owner] += v;
+      var px = x0 + (c + 0.5) * cs, py = rowY(r) + cs / 2;
+      if (!RMF) for (var q = 0; q < v + 1; q++) particles.push({ x: px, y: py, vx: (Math.random() - .5) * 90, vy: -60 - Math.random() * 80, life: 0.6, t: 0, kind: 'spark' });
+      if (sweep.chimeN < 120) { sfx('chime', (sweep.chimeN++) + tl.owner * 2); }
+    }
+    sweep.final.courses.forEach(function (co) { if (co.r === r && co.p >= 0) sweep.shown[co.p] += 3; });
+    updateUI();
+  }
+  if (sweep.row >= rowsTotal && k > 1.05 && !sweep.done) { sweep.done = true; var gEnd = G, sw = sweep; setTimeout(function () { if (G === gEnd && sweep === sw) finishSweep(); }, 500); }
+}
+// One frame of the sweep's weather: drizzle (3 streaks), downpour (7 long ones), snow (2 flakes), petals (2).
+function spawnWeather(style) {
+  var i;
+  // snow and petals drift too slowly to cross the roof in a sweep, so they appear (fading in) all over the roof view
+  var span = Math.max(40, view.trayTop - view.top);
+  if (style === 'snow') { for (i = 0; i < 2; i++) particles.push({ x: Math.random() * VW, y: view.top + Math.random() * span, vx: (Math.random() - 0.5) * 30, vy: 60 + Math.random() * 50, life: 2.6, t: 0, kind: 'snow', r: 1.4 + Math.random() * 1.8 }); }
+  else if (style === 'petals') { for (i = 0; i < 2; i++) particles.push({ x: Math.random() * VW, y: view.top + Math.random() * span, vx: 30 + Math.random() * 40, vy: 70 + Math.random() * 50, life: 2.6, t: 0, kind: 'petal', a: Math.random() * 6.3 }); }
+  else { var heavy = style === 'downpour'; for (i = 0; i < (heavy ? 7 : 3); i++) particles.push({ x: Math.random() * VW, y: view.top + Math.random() * 40, vx: -30, vy: (heavy ? 800 : 520) + Math.random() * 200, life: 1.1, t: 0, kind: 'rain', len: heavy ? 20 : 12 }); }
+}
+function finishSweep() {
+  rain(false);
+  var s = G.s, sc = SH.score(s), ws = SH.winners(s), w = ws[0], tie = ws.length > 1;
+  sweep = null; updateUI();
+  var humanIdx = G.seats.indexOf('human'), humans = G.seats.filter(function (k) { return k === 'human'; }).length;
+  var title, firstDaily = false, margin = 0;
+  if (G.daily) {
+    margin = sc.total[0] - sc.total[1];
+    title = margin > 0 ? 'Roof won by ' + margin : margin < 0 ? 'Bot wins by ' + (-margin) : 'Dead even';
+    if (!(G.replay || G.friend) && store.daily[G.daily] == null) { firstDaily = true; store.daily[G.daily] = margin; store.stats.bestStreak = Math.max(store.stats.bestStreak, dailyStreak(G.daily)); save(); }
+  } else if (tie) title = 'Shared win: ' + ws.map(function (i) { return seatName(i); }).join(' & ');
+  else if (humans === 1) title = w === humanIdx ? 'You win!' : seatName(w) + ' wins';
+  else title = seatName(w) + ' wins!';
+  if (!(G.replay || G.friend) && humans >= 1 && humanIdx >= 0 && !G.daily) { store.played++; if (ws.indexOf(humanIdx) > -1 && humans === 1) store.wins++; save(); }
+  // the record under Play vs Bot is per tier: any 1 vs 1 game against that bot counts
+  if (!(G.replay || G.friend) && !G.daily && humans === 1 && G.seats.length === 2 && BOT_NAMES[G.seats[1 - humanIdx]]) {
+    var bt = G.seats[1 - humanIdx], rec = store.tierRecord[bt] || (store.tierRecord[bt] = { w: 0, p: 0 });
+    rec.p++; if (ws.indexOf(humanIdx) > -1) rec.w++; save();
+  }
+  if (!(G.replay || G.friend) && !G.daily && humans === 1 && humanIdx >= 0 && !(G.tut && !G.tut.final)) recordStats(humanIdx, ws, sc);
+  // Sunbeams for this match (G.rewards collects the lines; the results card lists them)
+  G.rewards = sunbeamsFor({ daily: !!G.daily, firstDaily: firstDaily, margin: margin, streak: G.daily ? dailyStreak(G.daily) : 0, humans: humans,
+    won: humanIdx >= 0 && ws.indexOf(humanIdx) > -1, top: topBot(G.seats), scripted: !!(G.tut && !G.tut.final) || !!(G.replay || G.friend) });
+  var outright = humans === 1 && humanIdx >= 0 && ws.length === 1 && ws[0] === humanIdx;
+  var fullRoof = G.daily ? firstDaily : G.stack >= 12; // a Daily replay is unscored: no badges either
+  if (outright && fullRoof && G.seats.indexOf('hard') > -1 && !G.tut && !(G.replay || G.friend)) store.stats.hardBeats++;
+  var newAch = (G.replay || G.friend || (G.tut && !G.tut.final)) ? [] : achievementsFor({ s: G.s, me: humanIdx, ws: ws, sc: sc, humans: humans, trk: G.trk, tutorialDone: !!(G.tut && G.tut.final), full: fullRoof && !G.tut,
+    streak: G.daily && firstDaily ? dailyStreak(G.daily) : 0, hardBeats: store.stats.hardBeats });
+  var stamp = today();
+  newAch.forEach(function (id) { store.achievements[id] = stamp; G.rewards.push({ n: achOf(id).sun, why: achOf(id).name, badge: true }); });
+  creditSun(G.rewards);
+  $('eSun').innerHTML = sunLineHTML(G.rewards);
+  $('eAch').textContent = achLine(newAch);
+  if (newAch.length) { setTimeout(function () { sfx('ach'); }, 500); say('New achievement: ' + newAch.map(function (id) { return achOf(id).name; }).join(', ') + '.'); }
+  if (ws.indexOf(humanIdx) > -1 || humans > 1) sfx('win');
+  $('eTitle').textContent = title;
+  $('eSub').textContent = (G.replay ? 'Shared match · ' : G.friend ? 'Friends by link · ' : '') + (G.blitz ? 'Blitz · ' + G.blitz.auto + ' hung for you · ' : '') + (G.daily ? 'Daily Roof ' + G.daily : 'Seed ' + G.s.seed) + ' · weathered tails ×2';
+  var order = sc.total.map(function (v, i) { return i; }).sort(function (a, b) { return sc.total[b] - sc.total[a] || a - b; });
+  var html = '<tr><th>Player</th><th>Heads</th><th>Tails</th><th>Courses</th><th>Total</th></tr>';
+  order.forEach(function (i) {
+    html += '<tr class="' + (ws.indexOf(i) > -1 ? 'win' : '') + '"><td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + matOf(i).base + ';margin-right:6px"></span>' + seatName(i) + '</td><td>' + sc.heads[i] + '</td><td>' + (sc.base[i] - sc.heads[i]) + '</td><td>+' + sc.bonus[i] + '</td><td>' + sc.total[i] + '</td></tr>';
+  });
+  $('eTable').innerHTML = html;
+  say(title + '. ' + order.map(function (i) { return seatName(i) + ' ' + sc.total[i]; }).join(', ') + '.');
+  $('eShare').style.display = G.daily && !(G.replay || G.friend) ? 'block' : 'none';
+  $('eAgain').textContent = G.replay ? 'Watch again' : G.friend ? 'New match, same friends' : G.daily ? 'Play again (unscored)' : 'Rematch';
+  $('eLink').style.display = G.tut ? 'none' : 'block';
+  show('ovEnd');
+}
+function shareText() {
+  var s = G.s, sc = SH.score(s), margin = sc.total[0] - sc.total[1], low = SH.lowestRow(s), lines = [];
+  for (var r = Math.max(0, low - 5); r <= low; r++) {
+    var line = '';
+    for (var c = 0; c < SH.W; c++) { var cd = SH.cellAt(s, r, c); if (cd === -1) line += '⬜'; else { var o = s.tiles[SH.cTile(cd)].owner; line += o < 0 ? '⬛' : MATERIALS[o].emoji; } }
+    lines.push(line);
+  }
+  return 'SHINGLE Daily Roof ' + G.daily + '\n' + (margin >= 0 ? '+' : '') + margin + ' vs Hard bot (' + sc.total[0] + '–' + sc.total[1] + ')\n' + lines.join('\n');
+}
+
+// ---------- Input ----------
+function inTray(x, y) { return y >= view.trayTop; }
+function trayHit(x, y) {
+  for (var i = 0; i < 2; i++) { var R = trayRect(i); if (x >= R.x - 12 && x <= R.x + R.w + 12 && y >= R.y - 12 && y <= R.y + R.h + 22) return i; }
+  return -1;
+}
+function updateDrag(x, y) {
+  drag.x = x; drag.y = y;
+  var cs = cellPx(), x0 = roofX0();
+  var cx = x, cy = y - cs * 2.35 + cs; // centre of the floating tile
+  var best = null, bd = 1e9;
+  drag.slots.forEach(function (sl) {
+    var sx = x0 + (sl.c + 1) * cs, sy = rowY(sl.r) + cs, d = Math.hypot(sx - cx, sy - cy);
+    if (d < bd) { bd = d; best = sl; }
+  });
+  var prev = drag.snap;
+  drag.snap = (best && bd < cs * 1.25) ? best : null;
+  if (drag.snap && (!prev || prev.r !== drag.snap.r || prev.c !== drag.snap.c)) { buzz(6); sfx('snap'); drag.pv = previewFor(drag.slot, drag.snap); }
+  else if (!drag.snap) drag.pv = null;
+  drag.hover = null;
+  if (!drag.snap) {
+    var c = Math.round((cx - x0) / cs - 1), r = Math.round((cy - rowY(0)) / cs - 1);
+    if (c >= 0 && c <= SH.W - 2 && r >= 1 && r <= SH.lowestRow(G.s)) {
+      var s = G.s, o = SH.orient(s.hands[s.turn][drag.slot], tray[drag.slot].flip, tray[drag.slot].mirror), bad = [false, false], anyTail = false, weak = false;
+      for (var i = 0; i < 2; i++) { var cd = SH.cellAt(s, r, c + i); if (cd !== -1 && SH.cPart(cd) === 1) { anyTail = true; if (o.head[i] < SH.studsOf(s, cd)) { bad[i] = true; weak = true; } } }
+      if (anyTail && weak) drag.hover = { r: r, c: c, bad: bad };
+    }
+  }
+  // edge auto-scroll while dragging
+  if (y < view.top + 60) { view.manual = true; view.target = Math.max(0, view.target - 8); }
+  else if (y > view.trayTop - 20 && y < view.trayTop + 40 && false) {}
+}
+function onDown(e) {
+  if (!G || anyOverlay()) return;
+  $('pop').style.display = 'none';
+  audio(); music(true);
+  var x = e.clientX, y = e.clientY;
+  try { cv.setPointerCapture(e.pointerId); } catch (er) {}
+  if (inTray(x, y)) {
+    var i = trayHit(x, y);
+    if (i >= 0 && isHumanTurn() && !busy && G.s.hands[G.s.turn][i]) { ptr = { mode: 'tray', slot: i, x0: x, y0: y, moved: false, swiped: false, wasSel: sel === i }; if (sel !== i) pend = null; sel = i; }
+    else ptr = null;
+    return;
+  }
+  // a tap on a gold spot (no-drag mode) never counts toward the double tap that toggles the overview
+  var now = performance.now(), onSpot = noDragOn() && !!slotAt(x, y);
+  if (!onSpot && now - lastTapT < 300) { setOverview(!view.overview); lastTapT = 0; ptr = null; return; }
+  lastTapT = onSpot ? 0 : now;
+  ptr = { mode: 'pan', y: y, x0: x, y0: y, moved: false };
+}
+function onMove(e) {
+  if (!ptr) return;
+  var x = e.clientX, y = e.clientY;
+  if (ptr.mode === 'tray') {
+    var dx = x - ptr.x0, dy = y - ptr.y0;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) ptr.moved = true;
+    if (!ptr.swiped && Math.abs(dx) > 34 && Math.abs(dx) > Math.abs(dy) * 1.6) { ptr.swiped = true; doMirror(ptr.slot); }
+    if (!ptr.swiped && dy < -16 && Math.abs(dy) > Math.abs(dx)) {
+      var s = G.s, tr = tray[ptr.slot];
+      drag = { slot: ptr.slot, x: x, y: y, snap: null, hover: null, slots: tutFilter(slotsFor(s, ptr.slot, tr.flip, tr.mirror), tr) }; pend = null;
+      ptr.mode = 'drag'; updateDrag(x, y); sfx('flip');
+    }
+  } else if (ptr.mode === 'drag') updateDrag(x, y);
+  else if (ptr.mode === 'pan') {
+    var d = y - ptr.y; ptr.y = y;
+    if (Math.abs(y - ptr.y0) > 6 || Math.abs(x - ptr.x0) > 6) ptr.moved = true;
+    if (Math.abs(y - ptr.y0) > 4) { view.manual = true; lastTapT = 0; }
+    view.target = Math.max(0, Math.min(Math.max(0, contentH() - viewH() + cellPx() * 2), view.target - d));
+    view.scroll = view.target;
+  }
+}
+function onUp(e) {
+  if (!ptr) return;
+  if (ptr.mode === 'tray' && !ptr.moved && !ptr.swiped) {
+    if (noDragOn() && !ptr.wasSel) { sfx('flip'); buzz(5); updateUI(); } // no-drag: the first tap picks the tile, the next one flips it
+    else doFlip(ptr.slot);
+  }
+  else if (ptr.mode === 'pan' && !ptr.moved) tapRoof(e.clientX, e.clientY);
+  else if (ptr.mode === 'drag') {
+    var d = drag; drag = null;
+    if (d && d.snap) {
+      var tr = tray[d.slot];
+      view.manual = false;
+      commit({ pick: d.slot, flip: tr.flip, mirror: tr.mirror, r: d.snap.r, c: d.snap.c, drop: d.snap.drop });
+    } else if (d && d.hover) { sfx('deny'); toast('Too weak: head studs must match or beat the tail', 1300); }
+  }
+  ptr = null;
+}
+function doFlip(i) {
+  if (!isHumanTurn() || busy || !G.s.hands[G.s.turn][i]) return;
+  tray[i].flip = !tray[i].flip; sel = i; pend = null; sfx('flip'); buzz(5); updateUI();
+}
+function doMirror(i) {
+  if (!isHumanTurn() || busy || !G.s.hands[G.s.turn][i]) return;
+  tray[i].mirror = !tray[i].mirror; sel = i; pend = null; sfx('flip'); buzz(5); updateUI();
+}
+cv.addEventListener('pointerdown', onDown);
+cv.addEventListener('pointermove', onMove);
+cv.addEventListener('pointerup', onUp);
+cv.addEventListener('pointercancel', function () { ptr = null; drag = null; });
+cv.addEventListener('wheel', function (e) { if (!G) return; view.manual = true; view.target = Math.max(0, Math.min(Math.max(0, contentH() - viewH() + cellPx() * 2), view.target + e.deltaY)); }, { passive: true });
+
+$('bFlip').onclick = function () { doFlip(sel); };
+$('bMirror').onclick = function () { doMirror(sel); };
+$('bUndo').onclick = undo;
+window.addEventListener('keydown', function (e) {
+  if (!G || anyOverlay() || (e.target && e.target.tagName === 'INPUT')) return;
+  if (e.key === 'f') doFlip(sel); else if (e.key === 'm') doMirror(sel); else if (e.key === 'z') undo();
+  else if (e.key === '1' || e.key === '2') { var k2 = +e.key - 1; if (G.s.hands[G.s.turn][k2] != null && sel !== k2) { sel = k2; pend = null; updateUI(); } }
+  else if (e.key === 'o') setOverview(!view.overview);
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { cyclePend(1); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { cyclePend(-1); e.preventDefault(); }
+  else if (e.key === 'Escape' && pend) { pend = null; updateUI(); }
+  else if (e.key === 'Enter' && pend && isHumanTurn() && !busy && !(document.activeElement && document.activeElement.tagName === 'BUTTON')) { e.preventDefault(); hangPend(); }
+});
+
+// ---------- Overlays & menu ----------
+var overlays = ['ovMenu', 'ovHow', 'ovSet', 'ovPause', 'ovEnd', 'ovTable', 'ovStats', 'ovShop', 'ovClimb', 'ovClimbEnd', 'ovFriends', 'ovSend'];
+var backTo = null;
+function show(id) { overlays.forEach(function (o) { $(o).classList.toggle('show', o === id); }); syncChrome(); coachHide(); }
+function syncChrome() { var on = !!G && !$('ovMenu').classList.contains('show'); $('trayBar').style.visibility = on ? 'visible' : 'hidden'; $('status').style.visibility = on ? 'visible' : 'hidden'; }
+function hideAll() { overlays.forEach(function (o) { $(o).classList.remove('show'); }); syncChrome(); if (G && (G.tut || G.replay || G.climb || G.friend) && !G.s.over) $('coach').classList.add('show'); }
+function anyOverlay() { return overlays.some(function (o) { return $(o).classList.contains('show'); }); }
+document.querySelectorAll('[data-close]').forEach(function (b) {
+  b.onclick = function () { if (backTo) { show(backTo); backTo = null; } else hideAll(); };
+});
+function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function renderSeats() {
+  var box = $('seats'); box.innerHTML = '';
+  store.seats.forEach(function (kind, i) {
+    var row = document.createElement('div'); row.className = 'seat';
+    row.innerHTML = '<span class="sw" style="background:' + MATERIALS[i].base + '"></span><span class="lbl">' + MATERIALS[i].name + '</span>';
+    var seg = document.createElement('div'); seg.className = 'seg';
+    ['human', 'easy', 'medium', 'hard'].forEach(function (k) {
+      var b = document.createElement('button'); b.textContent = k === 'human' ? 'Human' : k[0].toUpperCase() + k.slice(1);
+      if (k === kind) b.className = 'on';
+      b.onclick = function () { store.seats[i] = k; save(); renderSeats(); };
+      seg.appendChild(b);
+    });
+    row.appendChild(seg); box.appendChild(row);
+  });
+  Array.prototype.forEach.call($('mStack').children, function (b) { b.classList.toggle('on', +b.dataset.v === store.stack); b.onclick = function () { store.stack = +b.dataset.v; save(); renderSeats(); }; });
+  $('mAddSeat').disabled = store.seats.length >= 4; $('mDelSeat').disabled = store.seats.length <= 2;
+  $('mTableSub').textContent = store.seats.length + ' seats · ' + store.stack + ' tiles';
+  $('mClimbSub').textContent = '\u2605 ' + climbTotal() + ' of ' + climbRoofs().length * 3;
+  $('mSun').innerHTML = SUN + ' ' + store.sunbeams + ' Sunbeams';
+  var d = today(), res = store.daily[d];
+  $('mDailySub').textContent = res == null ? 'Today · vs Hard' : 'Today · scored ' + (res >= 0 ? '+' : '\u2212') + Math.abs(res);
+  $('mBlitzSub').textContent = 'vs ' + BOT_NAMES[store.botTier].replace(' bot', '') + ' · 5 s';
+  Array.prototype.forEach.call($('mTier').children, function (b) {
+    var on = b.dataset.v === store.botTier; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.onclick = function () { store.botTier = b.dataset.v; save(); renderSeats(); };
+  });
+  var rec = store.tierRecord[store.botTier] || { w: 0, p: 0 };
+  $('mQuickSub').textContent = 'You vs ' + BOT_NAMES[store.botTier].replace(' bot', '') + ' · ' + rec.w + ' wins / ' + rec.p + ' played';
+  $('mResume').style.display = (G && !G.s.over) ? 'block' : 'none';
+}
+$('mAddSeat').onclick = function () { if (store.seats.length < 4) { store.seats.push('medium'); save(); renderSeats(); } };
+$('mDelSeat').onclick = function () { if (store.seats.length > 2) { store.seats.pop(); save(); renderSeats(); } };
+$('mStart').onclick = function () { audio(); backTo = null; startMatch(store.seats, { stack: store.stack }); maybeHow(); };
+$('mTable').onclick = function () { backTo = 'ovMenu'; renderSeats(); show('ovTable'); };
+$('mShop').onclick = function () { backTo = 'ovMenu'; askBuy = null; shopKind = 'set'; renderShop(); show('ovShop'); };
+Array.prototype.forEach.call($('shopTabs').children, function (b) { b.onclick = function () { shopKind = b.dataset.p; askBuy = null; renderShop(); }; });
+$('mStats').onclick = function () { backTo = 'ovMenu'; renderStats(); badgeTab(); statPage('stats'); show('ovStats'); };
+Array.prototype.forEach.call($('statTabs').children, function (b) { b.onclick = function () { statPage(b.dataset.p); }; });
+function howPage(n) {
+  Array.prototype.forEach.call($('howTabs').children, function (b) { var on = +b.dataset.p === n; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  $('howP1').hidden = n !== 1; $('howP2').hidden = n !== 2;
+}
+Array.prototype.forEach.call($('howTabs').children, function (b) { b.onclick = function () { howPage(+b.dataset.p); }; });
+$('mQuick').onclick = function () { audio(); if (!store.tutDone) { startTutorial(); return; } startMatch(['human', store.botTier]); maybeHow(); };
+$('hTut').onclick = function () { audio(); startTutorial(); };
+$('coachSkip').onclick = function () { if (G && G.replay) skipReplay(); else if (G && G.climb) openClimbList(); else tutEnd(); };
+$('mClimb').onclick = function () { audio(); openClimbList(); };
+$('cNext').onclick = function () { startClimb(G.climb.i + 1); };
+$('cAgain').onclick = function () { startClimb(G.climb.i); };
+$('cRoofs').onclick = function () { openClimbList(); };
+$('mBlitz').onclick = function () { audio(); backTo = null; startMatch(['human', store.botTier], { blitz: true }); maybeHow(); };
+$('mDaily').onclick = function () { audio(); startMatch(['human', 'hard'], { daily: today() }); maybeHow(); };
+$('mHow').onclick = function () { backTo = 'ovMenu'; howPage(1); show('ovHow'); };
+$('mSet').onclick = function () { backTo = 'ovMenu'; syncToggles(); show('ovSet'); };
+$('mResume').onclick = function () { if (G && G.friend && !G.s.over && !G.replay && G.s.turn !== G.friend.me) showSend(); else hideAll(); };
+$('menuBtn').onclick = function () { if (!G) { renderSeats(); show('ovMenu'); return; } show('ovPause'); };
+$('pHow').onclick = function () { backTo = 'ovPause'; howPage(1); show('ovHow'); };
+$('pSet').onclick = function () { backTo = 'ovPause'; syncToggles(); show('ovSet'); };
+$('pQuit').onclick = function () { renderSeats(); show('ovMenu'); };
+$('eAgain').onclick = function () { if (G.replay) startReplay(G.replay.link); else if (G.friend) startFriend(G.friend.names, G.stack); else if (G.daily) startMatch(['human', 'hard'], { daily: G.daily }); else startMatch(G.seats, { stack: G.stack, blitz: !!G.blitz }); };
+$('mFriends').onclick = function () { backTo = 'ovMenu'; renderFriends(); show('ovFriends'); };
+$('fAdd').onclick = function () { if (store.friendNames.length < 4) { readFriends(); store.friendNames.push(''); save(); renderFriends(); } };
+$('fDel').onclick = function () { if (store.friendNames.length > 2) { readFriends(); store.friendNames.pop(); save(); renderFriends(); } };
+$('fStart').onclick = function () { audio(); readFriends(); startFriend(store.friendNames.map(function (nm, i) { return cleanName(nm, i); }), store.friendStack); };
+$('sSend').onclick = function () { if (G && G.friend && G.friend.url) sendLink(G.friend.url, seatName(G.s.turn)); };
+$('sUndo').onclick = function () { busy = false; hideAll(); undo(); coachFriend(); };
+$('sMenu').onclick = function () { renderSeats(); show('ovMenu'); };
+function readFriends() { Array.prototype.forEach.call(document.querySelectorAll('#fSeats .fname'), function (inp, i) { store.friendNames[i] = inp.value.slice(0, 16); }); save(); }
+function renderFriends() {
+  var box = $('fSeats'); box.innerHTML = '';
+  store.friendNames.forEach(function (nm, i) {
+    var row = document.createElement('div'); row.className = 'seat';
+    row.innerHTML = '<span class="sw" style="background:' + MATERIALS[i].base + '"></span>';
+    var inp = document.createElement('input'); inp.className = 'fname'; inp.maxLength = 16; inp.value = nm; inp.placeholder = MATERIALS[i].name; inp.setAttribute('aria-label', 'Friend ' + (i + 1) + ' name');
+    inp.onchange = readFriends; row.appendChild(inp); box.appendChild(row);
+  });
+  Array.prototype.forEach.call($('fStack').children, function (b) { b.classList.toggle('on', +b.dataset.v === store.friendStack); b.onclick = function () { readFriends(); store.friendStack = +b.dataset.v; save(); renderFriends(); }; });
+  $('fAdd').disabled = store.friendNames.length >= 4; $('fDel').disabled = store.friendNames.length <= 2;
+}
+$('eLink').onclick = function () {
+  var url = matchLink(G); if (!url) { toast('This match cannot be linked', 1200); return; }
+  lastLink = url;
+  if (navigator.share) { navigator.share({ title: 'SHINGLE match', url: url }).catch(function () {}); return; }
+  copyText(url, function (ok) { toast(ok ? 'Match link copied. Send it to a friend.' : 'Copy failed. The link is in the address bar.', 1600); if (!ok) history.replaceState(null, '', url); });
+};
+function copyText(txt, done) {
+  var fallback = function () {
+    try { var ta = document.createElement('textarea'); ta.value = txt; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); var ok = document.execCommand('copy'); document.body.removeChild(ta); done(!!ok); } catch (e) { done(false); }
+  };
+  try { navigator.clipboard.writeText(txt).then(function () { done(true); }, fallback); } catch (e) { fallback(); }
+}
+$('eMenu').onclick = function () { renderSeats(); show('ovMenu'); };
+$('eView').onclick = function () { hideAll(); setOverview(true); toast('Tap ☰ for menu', 1200); };
+$('eShare').onclick = function () {
+  var txt = shareText();
+  var fallback = function () { toast(txt.split('\n').slice(0, 2).join(' · '), 2600); };
+  try {
+    navigator.clipboard.writeText(txt).then(function () { toast('Copied! Paste it anywhere.'); }, function () {
+      if (navigator.share) navigator.share({ text: txt }).catch(fallback); else fallback();
+    });
+  } catch (e) { fallback(); }
+};
+function maybeHow() { if (!store.seenHow) { store.seenHow = true; save(); backTo = null; howPage(1); show('ovHow'); } }
+function syncToggles() {
+  Array.prototype.forEach.call($('tHintLevel').children, function (b) {
+    var on = b.dataset.v === store.hintLevel; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.onclick = function () { store.hintLevel = b.dataset.v; store.hints = store.hintLevel !== 'off'; save(); syncToggles(); refreshHints(); };
+  });
+  $('tHintNote').textContent = HINT_NOTES[store.hintLevel];
+  [['tSound', 'sound'], ['tMusic', 'music'], ['tHaptic', 'haptics'], ['tPreview', 'preview'], ['tNoDrag', 'noDrag', noDragOn], ['tSymbols', 'symbols'], ['tMotion', 'reduceMotion', rmOn], ['tAnnounce', 'announce']].forEach(function (p) {
+    var b = $(p[0]), on = p[2] ? p[2]() : !!store[p[1]], row = b.parentNode;
+    b.classList.toggle('on', on); b.setAttribute('role', 'switch'); b.setAttribute('aria-checked', on ? 'true' : 'false');
+    b.setAttribute('aria-label', row.firstElementChild.textContent);
+    b.onclick = null; // the whole row is the target (48 px), the click bubbles up to it
+    row.onclick = function () { store[p[1]] = !on; save(); syncToggles(); if (p[1] === 'music') music(store.music); if (p[1] === 'noDrag') { pend = null; updateUI(); } if (p[1] === 'symbols' && G) buildChips(), updateUI(); if (p[1] === 'reduceMotion') applyRM(); if (p[1] === 'announce' && !store.announce) $('live').textContent = ''; };
+  });
+}
+
+// ---------- Boot ----------
+window.addEventListener('resize', function () { layout(); if (G) followFrontier(true); });
+document.addEventListener('visibilitychange', function () { if (document.hidden) { music(false); } });
+layout(); makePatterns(); renderSeats(); syncChrome(); applyRM(); openLink();
+function loop(now) { draw(now); tickChips(now); tickBlitz(now); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+// Any secure context: https on the site, and localhost while testing (the offline check needs the worker there).
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+// test hook
+window.__shingle = { get G() { return G; }, startMatch: startMatch, commit: commit, SH: SH, view: view, slotsFor: slotsFor, tutFilter: tutFilter, get tray() { return tray; },
+  get drag() { return drag; }, previewFor: previewFor, get pvDraws() { return pvDraws; }, get busy() { return busy; },
+  get noDrag() { return noDragOn(); }, startFriend: startFriend, packLink: packLink, get linkError() { return linkError; },
+  get friendLink() { return G && G.friend ? G.friend.url : null; }, get sfxCount() { return sfxCount; },
+  // tests and the preview capture: put a match at a given state (a position several moves in) and carry on from there
+  loadState: function (s2) { G.s = s2; G.history = []; G.trk = newTrack(s2.n); anim = null; particles = []; pend = null; drag = null; busy = false;
+    followFrontier(true); buildChips(); refreshHints(); updateUI();
+    if (!G.s.over && G.seats[G.s.turn] !== 'human') scheduleBot(); else if (!G.s.over) announceTurn(); }, climbRoofs: climbRoofs, get climbBuried() { return climbBuried(); }, bestGainMove: bestGainMove, encodeMatch: encodeMatch, decodeMatch: decodeMatch, matchLink: matchLink, get lastLink() { return lastLink; }, sunLineHTML: sunLineHTML, achLine: achLine, matOf: matOf, buyItem: buyItem, get particleKinds() { return particles.map(function (p) { return p.kind; }); }, achievementsFor: achievementsFor, trackMove: trackMove, newTrack: newTrack, courseByOne: courseByOne, sunbeamsFor: sunbeamsFor, dailyStreak: dailyStreak, get store() { return store; }, migrateSave: migrateSave, get courseTags() { return courseTags; }, get hintCounts() { return { threat: Object.keys(threat).length, risk: Object.keys(risk).length }; }, describeHang: describeHang, get rm() { return rmOn(); }, get particles() { return particles.length; }, get anim() { return anim; }, get sweepDur() { return sweep ? sweep.dur || 0 : 0; }, get symDraws() { return symDraws; }, get pend() { return pend; }, get sel() { return sel; }, tapSlots: tapSlots };
+})();
+</script>
+</body>
+</html>
