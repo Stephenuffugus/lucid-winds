@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MARROWDEEP">
-<link rel="manifest" href="./manifest.webmanifest?v=20260914a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260914a">
-<link rel="icon" href="./icon-192.png?v=20260914a">
+<link rel="manifest" href="./manifest.webmanifest?v=20261114b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261114b">
+<link rel="icon" href="./icon-192.png?v=20261114b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/marrowdeep/">
 <style>
 /*  MARROWDEEP
@@ -93,6 +93,17 @@ h1,h2,p{margin:0}
   max-width:20rem;margin-top:14px}
 .small{font-size:.75rem;color:var(--muted)}
 .label{font-size:.7rem;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+/* ⛔ LOOKED AT (Play queue round two, 412 x 915): on the roll screen the two labels sat 6 px under the dice and the
+   origin card, and the three callings hung left at 340 while the origin card above them was centred, so the column
+   had two left edges. The labels get air, and the callings centre in the same 340 column. */
+#creOriginLabel,#creCallLabel{margin-top:18px}
+#creCallings{display:flex;flex-direction:column;align-items:center}
+/* the title's bottom left 130 px band is the music chip's (the footer inset the layout gate asserts). On a first
+   launch the chip is held off the title, and the band stood empty beside BEGIN; the studio's name sits in it then,
+   and only then. */
+.brandcorner{display:none;position:absolute;left:calc(18px + var(--safeL));bottom:calc(24px + var(--safeB));width:104px;
+  font-size:.7rem;letter-spacing:.16em;line-height:1.6;color:var(--muted);text-transform:uppercase}
+.sws-music-held .brandcorner{display:block}
 
 /* ---------- controls ---------- */
 .btn{-webkit-appearance:none;appearance:none;display:flex;align-items:center;justify-content:center;
@@ -453,6 +464,7 @@ h1,h2,p{margin:0}
   <!-- ⛔ The bottom left 120 by 120 belongs to the fleet's music chip and its folded
        pill. A first draft put HOW and SOUND straight through it, so the chip reseated
        itself over the game's own controls. Everything here is inset past that band. -->
+  <p class="brandcorner" aria-hidden="true">Sky Wolf<br>Studio</p>
   <div class="pin col chipclear">
     <button class="btn primary" id="btnBegin">BEGIN</button>
     <button class="btn small" id="btnHow">HOW</button>
@@ -469,7 +481,7 @@ h1,h2,p{margin:0}
     <div id="howLines" style="width:100%"></div>
     <div class="spacer"></div>
   </div>
-  <div class="pin col"><button class="btn small" id="btnCoachAgain">SHOW ME AGAIN</button><button class="btn primary" id="btnGotIt">GOT IT</button></div>
+  <div class="pin col"><a class="btn small" id="lnkPrivacy" href="privacy.html?v=20261114b" style="text-decoration:none">PRIVACY</a><button class="btn small" id="btnCoachAgain">SHOW ME AGAIN</button><button class="btn primary" id="btnGotIt">GOT IT</button></div>
 </section>
 
 <!-- ROLLING A CHARACTER IS THE THRILL (pillar 1): one screen, one tap, then one choice. -->
@@ -678,7 +690,40 @@ h1,h2,p{margin:0}
 </section>
 
 </div>
-<script src="/music-unlocks.js?v=20260914a" defer></script>
+<style id="musicHeld">/* the soundtrack held (SWS_MANNERS sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
+.sws-music-held #sws-music-chip,.sws-music-held #sws-music-pill,.sws-music-held #sws-music-toast{display:none!important}</style>
+<script id="musicFirst">/* ⛔ THE SOUNDTRACK'S MANNERS, 20261114a (Play queue, the recipe of Whistlestop and its four). No song card, pill
+   or Music button over a new player's first screen, over a list or over the board. on a new player's FIRST launch (never launched, no save) the script is held from here, with the shared script's
+   own SWS_MUSIC_HOLD flag; the game calls SWS_MANNERS.hold(on) as screens change (held everywhere but the title, which keeps its bottom left corner clear for it) and SWS_MANNERS.brk(still)
+   at a natural break: the first break lets a first launch go and shows a song that waited (reveal), if `still` says
+   the break is still on screen 1.4 s later. hold() alone sets an inline display none that the script's reseat
+   (applyCorner rewrites the chip's whole style) can undo, so a root class and one !important rule keep the chip
+   hidden. /music-unlocks.js itself is not edited. */
+(function () {
+  var first = false, n = 0;
+  try { n = +(localStorage.getItem("marrowdeep_launches") || 0) || 0;
+    localStorage.setItem("marrowdeep_launches", String(n + 1));
+    first = n < 1 && !localStorage.getItem("lw_marrowdeep_v1"); } catch (e) {}
+  var M = { first: first, want: false, sent: false, t: 0 };
+  if (M.first || M.want) { window.SWS_MUSIC_HOLD = true; M.sent = true; }
+  function sync() {
+    var on = M.want || M.first;
+    try { document.documentElement.classList.toggle("sws-music-held", on); } catch (e) {}
+    try { var m = window.SWSMusic; if (m && m.hold && on !== M.sent) { m.hold(on); M.sent = on; } } catch (e) {}
+  }
+  window.SWS_MANNERS = {
+    hold: function (on) { M.want = !!on; sync(); },
+    brk: function (still) {
+      M.first = false; sync(); clearTimeout(M.t);
+      M.t = setTimeout(function () {
+        try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+      }, 1400);
+    }
+  };
+  sync();
+  document.addEventListener("DOMContentLoaded", sync);
+})();</script>
+<script src="/music-unlocks.js?v=20261114b" defer></script>
 <script>
 /*  MARROWDEEP, one file.
     Layer order: BALANCE, RNG, DATA, EFFECTS, DICE, GEN, SIM  (the engine, between
@@ -5460,7 +5505,15 @@ var VIEW = (function () {
     for (i = 0; i < all.length; i++) all[i].classList.remove('on');
     var e = $('scr-' + id);
     if (e) { e.classList.add('on'); e.scrollTop = 0; }
+    var was = current;
     current = id;
+    /* the soundtrack's manners (see #musicFirst): only the title keeps the Music button; back in the hall from
+       anywhere past the first roll (a quest, a death, the roster) is a break */
+    if (window.SWS_MANNERS) {
+      SWS_MANNERS.hold(id !== 'title');
+      if (id === 'hall' && was && was !== 'title' && was !== 'how' && was !== 'creation')
+        SWS_MANNERS.brk(function () { return current === 'hall'; });
+    }
     return e;
   }
   function screen() { return current; }
@@ -7558,7 +7611,7 @@ var TEST = (function () {
 // ---- TEST_EXPORT_END ----
 
 /* ============================== BOOT ============================== */
-var STAMP = '20260914a';
+var STAMP = '20261114b';
 
 var BOOT = (function () {
   'use strict';

@@ -1,14 +1,47 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#2B3A67">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260915a">
-<link rel="icon" href="./icon-192.png?v=20260915a">
-<link rel="manifest" href="./manifest.webmanifest?v=20260915a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261114d">
+<link rel="icon" href="./icon-192.png?v=20261114d">
+<link rel="manifest" href="./manifest.webmanifest?v=20261114d">
 <!-- ⛔ THE FLEET'S MUSIC CHIP. This game and Inkswing were the only two of the
      twelve without it, while both DECISIONS files said in writing that the
      bottom left 120 by 120 was being kept clear for it. A corner reserved for
      something that was never included is just dead space. Added 2026-09-07. -->
-<script src="/music-unlocks.js?v=20260915a" defer></script>
+<style id="musicHeld">/* the soundtrack held (SWS_MANNERS sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
+.sws-music-held #sws-music-chip,.sws-music-held #sws-music-pill,.sws-music-held #sws-music-toast{display:none!important}</style>
+<script id="musicFirst">/* ⛔ THE SOUNDTRACK'S MANNERS, 20261114a (Play queue, the recipe of Whistlestop and its four). No song card, pill
+   or Music button over a new player's first screen, over a list or over the board. the game opens straight onto its board, so the script is held from boot on every launch and lets go only on a menu, with the shared script's
+   own SWS_MUSIC_HOLD flag; the game calls SWS_MANNERS.hold(on) as screens change (held on the sheet, the rig, the ink, the folio, the poster and a kept link; the Music button lives in the menu) and SWS_MANNERS.brk(still)
+   at a natural break: the first break lets a first launch go and shows a song that waited (reveal), if `still` says
+   the break is still on screen 1.4 s later. hold() alone sets an inline display none that the script's reseat
+   (applyCorner rewrites the chip's whole style) can undo, so a root class and one !important rule keep the chip
+   hidden. /music-unlocks.js itself is not edited. */
+(function () {
+  var first = false, n = 0;
+  try { n = +(localStorage.getItem("inkswing_launches") || 0) || 0;
+    localStorage.setItem("inkswing_launches", String(n + 1));
+    first = n < 1 && !localStorage.getItem("lw_inkswing_v1"); } catch (e) {}
+  var M = { first: first, want: true, sent: false, t: 0 };
+  if (M.first || M.want) { window.SWS_MUSIC_HOLD = true; M.sent = true; }
+  function sync() {
+    var on = M.want || M.first;
+    try { document.documentElement.classList.toggle("sws-music-held", on); } catch (e) {}
+    try { var m = window.SWSMusic; if (m && m.hold && on !== M.sent) { m.hold(on); M.sent = on; } } catch (e) {}
+  }
+  window.SWS_MANNERS = {
+    hold: function (on) { M.want = !!on; sync(); },
+    brk: function (still) {
+      M.first = false; sync(); clearTimeout(M.t);
+      M.t = setTimeout(function () {
+        try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+      }, 1400);
+    }
+  };
+  sync();
+  document.addEventListener("DOMContentLoaded", sync);
+})();</script>
+<script src="/music-unlocks.js?v=20261114d" defer></script>
 <title>INKSWING</title>
 <style>
 :root{
@@ -98,6 +131,12 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
   padding:10px 16px;border-radius:12px;font-size:.86rem;text-align:center;max-width:80%;
   opacity:0;transition:opacity 220ms ease-out;pointer-events:none}
 #hint.on{opacity:1}
+/* ⛔ LOOKED AT (Play queue round two, 412 x 915): the first hint, kept up until the first throw, sat over the
+   pendulum's pivot and wrapped to two lines because a box at left 50% shrinks to the right half. It is as wide as
+   its words now, and the first hint sits low, in the band under the inks where FINISH and TEAR OFF arrive after the
+   throw, so that band is the instruction until it is the buttons. */
+#hint{width:max-content}
+#hint.low{top:auto;bottom:calc(36px + var(--safeB))}
 /* ⛔ 140 AT THE FOOT, NOT 20, AND IT IS THE MUSIC CHIP'S CORNER. Every screen in
    this game is a scrolling column of full width buttons, so the last button in
    the column sat in the bottom left 120 by 120 the fleet keeps for the chip: at
@@ -134,12 +173,24 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 .card .sub{display:block;font-size:.74rem;color:var(--muted);margin-top:3px}
 .card[disabled]{opacity:.5}
 #folioList,#rigList,#posterList{display:flex;flex-direction:column;gap:8px}
+/* ⛔ THE FOLIO SHOWS WHAT YOU KEPT (Play queue round four). KEEP saved up to 48 drawings and the folio screen was a
+   title and BACK: nothing ever filled the list. Two thumbnails a row, newest first, each one a tap that opens it
+   large, where it can be taken out with a second tap. */
+#folioList.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ftile{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-height:48px;padding:8px;
+  border:2px solid var(--brass-lo);border-radius:12px;background:rgba(251,246,232,.06);color:var(--cream);
+  font-family:inherit;text-align:left}
+.ftile canvas{width:100%;aspect-ratio:4/5;height:auto;border-radius:6px;background:#F3ECDA}
+.ftile .nm{font-size:.8rem;font-weight:700;display:block}
+.ftile .sub{font-size:.72rem;color:rgba(251,246,232,.66);display:block}
+#folioBig{width:100%;aspect-ratio:4/5;height:auto;border-radius:8px;background:#F3ECDA}
+#btnFolioRemove.arm{border-color:#C0563F;color:#F0C2B4}
 #toast{position:fixed;left:50%;bottom:calc(96px + var(--safeB));transform:translateX(-50%);
   background:var(--ink);color:var(--cream);padding:10px 16px;border-radius:10px;font-size:.82rem;
   z-index:40;opacity:0;pointer-events:none;transition:opacity 170ms ease-out;max-width:84%;
   text-align:center}
 #toast.on{opacity:1}
-body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
+body.listing #toast,#toast.top{top:calc(72px + var(--safeT));bottom:auto}
 </style>
 <div id="wrap">
   <canvas id="stage"></canvas>
@@ -218,6 +269,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
       <button class="btn" id="btnMotion">MOTION ON</button>
       <button class="btn" id="btnTilt">TILT OFF</button>
       <button class="btn" id="btnName">YOUR NAME</button>
+      <a class="btn" id="lnkPrivacy" href="privacy.html?v=20261114d" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <p class="tiny">Sky Wolf Studio</p>
       <button class="btn ghost" id="btnMenuClose">CLOSE</button>
     </div>
@@ -228,6 +280,16 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
       <div class="title" style="font-size:1.2rem">The folio</div>
       <div id="folioList"></div>
       <button class="btn ghost" id="btnFolioBack">BACK</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrFolioOne">
+    <div class="col">
+      <div class="title" style="font-size:1.2rem" id="folioOneTitle">Fig. 1</div>
+      <canvas id="folioBig" width="800" height="1000" aria-label="A kept drawing"></canvas>
+      <p class="tiny" id="folioOneLine"></p>
+      <button class="btn" id="btnFolioOneBack">BACK TO THE FOLIO</button>
+      <button class="btn ghost" id="btnFolioRemove">REMOVE FROM THE FOLIO</button>
     </div>
   </div>
 
@@ -1843,7 +1905,7 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 /* ============================ 16. THE PAGE ============================ */
-var STAMP = '20260915a';
+var STAMP = '20261114d';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
 /* the throw strip's row (call 60): a 48 px chip with 4 px of air above and below it */
@@ -1989,6 +2051,9 @@ function syncActions() {
   el('btnRemove').hidden = !picking;
   el('btnPickDone').hidden = !picking;
   if (!picking && el('btnRemove').textContent !== 'REMOVE') el('btnRemove').textContent = 'REMOVE';
+  /* ⛔ the kept first hint sits low, where these buttons live: it never shares the band with them. A new player
+     who opens a shared drawing before ever throwing has the buttons and no hint (Play queue round five). */
+  if (hint.stay && (n || G.drawing)) { hint.stay = false; el('hint').classList.remove('on'); }
   renderStrip();
 }
 function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
@@ -2467,6 +2532,7 @@ function release() {
   G.drawing = true;
   G.since = G.t;
   if (!SAVE.seen.thrown) { SAVE.seen.thrown = 1; saveNow(); }
+  if (hint.stay) { hint.stay = false; el('hint').classList.remove('on'); }
   soundStart();
   haptic(12);
   return thr;
@@ -2640,24 +2706,30 @@ function soundRip() {
 var RIG_ARM_MS = 3000;
 function toast(msg, ms) {
   var t = el('toast');
+  t.classList.remove('top');
   t.textContent = msg;
   t.classList.add('on');
   clearTimeout(toast._h);
   toast._h = setTimeout(function () { t.classList.remove('on'); }, ms || 1900);
 }
-function hint(msg) {
+/* ⛔ a new player's FIRST hint stays until they do the thing (`stay`, Play queue 20261114a): it showed for three
+   seconds and a stranger looking at the board a moment later had no line telling them what to do (seen at 412 x 915) */
+function hint(msg, stay) {
   var h = el('hint');
+  if (stay && G.sheet && G.sheet.throws.length) return;
   h.textContent = msg;
   h.classList.add('on');
   clearTimeout(hint._h);
-  hint._h = setTimeout(function () { h.classList.remove('on'); }, 3400);
+  hint.stay = !!stay;
+  h.classList.toggle('low', !!stay);
+  if (!stay) hint._h = setTimeout(function () { h.classList.remove('on'); }, 3400);
 }
 function haptic(ms) {
   if (!SETTINGS.motion) return;
   try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
 }
 function showScreen(name) {
-  var all = ['scrRig', 'scrColour', 'scrMenu', 'scrFolio', 'scrPoster', 'scrKeep'], i;
+  var all = ['scrRig', 'scrColour', 'scrMenu', 'scrFolio', 'scrFolioOne', 'scrPoster', 'scrKeep'], i;
   for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
   G.screen = name.toLowerCase();
   document.body.classList.toggle('listing', name !== 'Sheet');
@@ -2665,7 +2737,13 @@ function showScreen(name) {
      drawn, so a rig that came open since is open the moment you look */
   if (name === 'Rig') renderRigScreen();
   if (name === 'Colour') renderColourScreen();
+  if (name === 'Folio') renderFolio();
   fitCanvas();
+  /* the soundtrack's manners (see #musicFirst): the Music button lives in the menu, and opening it is a break */
+  if (window.SWS_MANNERS) {
+    SWS_MANNERS.hold(name !== 'Menu');
+    if (name === 'Menu') SWS_MANNERS.brk(function () { return G.screen === 'menu'; });
+  }
 }
 function saveNow() {
   try {
@@ -2747,6 +2825,8 @@ function boot() {
   });
   el('btnColourBack').addEventListener('click', function () { showScreen('Sheet'); });
   el('btnFolioBack').addEventListener('click', function () { showScreen('Menu'); });
+  el('btnFolioOneBack').addEventListener('click', function () { showScreen('Folio'); });
+  el('btnFolioRemove').addEventListener('click', function () { removeFolioOne(); });
   el('btnPosterBack').addEventListener('click', function () { showScreen('Menu'); });
   el('btnFolio').addEventListener('click', function () { showScreen('Folio'); });
   el('btnPoster').addEventListener('click', function () { showScreen('Poster'); });
@@ -2788,7 +2868,7 @@ function boot() {
   /* a link opens as a drawing being made, not as a finished picture */
   if (openLink(location.hash)) { G.drawing = true; }
   syncActions();
-  if (!SAVE.seen.thrown) setTimeout(function () { hint('Grab the brass bob. Throw it.'); }, 700);
+  if (!SAVE.seen.thrown) setTimeout(function () { hint('Grab the brass bob. Throw it.', true); }, 700);
   kick();
   try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
   if ('serviceWorker' in navigator) {
@@ -2921,6 +3001,32 @@ function sandHiss(on) {
    single soft edge. */
 var POSTER_W = 2048, POSTER_H = 2560;
 var POSTER_KINDS = Object.freeze(['plate', 'dark', 'bare']);
+/* the ink of a sheet laid down on any canvas at any scale: the poster at print size, and the folio's
+   thumbnails and its large view (Play queue round four), so a kept drawing looks the same in all three */
+function inkSheet(c, sheet, cx, cy, k, dark) {
+  var tr = traceOf(sheet, horizonOf(sheet)), i;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  for (i = 1; i < tr.length; i++) {
+    var a = tr[i - 1], b = tr[i];
+    var dt = b.t - a.t;
+    if (dt <= 0) continue;
+    var d = Math.hypot(b.x - a.x, b.y - a.y);
+    var speed = d / dt;
+    var f = Math.pow(clamp(1 - speed / CONFIG.V_MAX, 0, 1), 1.8);
+    var thr = throwAt(sheet, b.t);
+    var w = (CONFIG.INK_W_MIN + (CONFIG.INK_W_MAX - CONFIG.INK_W_MIN) * f) * nibScale(thr ? thr.w : 1);
+    var hex = colourOf(thr);
+    c.strokeStyle = dark ? paleInk(hex) : hex;
+    c.globalAlpha = clamp((0.34 + 0.26 * f) * nibInk(thr ? thr.w : 1), 0, 0.95);
+    c.lineWidth = Math.max(1, w * k);
+    c.beginPath();
+    c.moveTo(cx + a.x * k, cy + a.y * k);
+    c.lineTo(cx + b.x * k, cy + b.y * k);
+    c.stroke();
+  }
+  c.globalAlpha = 1;
+}
 function posterCanvas(sheet, kind, name) {
   var cv = document.createElement('canvas');
   cv.width = POSTER_W; cv.height = POSTER_H;
@@ -2946,27 +3052,8 @@ function posterCanvas(sheet, kind, name) {
     c.strokeRect(mx - 18, my - 18, aw + 36, ah + 36);
   }
   /* every throw, at print size, one segment at a time */
-  var tr = traceOf(sheet, horizonOf(sheet)), i;
-  c.lineCap = 'round';
-  c.lineJoin = 'round';
-  for (i = 1; i < tr.length; i++) {
-    var a = tr[i - 1], b = tr[i];
-    var dt = b.t - a.t;
-    if (dt <= 0) continue;
-    var d = Math.hypot(b.x - a.x, b.y - a.y);
-    var speed = d / dt;
-    var f = Math.pow(clamp(1 - speed / CONFIG.V_MAX, 0, 1), 1.8);
-    var thr = throwAt(sheet, b.t);
-    var w = (CONFIG.INK_W_MIN + (CONFIG.INK_W_MAX - CONFIG.INK_W_MIN) * f) * nibScale(thr ? thr.w : 1);
-    var hex = colourOf(thr);
-    c.strokeStyle = dark ? paleInk(hex) : hex;
-    c.globalAlpha = clamp((0.34 + 0.26 * f) * nibInk(thr ? thr.w : 1), 0, 0.95);
-    c.lineWidth = Math.max(1, w * k);
-    c.beginPath();
-    c.moveTo(cx + a.x * k, cy + a.y * k);
-    c.lineTo(cx + b.x * k, cy + b.y * k);
-    c.stroke();
-  }
+  inkSheet(c, sheet, cx, cy, k, dark);
+  var i;
   c.globalAlpha = 1;
   if (!bare) {
     /* ⛔ the caption is the brass line the design asks for, and it says what the
@@ -3247,7 +3334,11 @@ function bindInput() {
   el('btnUndo').addEventListener('click', function () {
     if (undoLast()) { toast('That throw is off'); } else { toast('Nothing to take off'); }
   });
-  el('btnKeep').addEventListener('click', function () { keepSheet(); });
+  el('btnKeep').addEventListener('click', function () {
+    keepSheet();
+    /* a drawing kept is a break (see #musicFirst) */
+    if (window.SWS_MANNERS) SWS_MANNERS.brk(function () { return G.screen === 'sheet' && !G.drawing; });
+  });
   el('btnShare').addEventListener('click', function () { shareSheet(); });
   /* call 60: REMOVE asks once, the way TEAR OFF does, because a middle throw has no UNDO */
   el('btnRemove').addEventListener('click', function () {
@@ -3402,6 +3493,78 @@ function renderRigScreen() {
     })(RIGS[RIG_ORDER[i]]);
   }
 }
+/* ---- the folio: the kept drawings, newest first (SAVE.folio is kept newest first by keepSheet) ---- */
+var FOLIO = { art: [], job: 0, open: -1, armAt: 0 };
+/* a kept drawing drawn onto a canvas of any size, on the cream of the sheet */
+function folioArt(cv, entry) {
+  var c = cv.getContext('2d'), W = cv.width, H = cv.height;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.fillStyle = '#F3ECDA';
+  c.fillRect(0, 0, W, H);
+  var k = Math.min(W / CONFIG.SHEET_W, H / CONFIG.SHEET_H) * 0.94;
+  try { inkSheet(c, newSheet(entry), W / 2, H / 2, k, false); } catch (e) {}
+}
+function folioCaption(entry, ix) {
+  var rig = RIGS[entry.rig] || RIGS.single, n = (entry.throws || []).length;
+  return { nm: 'Fig. ' + (SAVE.folio.length - ix), sub: rig.name + ', ' + n + (n === 1 ? ' throw' : ' throws') };
+}
+function renderFolio() {
+  var host = el('folioList'), i;
+  host.innerHTML = '';
+  clearTimeout(FOLIO.job);
+  host.classList.toggle('tiles', SAVE.folio.length > 0);
+  if (!SAVE.folio.length) {
+    host.innerHTML = '<p class="lede">Nothing kept yet. Throw a drawing you like, then press KEEP and it lands here.</p>';
+    return;
+  }
+  var todo = [];
+  for (i = 0; i < SAVE.folio.length; i++) (function (ix) {
+    var e = SAVE.folio[ix], cap = folioCaption(e, ix);
+    var b = document.createElement('button');
+    b.className = 'ftile'; b.type = 'button'; b.setAttribute('data-ix', ix);
+    var cv = document.createElement('canvas'); cv.width = 200; cv.height = 250;
+    b.appendChild(cv);
+    var t = document.createElement('span'); t.className = 'nm'; t.textContent = cap.nm; b.appendChild(t);
+    var u = document.createElement('span'); u.className = 'sub'; u.textContent = cap.sub; b.appendChild(u);
+    b.addEventListener('click', function () { openFolioOne(ix); });
+    host.appendChild(b);
+    todo.push({ cv: cv, e: e });
+  })(i);
+  /* one thumbnail a beat, so a full folio of 48 opens at once and fills in, rather than freezing the tap */
+  (function next() {
+    var j = todo.shift(); if (!j) return;
+    folioArt(j.cv, j.e);
+    FOLIO.job = setTimeout(next, 0);
+  })();
+}
+function openFolioOne(ix) {
+  var e = SAVE.folio[ix]; if (!e) return;
+  FOLIO.open = ix; FOLIO.armAt = 0;
+  var cap = folioCaption(e, ix);
+  el('folioOneTitle').textContent = cap.nm;
+  el('folioOneLine').textContent = cap.sub + (e.name ? ', thrown by ' + e.name : '');
+  el('btnFolioRemove').textContent = 'REMOVE FROM THE FOLIO';
+  el('btnFolioRemove').classList.remove('arm');
+  showScreen('FolioOne');
+  folioArt(el('folioBig'), e);
+}
+/* the confirm is the second tap: the first arms the button and says so, a second within four seconds removes */
+function removeFolioOne() {
+  var b = el('btnFolioRemove'), now = Date.now();
+  if (FOLIO.open < 0 || !SAVE.folio[FOLIO.open]) return;
+  if (!FOLIO.armAt || now - FOLIO.armAt > 4000) {
+    FOLIO.armAt = now;
+    b.textContent = 'TAP AGAIN TO REMOVE IT';
+    b.classList.add('arm');
+    setTimeout(function () { if (FOLIO.armAt === now) { FOLIO.armAt = 0; b.textContent = 'REMOVE FROM THE FOLIO'; b.classList.remove('arm'); } }, 4000);
+    return;
+  }
+  SAVE.folio.splice(FOLIO.open, 1);
+  FOLIO.open = -1; FOLIO.armAt = 0;
+  saveNow();
+  showScreen('Folio');
+  toast('Taken out of the folio');
+}
 function keepSheet() {
   if (!G.sheet.throws.length) return;
   SAVE.folio.unshift({ rig: G.sheet.rig, lengths: G.sheet.lengths.slice(),
@@ -3412,7 +3575,12 @@ function keepSheet() {
   while (SAVE.folio.length > CONFIG.FOLIO_MAX) SAVE.folio.pop();
   saveNow();
   renderRigScreen();
-  toast('In the folio');
+  /* ⛔ KEEP KEEPS A COPY AND THE SHEET STAYS (Play queue round four). The next throw lands on the same paper,
+     which surprised a player who read KEEP as done; the behaviour is the game's (layering throws is the point of a
+     sheet, and TEAR OFF is the new page), so the words say it instead of the rule changing. */
+  toast('Kept. Throw again to add to it, or tear off for a new sheet.', 3600);
+  /* three lines at the foot sat on SHARE and TEAR OFF, the two buttons it names; it says it over the paper's top */
+  el('toast').classList.add('top');
   haptic(14);
 }
 
@@ -3519,6 +3687,7 @@ window.INKSWING_TEST = {
   setInk: function (id) { G.ink = id; buildInkRail(); },
   ink: function () { return G.ink; },
   folio: function () { return SAVE.folio; },
+  folioTiles: function () { return document.querySelectorAll('#folioList .ftile').length; },
   undo: function () { return undoLast(); },
   /* call 60: read only views of the strip's pick and its highlight */
   pick: function () { return G.pick == null ? null : G.pick; },

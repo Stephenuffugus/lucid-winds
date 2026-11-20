@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AIRWORTHY">
-<link rel="manifest" href="./manifest.webmanifest?v=20260915c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260915c">
-<link rel="icon" href="./icon-192.png?v=20260915c">
+<link rel="manifest" href="./manifest.webmanifest?v=20261114c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261114c">
+<link rel="icon" href="./icon-192.png?v=20261114c">
 <link rel="canonical" href="https://lucidwinds.com/satellites/airworthy/">
 <style>
 /*  AIRWORTHY
@@ -322,7 +322,40 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
-<script src="/music-unlocks.js?v=20260915c" defer></script>
+<style id="musicHeld">/* the soundtrack held (SWS_MANNERS sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
+.sws-music-held #sws-music-chip,.sws-music-held #sws-music-pill,.sws-music-held #sws-music-toast{display:none!important}</style>
+<script id="musicFirst">/* ⛔ THE SOUNDTRACK'S MANNERS, 20261114a (Play queue, the recipe of Whistlestop and its four). No song card, pill
+   or Music button over a new player's first screen, over a list or over the board. on a new player's FIRST launch (never launched, no save) the script is held from here, with the shared script's
+   own SWS_MUSIC_HOLD flag; the game calls SWS_MANNERS.hold(on) as screens change (held on the field, the workshop, the tunnel and the two lists; the Music button lives on the title and How) and SWS_MANNERS.brk(still)
+   at a natural break: the first break lets a first launch go and shows a song that waited (reveal), if `still` says
+   the break is still on screen 1.4 s later. hold() alone sets an inline display none that the script's reseat
+   (applyCorner rewrites the chip's whole style) can undo, so a root class and one !important rule keep the chip
+   hidden. /music-unlocks.js itself is not edited. */
+(function () {
+  var first = false, n = 0;
+  try { n = +(localStorage.getItem("airworthy_launches") || 0) || 0;
+    localStorage.setItem("airworthy_launches", String(n + 1));
+    first = n < 1 && !localStorage.getItem("lw_airworthy_v1"); } catch (e) {}
+  var M = { first: first, want: false, sent: false, t: 0 };
+  if (M.first || M.want) { window.SWS_MUSIC_HOLD = true; M.sent = true; }
+  function sync() {
+    var on = M.want || M.first;
+    try { document.documentElement.classList.toggle("sws-music-held", on); } catch (e) {}
+    try { var m = window.SWSMusic; if (m && m.hold && on !== M.sent) { m.hold(on); M.sent = on; } } catch (e) {}
+  }
+  window.SWS_MANNERS = {
+    hold: function (on) { M.want = !!on; sync(); },
+    brk: function (still) {
+      M.first = false; sync(); clearTimeout(M.t);
+      M.t = setTimeout(function () {
+        try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+      }, 1400);
+    }
+  };
+  sync();
+  document.addEventListener("DOMContentLoaded", sync);
+})();</script>
+<script src="/music-unlocks.js?v=20261114c" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">AIRWORTHY</h1>
@@ -402,6 +435,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
       <p class="lede">Fold a plane. The folds are not decoration, they are the physics.</p>
       <p class="lede">Pull back and let go. Watch what it does.</p>
       <p class="lede">Bend the elevators a hair and throw it again.</p>
+      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261114c" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <button class="btn ghost" id="btnHowBack">BACK</button>
     </div>
   </div>
@@ -469,7 +503,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
   <div class="screen" id="scrChallenges">
     <div class="col">
       <div class="title" style="font-size:1.3rem">The challenges</div>
-      <p class="lede">Six of them, and no one plane wins them all. The throw is
+      <p class="lede"><span id="challengeCount">Eleven</span> of them, and no one plane wins them all. The throw is
       set on each, so what you bring is the fold.</p>
       <div id="challengeList"></div>
       <button class="btn ghost" id="btnChallengesBack">BACK</button>
@@ -2608,7 +2642,13 @@ function drawCourse(ctx, id) {
   } else {
     /* the painted stripe every school hall has, so the wall between the roof and
        the windows is a wall and not a colour swatch */
-    var stripe = roof + (Math.max(py(4.0), V.H * 0.11 + V.ppm * 1.5) - roof) * 0.52;
+    /* ⛔ LOOKED AT (Play queue round two, 412 x 915): at 52 percent the stripe and a row of short windows left two
+       empty bands of wall, and the windows sat on a world grid that cut one in half at the left edge of the first
+       frame. The stripe now sits a third of the way down, the windows run from under it to their old sill as tall
+       hall windows, and the row is phased so one window is centred on a still camera, which puts whole windows at
+       both edges of a phone. */
+    var sill = Math.max(py(4.0), V.H * 0.11 + V.ppm * 1.5) + Math.max(6, V.ppm * 0.9);
+    var stripe = roof + (Math.max(py(4.0), V.H * 0.11 + V.ppm * 1.5) - roof) * 0.32;
     ctx.fillStyle = 'rgba(200,168,75,.16)';
     ctx.fillRect(0, stripe, V.W, Math.max(4, V.ppm * 0.5));
     ctx.strokeStyle = 'rgba(110,106,96,.22)';
@@ -2620,13 +2660,28 @@ function drawCourse(ctx, id) {
     ctx.stroke();
     ctx.strokeStyle = 'rgba(110,106,96,.30)';
     ctx.lineWidth = 2;
+    var ww = Math.max(6, V.ppm * 1.4);
+    var wph = ((V.W / 2 - V.ox) / V.ppm) - 0.7;
+    wph = wph - Math.floor(wph / 4) * 4;
+    var wtop = Math.min(stripe + Math.max(4, V.ppm * 0.5) + V.ppm * 0.8, sill - Math.max(6, V.ppm * 0.9));
     for (i = 0; i < 14; i++) {
-      var wx2 = x0 + i * 4;
+      var wx2 = Math.floor(V.camX / 4) * 4 - 8 + wph + i * 4;
       /* the high windows sit in the wall between the roof and the flight, and on
          a tall screen that band is where they belong rather than at a world
          height that leaves it empty */
-      var wy3 = Math.max(py(4.0), V.H * 0.11 + V.ppm * 1.5);
-      ctx.strokeRect(px(wx2), wy3, Math.max(6, V.ppm * 1.6), Math.max(6, V.ppm * 0.9));
+      var wl = px(wx2);
+      if (wl < -ww - 4 || wl > V.W + 4) continue;
+      ctx.fillStyle = 'rgba(255,255,255,.22)';
+      ctx.fillRect(wl, wtop, ww, sill - wtop);
+      ctx.strokeRect(wl, wtop, ww, sill - wtop);
+      if (sill - wtop > V.ppm * 2) {
+        /* the frame of a hall window: one upright, and a bar every metre and a bit */
+        ctx.beginPath();
+        ctx.moveTo(wl + ww / 2, wtop); ctx.lineTo(wl + ww / 2, sill);
+        var bar;
+        for (bar = wtop + V.ppm * 1.2; bar < sill - V.ppm * 0.4; bar += V.ppm * 1.2) { ctx.moveTo(wl, bar); ctx.lineTo(wl + ww, bar); }
+        ctx.stroke();
+      }
     }
   }
   /* the floor, with its lines every metre and a fat one every five */
@@ -4357,8 +4412,12 @@ function tunRender() {
      under the panel, and the aeroplane was drawn in the part nobody can see. */
   tunLayout();
 }
+/* the heading counts the list it sits over (it said Six over eleven; Play queue round five) */
+var NUM_WORDS = ['None', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven',
+  'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty'];
 function renderChallenges() {
   var host = el('challengeList'), i, out = '', last = '';
+  el('challengeCount').textContent = NUM_WORDS[CHALLENGES.length] || String(CHALLENGES.length);
   host.innerHTML = '';
   for (i = 0; i < CHALLENGES.length; i++) {
     var ch = CHALLENGES[i];
@@ -4402,7 +4461,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20260915c';
+var STAMP = '20261114c';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
@@ -4424,7 +4483,7 @@ function toast(msg) {
 function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
 function showScreen(name) {
-  var all = ['scrTitle', 'scrHow', 'scrHangar', 'scrChallenges'], i;
+  var all = ['scrTitle', 'scrHow', 'scrHangar', 'scrChallenges'], i, was = G.screen;
   for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
   G.screen = name.toLowerCase();
   var field = (name === 'Field'), shop = (name === 'Workshop'), tun = (name === 'Tunnel');
@@ -4439,6 +4498,13 @@ function showScreen(name) {
   if (!field) { el('resultCard').classList.remove('on'); el('scrTrim').classList.remove('on'); }
   fitCanvas();
   if (tun) tunLayout();
+  /* the soundtrack's manners (see #musicFirst): off the field, the workshop, the tunnel and the lists; coming home
+     from a flight, a fold or the tunnel is a break */
+  if (window.SWS_MANNERS) {
+    SWS_MANNERS.hold(!(name === 'Title' || name === 'How'));
+    if ((was === 'field' || was === 'workshop' || was === 'tunnel') && name === 'Title')
+      SWS_MANNERS.brk(function () { return G.screen === 'title'; });
+  }
 }
 /* the row of courses under the big button, and the button saying where it goes */
 function renderCoursePick() {
@@ -4454,7 +4520,15 @@ function renderCoursePick() {
 function toField(spec, challengeId) {
   G.spec = spec || G.spec || newSpec();
   G.challenge = challengeId ? challengeById(challengeId) : null;
+  var wasCourse = G.course;
   G.course = G.challenge ? G.challenge.course : (COURSES[G.pickCourse] ? G.pickCourse : 'gym');
+  /* ⛔ A NEW PLACE STARTS CLEAN (Play queue round five). The last throw's result card and its class in the readout
+     came along to a newly chosen place, so the canyon opened under the gym's verdict. A change of place clears
+     both; the same place keeps them, as it always has. */
+  if (wasCourse !== G.course) {
+    G.lastClass = null; G.lastScore = null; G.lastMedal = null;
+    el('resultCard').classList.remove('on');
+  }
   G.res = null; G.live = null; G.flying = false; G.trail = [];
   G.armed = false;
   G.best = null;
@@ -4636,6 +4710,8 @@ function endFlight() {
   el('resultLine').innerHTML = (ch ? '' : G.lastClass.line + '<br>') + line;
   drawResultDoodad();
   el('resultCard').classList.add('on');
+  /* a throw landed: a break, and the card may show over the result (see #musicFirst) */
+  if (window.SWS_MANNERS) SWS_MANNERS.brk(function () { return G.screen === 'field' && el('resultCard').classList.contains('on'); });
   AUDIO.quiet();
   AUDIO.play(G.lastMedal ? 'clap' : 'land');
   updateHud();

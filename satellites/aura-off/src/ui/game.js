@@ -60,14 +60,14 @@ import {
   createMatch, resolveExchange, matchSnapshot, matchSummary,
   legalMoves, previewMove, canBlend, getMove, TUNING,
   qualifyFor, createQualifier, qualifySummary
-} from '../engine/battle.js?v=20260829b';
-import { blendMove } from '../engine/scoring.js?v=20260829b';
-import { sampleInto, blend as blendPose, lerpPose, settleWeight } from '../engine/anim.js?v=20260829b';
-import { restPose, mountFigure } from '../engine/rig.js?v=20260829b';
+} from '../engine/battle.js?v=20261114b';
+import { blendMove } from '../engine/scoring.js?v=20261114b';
+import { sampleInto, blend as blendPose, lerpPose, settleWeight } from '../engine/anim.js?v=20261114b';
+import { restPose, mountFigure } from '../engine/rig.js?v=20261114b';
 
-import { createHud } from './hud.js?v=20260829b';
-import { createTiming } from './timing.js?v=20260829b';
-import * as save from './save.js?v=20260829b';
+import { createHud } from './hud.js?v=20261114b';
+import { createTiming } from './timing.js?v=20261114b';
+import * as save from './save.js?v=20261114b';
 
 /* -------------------------------------------------------------------------- */
 /* PACING — the only numbers in this file, and none of them touch a score      */
@@ -455,6 +455,12 @@ export function createGame(cfg) {
     }
     if (name) { stopLoop(); timing.cancel(); }
     else startLoop();
+    /* the soundtrack's manners (index.html #musicFirst): only the title keeps the Music button; a result is a break */
+    const M = (typeof window !== 'undefined') ? window.SWS_MANNERS : null;
+    if (M) {
+      M.hold(name !== 'title');
+      if (name === 'result') M.brk(function () { return S.screen === 'result'; });
+    }
   }
 
   /** `<body data-state>` — ready | timing | resolving | over. */

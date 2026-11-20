@@ -40,7 +40,7 @@
 'use strict';
 
 /** Bump on every deploy. Must match the `build` meta tag in index.html. */
-var BUILD = '20260829b';
+var BUILD = '20261114b';
 
 /** Every cache this worker may ever touch starts with this. NOTHING else. */
 var CACHE_PREFIX = 'skywolf:auraoff:';
@@ -61,6 +61,7 @@ var NET_TIMEOUT_MS = 6000;
 var SHELL = [
   './',
   './index.html',
+  './privacy.html',
   './manifest.webmanifest',
   './src/main.js',
   './src/ui/style.css',
@@ -207,13 +208,22 @@ self.addEventListener('activate', function (event) {
 /* -------------------------------------------------------------------------- */
 
 /** Network-first. The player must never be pinned to an old build. HAZARD 3. */
+/* ⛔ A NAVIGATION IS SAVED UNDER ITS OWN PAGE. Every document used to be saved as ./index.html, harmless while the
+   game was the only page; with privacy.html beside it, opening the privacy page online would put it in the game's
+   place and an offline relaunch would draw it (the trap the Play queue's first five hit on 13 Nov). The start URL (a
+   path ending in / or in index.html, whatever its query) is the game; any other page is itself, keyed by its path
+   without the query, and offline it is answered from its own entry or the offline page, never from the game's. */
 function navigationStrategy(event) {
+  var url = new URL(event.request.url);
+  var isGame = /\/(index\.html)?$/.test(url.pathname);
+  var key = isGame ? './index.html' : url.origin + url.pathname;
   return netWithTimeout(event.request)
     .then(function (res) {
-      if (res && res.ok) put('./index.html', res);
+      if (res && res.ok) put(key, res);
       return res;
     })
     .catch(function () {
+      if (!isGame) return match(key).then(function (hit) { return hit || offlineDoc(); });
       return match('./index.html').then(function (hit) {
         return hit || match(event.request).then(function (h2) {
           return h2 || offlineDoc();

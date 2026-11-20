@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STRATA">
-<link rel="manifest" href="./manifest.webmanifest?v=20261113b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20261113b">
-<link rel="icon" href="./icon-192.png?v=20261113b">
+<link rel="manifest" href="./manifest.webmanifest?v=20261114a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261114a">
+<link rel="icon" href="./icon-192.png?v=20261114a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
 <style>
 /*  STRATA
@@ -242,7 +242,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 (function(){ try{ var n=+(localStorage.getItem("strata_launches")||0)||0;
   localStorage.setItem("strata_launches",String(n+1));
   if(n<1&&!localStorage.getItem("lw_strata_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
-<script src="/music-unlocks.js?v=20261113b" defer></script>
+<script src="/music-unlocks.js?v=20261114a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
@@ -280,7 +280,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
       <p class="lede">Brush the dust away. Something is under there.</p>
       <p class="lede">The chisel is quicker, and it cracks a bone if you rest on one. The pick cracks anything it touches.</p>
       <p class="lede">Trace a freed bone along its length to lift it out. Mount it, name it, and hang it up.</p>
-      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261113b" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
+      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261114a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <button class="btn ghost" id="btnHowBack">BACK</button>
     </div>
   </div>
@@ -451,6 +451,14 @@ function seedFromString(str) {
   return h >>> 0;
 }
 function mixSeed(seed, salt) { return (Math.imul(seed ^ salt, 2654435761) >>> 0); }
+/* ⛔ EVERY FOSSIL IS THE ONLY ONE (Play queue round three). A new site's seed was a hash of the museum size and the
+   frame count alone, so a DIG pressed in the first minute had a few thousand possible first animals and two new
+   players could dig the same one. The seed now also carries 32 bits the caller draws from crypto.getRandomValues
+   (`draw`, outside the SIM, which never rolls an unseeded die). A specimen is still its seed: the museum and a share
+   link store the finished seed, so nothing already dug changes. */
+function digSeed(museumLen, frames, draw) {
+  return mixSeed(seedFromString('site' + museumLen + ':' + Math.floor(frames)), draw >>> 0);
+}
 
 /* ========================= 3. DMATH ========================= */
 /* Copied from satellites/doohickey/index.html, whose header explains why it
@@ -1577,7 +1585,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20261113b';
+var STAMP = '20261114a';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -2499,6 +2507,14 @@ function suiteDeterm(T) {
   T.assert('and a different seed gives a different animal',
     JSON.stringify(species(mixSeed(4242, 18), 3)) !== JSON.stringify(a));
   T.eq('and the same site twice', JSON.stringify(makeSite(99, 2)), JSON.stringify(makeSite(99, 2)));
+  /* a museum saved before round three: seed 123456789, era 3, pinned from the build before the change */
+  var fx = species(123456789, 3);
+  T.eq('a saved specimen loads as it was dug: its name', identity(fx, 123456789, '').binomial, 'Chasmoplaxus tener');
+  T.eq('and its bones', bones(fx).length, 62);
+  T.eq('and the whole animal', seedFromString(JSON.stringify(fx)), 1483652076);
+  T.eq('a dig seed is a pure function of its inputs', digSeed(2, 600, 0x1234abcd), digSeed(2, 600, 0x1234abcd));
+  T.assert('and two digs from the same museum on the same frame differ by their draw',
+    digSeed(2, 600, 0x1234abcd) !== digSeed(2, 600, 0x9e3779b9));
 }
 
 function suitePurity(T, src) {
@@ -2951,8 +2967,15 @@ function startDemo() {
     done++;
   }
 }
+/* 32 fresh random bits for a new site (see digSeed). crypto first; a browser without it falls back to Math.random,
+   which still separates two players far better than the frame count did. */
+function draw32() {
+  try { var a = new Uint32Array(1); window.crypto.getRandomValues(a); return a[0] >>> 0; } catch (e) {}
+  return Math.floor(Math.random() * 4294967296) >>> 0;
+}
+function freshDigSeed() { return digSeed(SAVE.museum.length, FRAMES, draw32()); }
 function newSite(seed, depth) {
-  G.seed = seed === undefined ? (seedFromString('site' + (SAVE.museum.length) + ':' + Math.floor(FRAMES))) : seed;
+  G.seed = seed === undefined ? freshDigSeed() : seed;
   G.depth = depth === undefined ? depthFor(SAVE.museum.length) : depth;
   G.site = makeSite(G.seed, G.depth);
   G.dig = newDig(G.site);
@@ -3275,7 +3298,7 @@ function openJournal() {
   el('jourEmpty').hidden = !!(m.length || SAVE.sites);
   showScreen('Journal');
 }
-function openHall() {
+function openHall(newest) {
   var hall = el('hall');
   hall.innerHTML = '';
   var i, crates = SAVE.crates || [];
@@ -3292,6 +3315,14 @@ function openHall() {
   for (i = 0; i < crates.length; i++) hall.appendChild(cratePlinth(crates[i], i));
   for (i = 0; i < SAVE.museum.length; i++) hall.appendChild(plinthFor(SAVE.museum[i], i));
   showScreen('Hall');
+  /* ⛔ THE HALL OPENS ON THE NEWEST (Play queue round three). It opened scrolled to the first specimen ever dug, so
+     the animal you had just brought home was a long swipe away. The newest stands centred; unopened crates are
+     the one thing newer, so while one waits (and nothing was just unpacked) the hall opens at the crates. */
+  var last = hall.lastElementChild;
+  if (last && SAVE.museum.length && (newest || !nc)) {
+    var hr = hall.getBoundingClientRect(), lr = last.getBoundingClientRect();
+    hall.scrollLeft += (lr.left + lr.width / 2) - (hr.left + hr.width / 2);
+  } else hall.scrollLeft = 0;
 }
 /* a specimen somebody sent, still in its crate */
 function cratePlinth(c, ix) {
@@ -3596,7 +3627,7 @@ function unpackCrate(ix) {
     condition: c.condition, dedicated: c.dedicated, from: c.from });
   saveNow();
   AUDIO.play('jacket');
-  openHall();
+  openHall(true);
   return c;
 }
 
@@ -3623,7 +3654,7 @@ function boot() {
   el('btnMenuClose').addEventListener('click', function () { el('scrMenu').classList.remove('on'); });
   el('btnNewSite').addEventListener('click', function () {
     el('scrMenu').classList.remove('on');
-    newSite(seedFromString('s' + FRAMES + ':' + SAVE.museum.length), G.depth);
+    newSite(mixSeed(seedFromString('s' + FRAMES + ':' + SAVE.museum.length), draw32()), G.depth);
   });
   el('btnToMuseum').addEventListener('click', function () {
     el('scrMenu').classList.remove('on'); openHall();
@@ -3827,6 +3858,8 @@ window.STRATA_TEST = {
   view: function () { return V; },
   dig: function () { return G.dig; },
   frames: function () { return FRAMES; },
+  /* two dig seeds from exactly the same state (one call, same frame, same museum), through the real draw */
+  digSeeds: function () { return [freshDigSeed(), freshDigSeed()]; },
   screen: function () { return G.screen; },
   site: function (seed, depth) { newSite(seed === undefined ? 4242 : seed, depth || 0); },
   toScreen: function (x, y) { return { x: sx(x), y: sy(y) }; },

@@ -136,7 +136,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
 (function(){ try{ var n=+(localStorage.getItem("wardian_launches")||0)||0;
   localStorage.setItem("wardian_launches",String(n+1));
   if(n<1&&!localStorage.getItem("lw_wardian_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
-<script src="/music-unlocks.js?v=20261113b" defer></script>
+<script src="/music-unlocks.js?v=20261114a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WARDIAN</h1>
@@ -204,7 +204,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
     <p class="tiny">This one keeps his habit. Night falls in it when night falls outside your window. Nothing in it can die, get sick, or leave.</p>
     <p class="tiny">Sky Wolf Studio</p>
     <div class="spacer"></div>
-    <div class="row"><a class="btn small ghost" id="lnkPrivacy" href="privacy.html?v=20261113b" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
+    <div class="row"><a class="btn small ghost" id="lnkPrivacy" href="privacy.html?v=20261114a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
     <button class="btn small ghost" id="btnAboutBack">BACK</button></div>
   </div>
 
@@ -2388,7 +2388,7 @@ function draw(state) {
 }
 
 /* ========================= 17. INPUT ========================= */
-var STAMP = '20261113b';
+var STAMP = '20261114a';
 var PREFERS_STILL = false;
 var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
 /* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
@@ -2809,7 +2809,10 @@ function lettersEarned(state) {
 /* the hint the jar is ready to offer, one at a time, in order, unlocked by days */
 function hintFor(state) {
   var n = Math.min(WORDS.hints.length, Math.max(1, Math.floor(state.dayCount / 2) + 1));
-  return WORDS.hints.slice(0, n);
+  var out = WORDS.hints.slice(0, n);
+  /* the Play app offers no sky switch, so the journal does not point at one (see IN_TWA) */
+  if (IN_TWA) out = out.filter(function (h) { return h.indexOf('listen to your sky') < 0; });
+  return out;
 }
 
 /* ========================= 20. JOURNAL AND POUCH ========================= */
@@ -3139,8 +3142,22 @@ function fetchWeather(lat, lon) {
     weatherState('The jar could not reach the sky just now. It is running on the clock.');
   });
 }
+/* ⛔ THE PLAY APP DOES NOT LISTEN TO THE SKY (Play queue round three, a default for the first release). The sky sends
+   the phone's position, rounded to about a kilometre, to api.open-meteo.com; in the Play app that is a location
+   permission and a data safety line for one quiet feature, so inside the Play app (a TWA: an android-app referrer on
+   its first page, kept for the session, or the installed standalone window on Android) the button, its line and the
+   journal's hint about it are not shown and nothing asks for a location. The web keeps all of it. */
+var IN_TWA = (function () {
+  var t = false;
+  try {
+    t = document.referrer.indexOf('android-app://') === 0 || sessionStorage.getItem('wardian_twa') === '1' ||
+      !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches && /Android/i.test(navigator.userAgent));
+    if (t) sessionStorage.setItem('wardian_twa', '1');
+  } catch (e) {}
+  return t;
+})();
 function askWeather() {
-  if (WEATHER_BUSY) return;
+  if (WEATHER_BUSY || IN_TWA) return;
   if (!navigator.geolocation) {
     weatherState('This device does not offer a location. The jar runs on the clock.');
     return;
@@ -3159,7 +3176,7 @@ function askWeather() {
   }, { timeout: CONFIG.GEO_TIMEOUT_MS, maximumAge: CONFIG.WEATHER_CACHE_MIN * 60000 });
 }
 function weatherTick() {
-  if (!SETTINGS.weather || WEATHER_BUSY) return;
+  if (!SETTINGS.weather || WEATHER_BUSY || IN_TWA) return;
   if (G.weatherAt && Date.now() - G.weatherAt < CONFIG.WEATHER_CACHE_MIN * 60000) return;
   if (!navigator.geolocation) return;
   WEATHER_BUSY = true;
@@ -3456,6 +3473,10 @@ function boot() {
   REDUCED = PREFERS_STILL || !SETTINGS.motion;
   runCatchUp();
   renderPouchBar();
+  if (IN_TWA) {
+    SETTINGS.weather = 0; G.weather = null;
+    el('btnWeather').hidden = true; el('weatherState').hidden = true;
+  }
   syncSettings();
   if (SETTINGS.weather && G.weather) {
     weatherState('Your sky was ' + weatherWord(G.weather) + ' when the jar last looked.');

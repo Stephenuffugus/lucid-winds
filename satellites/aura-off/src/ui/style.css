@@ -965,6 +965,10 @@ body[data-stage="farmeo"] #you{
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
   padding:1px;               /* so a focus ring is not clipped by the scroller */
+  /* ⛔ LOOKED AT (Play queue round two, 412 x 915): the fade below is on whether or not the grid scrolls, so with
+     three moves the second row always lost its last 16 px into the hype bar and read as a cut card. The grid
+     carries 16 px of empty foot for the fade to eat; a scrolling grid still dissolves its fold. */
+  padding-bottom:16px;
   /* A half-visible card at the fold reads as a rendering fault. Dissolve the
      last few pixels instead, which reads as "keep going". */
   -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 16px),transparent 100%);

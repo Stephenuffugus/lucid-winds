@@ -22,7 +22,7 @@
 
 <a class="back" href="./">‹ Back to Wardian</a>
 <h1>WARDIAN · Privacy Policy</h1>
-<div class="sub">Last updated 13 November 2026 · Sky Wolf Studio</div>
+<div class="sub">Last updated 14 November 2026 · Sky Wolf Studio</div>
 
 <div class="lead">
   <strong>Wardian lives on your phone. It collects nothing about you and keeps nothing about you anywhere else.</strong>
@@ -35,6 +35,8 @@
   <li>Your jar, under the key <code>lw_wardian_v1</code>: what grows in it and what you placed in it, the journal and
     the pouch, the time you last looked in, the last weather word and temperature if you let the jar listen to your sky
     (never your location), and your settings (sound, motion, tilt, weather, northern or southern seasons).</li>
+  <li>How many times you have opened the game, under <code>wardian_launches</code>. It is used only to keep the studio's
+    song card off your first screen.</li>
   <li>The studio's music: which of its songs you have unlocked by playing, and how long and on how many days you
     have played, under <code>sws_game_unlocks</code> and keys that begin <code>sws_music</code>. If you use the music
     player, it also keeps its volume, the last song and any playlist you make, under <code>sws_music_state</code> and
@@ -48,11 +50,14 @@ In reads such a text back.</p>
 Wardian app (Android Settings, Apps, Wardian, Storage, Clear storage), or on the web clear this site's data in your
 browser. There is no copy anywhere else.</p>
 
-<h2>Your sky (off unless you turn it on)</h2>
-<p>Settings has a button, Let The Jar Listen To Your Sky. It is off at the start. If you tap it, your phone asks
-whether to share your location. If you allow it, the game rounds your position to about a kilometre and asks
-<code>api.open-meteo.com</code>, a free weather service, for the current weather there. That request carries the
-rounded position and nothing else about you. While the setting is on it asks again at most about once an hour. Your location is
+<h2>Your sky (on the web only, and off unless you turn it on)</h2>
+<p>On the web, Settings has a button, Let The Jar Listen To Your Sky. It is off at the start. The Google Play app does
+not have this button and never asks for your location.</p>
+<p>What it sends, when it is on: if you tap it, your phone asks whether to share your location. If you allow it, the
+game rounds your latitude and longitude to two decimal places (about a kilometre) and sends that rounded position to
+<code>api.open-meteo.com</code> (Open-Meteo, a free weather service) to ask for the current weather there. Like any
+server, Open-Meteo also sees your device's internet (IP) address with the request. Nothing else goes with it: no name,
+no account, nothing about your jar. While the setting is on it asks again at most about once an hour. Your location is
 never stored and never put on a photograph. Tap the button again and the setting goes off and the saved weather is cleared; deny the location and the jar
 runs on the clock alone.</p>
 
@@ -71,12 +76,13 @@ connection.</p>
 to your phone's share sheet, or saved as a download, only when you tap it. The game uploads nothing.</p>
 
 <h2>Permissions</h2>
-<p>Location, only if you turn on the sky, as above. Tilt, only if you turn it on: the jar then reads your phone's
+<p>Location, only on the web and only if you turn on the sky, as above; the Google Play app never asks for it. Tilt, only if you turn it on: the jar then reads your phone's
 motion on the device to tip the jar, and some phones ask your permission first. Nothing is sent. No camera, no
 microphone, no contacts. On phones that support it, some moments give a short vibration.</p>
 
 <h2>The Google Play app and the web</h2>
-<p>The Google Play app and the web page at <code>lucidwinds.com</code> run the same game and do the same things.</p>
+<p>The Google Play app and the web page at <code>lucidwinds.com</code> run the same game and do the same things,
+except that the Google Play app has no sky setting and never asks for or sends a location.</p>
 
 <h2>Children</h2>
 <p>Wardian collects no personal information from anyone, children included.</p>

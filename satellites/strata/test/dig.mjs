@@ -25,6 +25,11 @@ say(!!dig && dig.h >= 56 && dig.onTop, 'DIG is a reachable target on the title')
 await tap(page, '#btnDig');
 await waitFrames(page, 3);
 say((await page.evaluate(() => STRATA_TEST.screen())) === 'Dig', 'one press opens a cliff');
+/* EVERY FOSSIL IS THE ONLY ONE (Play queue round three): two dig seeds made from exactly the same state, the same
+   frame and the same museum, through the game's real random draw, are not the same seed. Watched to fail with the
+   draw pinned to 0 (the seed the game made before: museum size and frame count only). */
+const two = await page.evaluate(() => STRATA_TEST.digSeeds());
+say(two[0] !== two[1], 'two digs from the same starting state get different seeds (' + two[0] + ', ' + two[1] + ')');
 /* ⛔ AND THEN PIN THE SITE. Pressing DIG makes a FRESH one, seeded off the
    frame count, so this gate was working on a different animal every run and
    went red about one run in four when the bone it picked happened to sit near

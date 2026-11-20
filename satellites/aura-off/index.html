@@ -14,7 +14,7 @@
 <!-- BUILD STAMP. Bump this AND the matching BUILD in sw.js on every deploy.
      A deployed page can then be proved new by grepping the live HTML for the
      stamp, rather than by trusting a 200. -->
-<meta name="build" content="20260829b">
+<meta name="build" content="20261114b">
 
 <title>AURA OFF</title>
 
@@ -26,8 +26,41 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Aura Off">
 
-<link rel="stylesheet" href="src/ui/style.css?v=20260829b">
-<script src="/music-unlocks.js" defer></script>
+<link rel="stylesheet" href="src/ui/style.css?v=20261114b">
+<style id="musicHeld">/* the soundtrack held (SWS_MANNERS sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
+.sws-music-held #sws-music-chip,.sws-music-held #sws-music-pill,.sws-music-held #sws-music-toast{display:none!important}</style>
+<script id="musicFirst">/* ⛔ THE SOUNDTRACK'S MANNERS, 20261114a (Play queue, the recipe of Whistlestop and its four). No song card, pill
+   or Music button over a new player's first screen, over a list or over the board. on a new player's FIRST launch (never launched, no save) the script is held from here, with the shared script's
+   own SWS_MUSIC_HOLD flag; the game calls SWS_MANNERS.hold(on) as screens change (held in the fit check, the duel, the result and the circuit; the Music button lives on the title) and SWS_MANNERS.brk(still)
+   at a natural break: the first break lets a first launch go and shows a song that waited (reveal), if `still` says
+   the break is still on screen 1.4 s later. hold() alone sets an inline display none that the script's reseat
+   (applyCorner rewrites the chip's whole style) can undo, so a root class and one !important rule keep the chip
+   hidden. /music-unlocks.js itself is not edited. */
+(function () {
+  var first = false, n = 0;
+  try { n = +(localStorage.getItem("auraoff_launches") || 0) || 0;
+    localStorage.setItem("auraoff_launches", String(n + 1));
+    first = n < 1 && !localStorage.getItem("skywolf:auraoff:v1"); } catch (e) {}
+  var M = { first: first, want: false, sent: false, t: 0 };
+  if (M.first || M.want) { window.SWS_MUSIC_HOLD = true; M.sent = true; }
+  function sync() {
+    var on = M.want || M.first;
+    try { document.documentElement.classList.toggle("sws-music-held", on); } catch (e) {}
+    try { var m = window.SWSMusic; if (m && m.hold && on !== M.sent) { m.hold(on); M.sent = on; } } catch (e) {}
+  }
+  window.SWS_MANNERS = {
+    hold: function (on) { M.want = !!on; sync(); },
+    brk: function (still) {
+      M.first = false; sync(); clearTimeout(M.t);
+      M.t = setTimeout(function () {
+        try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+      }, 1400);
+    }
+  };
+  sync();
+  document.addEventListener("DOMContentLoaded", sync);
+})();</script>
+<script src="/music-unlocks.js?v=20261114b" defer></script>
 </head>
 <body>
 <div class="stage">
@@ -105,9 +138,10 @@
     <p>No words, no contact. Two people and a crowd. Reference everything, repeat nothing, and never look like you're trying.</p>
     <button class="btn" id="startBtn">Step up</button>
     <button class="btn ghost" id="howBtn">How it scores</button>
+    <a class="btn ghost" id="privacyLink" href="privacy.html?v=20261114b" style="text-decoration:none">Privacy</a>
   </div>
 </div>
-<script type="module" src="src/main.js?v=20260829b"></script>
+<script type="module" src="src/main.js?v=20261114b"></script>
 
 <!-- ==========================================================================
      SERVICE WORKER REGISTRATION - DEFENSIVE ON PURPOSE
@@ -132,7 +166,7 @@
     if (!secure) return;
     window.addEventListener('load', function () {
       try {
-        navigator.serviceWorker.register('sw.js?v=20260829b', { scope: './' })
+        navigator.serviceWorker.register('sw.js?v=20261114b', { scope: './' })
           .then(function (reg) { try { reg.update(); } catch (e) {} })
           .catch(function () { /* offline support unavailable; the game is fine */ });
       } catch (e) { /* ignore */ }

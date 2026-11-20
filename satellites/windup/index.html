@@ -1,14 +1,47 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#C9A227">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261114c">
+<link rel="icon" href="./icon-192.png?v=20261114c">
+<link rel="manifest" href="./manifest.webmanifest?v=20261114c">
 <!-- ⛔ THE FLEET'S MUSIC CHIP. This game and Inkswing were the only two of the
      twelve without it, while both DECISIONS files said in writing that the
      bottom left 120 by 120 was being kept clear for it. A corner reserved for
      something that was never included is just dead space. Added 2026-09-07. -->
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<style id="musicHeld">/* the soundtrack held (SWS_MANNERS sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
+.sws-music-held #sws-music-chip,.sws-music-held #sws-music-pill,.sws-music-held #sws-music-toast{display:none!important}</style>
+<script id="musicFirst">/* ⛔ THE SOUNDTRACK'S MANNERS, 20261114a (Play queue, the recipe of Whistlestop and its four). No song card, pill
+   or Music button over a new player's first screen, over a list or over the board. the game opens straight onto its board, so the script is held from boot on every launch and lets go only on a menu, with the shared script's
+   own SWS_MUSIC_HOLD flag; the game calls SWS_MANNERS.hold(on) as screens change (held on the box, the shelf, the gift screens and export; the Music button lives in the menu) and SWS_MANNERS.brk(still)
+   at a natural break: the first break lets a first launch go and shows a song that waited (reveal), if `still` says
+   the break is still on screen 1.4 s later. hold() alone sets an inline display none that the script's reseat
+   (applyCorner rewrites the chip's whole style) can undo, so a root class and one !important rule keep the chip
+   hidden. /music-unlocks.js itself is not edited. */
+(function () {
+  var first = false, n = 0;
+  try { n = +(localStorage.getItem("windup_launches") || 0) || 0;
+    localStorage.setItem("windup_launches", String(n + 1));
+    first = n < 1 && !localStorage.getItem("lw_windup_v1"); } catch (e) {}
+  var M = { first: first, want: true, sent: false, t: 0 };
+  if (M.first || M.want) { window.SWS_MUSIC_HOLD = true; M.sent = true; }
+  function sync() {
+    var on = M.want || M.first;
+    try { document.documentElement.classList.toggle("sws-music-held", on); } catch (e) {}
+    try { var m = window.SWSMusic; if (m && m.hold && on !== M.sent) { m.hold(on); M.sent = on; } } catch (e) {}
+  }
+  window.SWS_MANNERS = {
+    hold: function (on) { M.want = !!on; sync(); },
+    brk: function (still) {
+      M.first = false; sync(); clearTimeout(M.t);
+      M.t = setTimeout(function () {
+        try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+      }, 1400);
+    }
+  };
+  sync();
+  document.addEventListener("DOMContentLoaded", sync);
+})();</script>
+<script src="/music-unlocks.js?v=20261114c" defer></script>
 <title>WINDUP</title>
 <style>
 :root{
@@ -70,6 +103,10 @@ textarea{min-height:76px;resize:none}
   display:none;gap:8px}
 #punchBar.on{display:flex}
 #punchBar .btn{flex:1 1 0;padding:10px 6px;font-size:.84rem}
+/* the shelf is a column of whole width cards; with no rule they wrapped by the length of each name, two to a row
+   then one, at three different widths (seen at 412 x 915, Play queue round four) */
+#shelfList{display:flex;flex-direction:column;gap:8px;width:100%}
+#shelfList .btn{width:100%}
 #toast{position:fixed;left:50%;bottom:calc(96px + var(--safeB));transform:translateX(-50%);
   background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;font-size:.82rem;
   z-index:40;opacity:0;pointer-events:none;transition:opacity 170ms ease-out;max-width:84%;
@@ -115,6 +152,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
       <button class="btn" id="btnMotion">MOTION ON</button>
       <button class="btn" id="btnSwing">SWING ON</button>
       <button class="btn" id="btnHints">CHORD HINTS OFF</button>
+      <a class="btn" id="lnkPrivacy" href="privacy.html?v=20261114c" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <p class="tiny">Sky Wolf Studio</p>
       <button class="btn ghost" id="btnMenuClose">CLOSE</button>
     </div>
@@ -154,7 +192,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
       <button class="btn big" id="btnExpAudio">AUDIO</button>
       <button class="btn big" id="btnExpImage">STRIP IMAGE</button>
       <button class="btn big" id="btnExpPdf">PRINTABLE STRIP</button>
-      <p class="tiny">The printable strip is beta. Measure one against a real strip before you cut.</p>
+      <p class="tiny" id="pdfNote">The printable strip is beta. Measure one against a real strip before you cut.</p>
       <button class="btn ghost" id="btnExportBack">BACK</button>
     </div>
   </div>
@@ -1158,7 +1196,7 @@ function stealVoices(A, now) {
   }
 }
 /* ============================ 17. THE PAGE ============================ */
-var STAMP = '20260907c';
+var STAMP = '20261114c';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0 };
 var G = { screen: 'box', strip: null, audio: null, ready: false,
@@ -1550,6 +1588,7 @@ function crankStart(x, y) {
   /* ⛔ a sample within the dead zone of the hub has an angle that jumps by half
      a turn when the finger crosses the centre; those samples are ignored. */
   G.cranking = true;
+  if (hint.stay) { hint.stay = false; el('hint').classList.remove('on'); }
   G.crankPrev = d < CONFIG.CRANK_DEAD_PX ? null : angleTo(x, y);
   G.crankSpeed = 0;
   return true;
@@ -1777,11 +1816,15 @@ function punchRowAt(y) {
 }
 function punchStepAt(x) {
   var P = punchLayout();
-  return Math.round((x - P.x) / P.stepPx + PUN.scroll);
+  return Math.round((x - P.x - P.stepPx * 1.5) / P.stepPx + PUN.scroll);
 }
 function punchX(step) {
   var P = punchLayout();
-  return P.x + (step - PUN.scroll) * P.stepPx;
+  /* ⛔ THE GRIP MARGIN IS PAPER TOO (Play queue round two). Step 0 sat on the paper's very edge, so the first
+     note's hole was half off the strip and the pink margin, drawn clamped to the edge, landed to the RIGHT of the
+     red line, over the notes. The strip now starts a margin and a half before step 0: the margin is on the paper,
+     left of the line, and the first hole is whole. punchStepAt reads the same lead. */
+  return P.x + P.stepPx * 1.5 + (step - PUN.scroll) * P.stepPx;
 }
 function punchY(row) {
   var P = punchLayout();
@@ -1831,16 +1874,36 @@ function drawPunch(ctx) {
   var mx = punchX(0);
   if (mx > P.x - 40) {
     ctx.fillStyle = 'rgba(180,60,40,.14)';
-    ctx.fillRect(Math.max(P.x, mx - P.stepPx * 1.5), P.y, Math.min(P.stepPx * 1.5, mx - P.x + P.stepPx * 1.5), P.h);
+    var bx0 = Math.max(P.x, mx - P.stepPx * 1.5), bw = mx - bx0;
+    ctx.fillRect(bx0, P.y, bw, P.h);
     ctx.strokeStyle = 'rgba(180,60,40,.7)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(mx, P.y);
     ctx.lineTo(mx, P.y + P.h);
     ctx.stroke();
+    /* ⛔ LOOKED AT (Play queue round two): a pink band with no word on it reads as a fault. It says what it is,
+       up its own length, only while the whole band is on the paper. */
+    if (bw >= P.stepPx * 1.2) {
+      ctx.save();
+      ctx.translate(bx0 + bw / 2, P.y + P.h / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.font = '600 12px ui-rounded, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(150,50,34,.62)';
+      ctx.fillText('THE BOX GRIPS THE PAPER HERE, SO NO HOLES', 0, 0);
+      ctx.restore();
+    }
   }
-  /* the holes */
+  /* the holes. ⛔ LOOKED AT (Play queue round two): a hole past the paper's right edge was drawn half on the paper
+     and half on the table, which read as a cut hole. The holes are clipped to the paper, and the last stretch of
+     paper fades into the table so the strip reads as going on, which it does (drag to scroll). */
   var hr = Math.max(4, Math.min(9, P.rowH * 0.33));
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(P.x, P.y, P.w, P.h);
+  ctx.clip();
   for (i = 0; i < strip.holes.length; i++) {
     var h = strip.holes[i];
     var hx = punchX(h[0]);
@@ -1858,6 +1921,12 @@ function drawPunch(ctx) {
       ctx.stroke();
     }
   }
+  ctx.restore();
+  var fade = ctx.createLinearGradient(P.x + P.w - 26, 0, P.x + P.w, 0);
+  fade.addColorStop(0, 'rgba(36,24,18,0)');
+  fade.addColorStop(1, 'rgba(36,24,18,.85)');
+  ctx.fillStyle = fade;
+  ctx.fillRect(P.x + P.w - 26, P.y, 26, P.h);
   /* ⛔ CHORD HINTS ARE OFF BY DEFAULT. They are a crutch that turns a music box
      into a spreadsheet, and the design asks for them only as an option: the
      rows a third and a fifth from a hole already punched, ghosted in its
@@ -2061,12 +2130,15 @@ function haptic(ms) {
   if (!SETTINGS.motion) return;
   try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
 }
-function hint(msg) {
+/* ⛔ a new player's FIRST hint stays until they do the thing (`stay`, Play queue 20261114a): it showed for three
+   seconds and a stranger looking at the board a moment later had no line telling them what to do (seen at 412 x 915) */
+function hint(msg, stay) {
   var h = el('hint');
   h.textContent = msg;
   h.classList.add('on');
   clearTimeout(hint._h);
-  hint._h = setTimeout(function () { h.classList.remove('on'); }, 3200);
+  hint.stay = !!stay;
+  if (!stay) hint._h = setTimeout(function () { h.classList.remove('on'); }, 3200);
 }
 function kick() { if (!RAF && !document.hidden) RAF = requestAnimationFrame(frame); }
 
@@ -2112,6 +2184,20 @@ function seedShelf() {
     added++;
   }
   if (added) saveNow();
+}
+function diceRenames(name) {
+  var k;
+  if (!name || name === 'Untitled') return true;
+  for (k in STARTERS) if (STARTERS[k].name === name) return true;
+  return false;
+}
+function nextDiceName() {
+  var n = 0, i, m;
+  for (i = 0; i < SAVE.shelf.length; i++) {
+    m = /^Dice tune (\d+)$/.exec(SAVE.shelf[i].name || '');
+    if (m && +m[1] > n) n = +m[1];
+  }
+  return 'Dice tune ' + (n + 1);
 }
 function shelfPut(strip) {
   var i;
@@ -2174,6 +2260,11 @@ function showScreen(name) {
   G.screen = name.toLowerCase();
   document.body.classList.toggle('listing', name !== 'Box');
   fitCanvas();
+  /* the soundtrack's manners (see #musicFirst): the Music button lives in the menu, and opening it is a break */
+  if (window.SWS_MANNERS) {
+    SWS_MANNERS.hold(name !== 'Menu');
+    if (name === 'Menu') SWS_MANNERS.brk(function () { return G.screen === 'menu'; });
+  }
 }
 function saveNow() {
   try {
@@ -2236,6 +2327,19 @@ function boot() {
   el('btnGiveBack').addEventListener('click', function () { showScreen('Menu'); });
   el('btnExportBack').addEventListener('click', function () { showScreen('Menu'); });
   el('btnExpPdf').addEventListener('click', function () { exportPdf(); });
+  /* ⛔ THE PLAY APP CARRIES NO BETA (Play queue 20261114a). The printable strip has not been measured against a real
+     strip yet, and a store app must not hand a stranger a button marked beta; inside the Play app (a TWA: an
+     android-app referrer on its first page, kept for the session, or the installed standalone window on Android)
+     the button and its line are not shown. The web keeps both. Print one real strip, then this can go. */
+  (function () {
+    var inTWA = false;
+    try {
+      inTWA = document.referrer.indexOf('android-app://') === 0 || sessionStorage.getItem('windup_twa') === '1' ||
+        !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches && /Android/i.test(navigator.userAgent));
+      if (inTWA) sessionStorage.setItem('windup_twa', '1');
+    } catch (e) {}
+    if (inTWA) { el('btnExpPdf').hidden = true; el('pdfNote').hidden = true; }
+  })();
   el('btnExpImage').addEventListener('click', function () { exportImage(); });
   el('btnExpAudio').addEventListener('click', function () { exportAudio(); });
   el('btnShelf').addEventListener('click', function () { renderShelf(); showScreen('Shelf'); });
@@ -2299,7 +2403,7 @@ function boot() {
   bindInput();
   /* a link opens as a parcel, not as a song */
   if (giftOpenLink(location.hash)) { kick(); }
-  else if (!SAVE.seen.crankHint) { SAVE.seen.crankHint = 1; saveNow(); setTimeout(function () { hint('Turn the crank.'); }, 700); }
+  else if (!SAVE.seen.crankHint) { SAVE.seen.crankHint = 1; saveNow(); setTimeout(function () { hint('Turn the crank.', true); }, 700); }
   /* ⛔ TEST MODE ONLY, and it was not: fifteen key buttons sat across the bottom
      third of the screen on top of the PUNCH button in the very first shot. */
   if (/[?&]keys=1/.test(location.search)) buildTestKeys();
@@ -2366,6 +2470,7 @@ function giftOpenLink(hash) {
   GIFT.strip = st;
   GIFT.opened = 0;
   GIFT.pull = 0;
+  GIFT.done = 0; GIFT.grabbed = false;
   G.strip = st;
   G.advanceMm = 0; G.readAt = -leadSteps();
   el('nameChip').textContent = st.name;
@@ -2539,7 +2644,7 @@ function drawWrapped(ctx) {
   ctx.textAlign = 'left';
 }
 function giftGrab(x, y) {
-  if (!GIFT.on || GIFT.opened) return false;
+  if (!GIFT.on || GIFT.done) return false;
   var e = GIFT.endAt;
   if (!e) return false;
   var d = Math.sqrt((x - e.x) * (x - e.x) + (y - e.y) * (y - e.y));
@@ -2807,8 +2912,16 @@ function bindInput() {
   cv.addEventListener('pointerdown', function (e) {
     var x = e.clientX, y = e.clientY;
     resumeAudio();
-    if (GIFT.on && !GIFT.opened) {
-      if (giftGrab(x, y)) { PT = { id: e.pointerId, mode: 'ribbon' }; e.preventDefault(); }
+    /* ⛔ AN INTERRUPTED PULL MUST NOT LOCK THE PARCEL (Play queue round four). This gate read GIFT.opened, which a
+       pull sets to a fraction as it goes; when the finger's release never reached the canvas (it slid off the
+       glass or over the toast), the fraction stayed, and every later press was refused: the parcel could never be
+       opened. It reads `done` now, the pull is captured to the canvas so its release always arrives, and a
+       cancelled pull springs back like a short one. */
+    if (GIFT.on && !GIFT.done) {
+      if (giftGrab(x, y)) {
+        PT = { id: e.pointerId, mode: 'ribbon' }; e.preventDefault();
+        try { cv.setPointerCapture(e.pointerId); } catch (x2) {}
+      }
       return;
     }
     if (PUN.on) {
@@ -2855,12 +2968,15 @@ function bindInput() {
   cv.addEventListener('pointerup', up);
   cv.addEventListener('pointercancel', function () {
     if (PT && PT.mode === 'crank') crankEnd();
+    if (PT && PT.mode === 'ribbon' && GIFT.opened < 1) { GIFT.grabbed = false; GIFT.opened = 0; GIFT.pull = 0; }
     PT = null;
   });
   el('btnPunch').addEventListener('click', function () { resumeAudio(); punchOpen(); });
   el('btnPunchDone').addEventListener('click', function () {
     punchClose();
     shelfPut(G.strip);
+    /* a strip punched and shelved is a break (see #musicFirst) */
+    if (window.SWS_MANNERS) SWS_MANNERS.brk(function () { return G.screen === 'box'; });
   });
   el('btnPlay').addEventListener('click', function () {
     resumeAudio();
@@ -2878,6 +2994,13 @@ function bindInput() {
     }
     PUN.scroll = Math.max(0, at - 2);
     standDownClear();
+    /* ⛔ A DICED TUNE IS A NEW TUNE (Play queue round four). Rolled onto a song from the box it kept that song's
+       name, so DONE put a second "Twinkle Twinkle" on the shelf beside the real one. A strip still wearing a box
+       song's name (or none) becomes "Dice tune N"; a strip the player named keeps its name. */
+    if (added && diceRenames(G.strip.name)) {
+      G.strip.name = nextDiceName();
+      el('nameChip').textContent = G.strip.name;
+    }
     toast(added + ' more notes');
     saveNow();
   });

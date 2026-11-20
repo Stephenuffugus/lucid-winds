@@ -186,7 +186,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 (function(){ try{ var n=+(localStorage.getItem("doohickey_launches")||0)||0;
   localStorage.setItem("doohickey_launches",String(n+1));
   if(n<1&&!localStorage.getItem("lw_doohickey_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
-<script src="/music-unlocks.js?v=20261113b" defer></script>
+<script src="/music-unlocks.js?v=20261114a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">DOOHICKEY</h1>
@@ -250,7 +250,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
       <p class="lede">Drag parts from the tray. Turn them with the dial.</p>
       <p class="lede">Press GO and watch.</p>
       <p class="lede">Tap to stop and fix it.</p>
-      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261113b" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
+      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261114a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <button class="btn ghost" id="btnHowBack">BACK</button>
     </div>
   </div>
@@ -2391,6 +2391,30 @@ function fitCanvas() {
     var tr = document.getElementById('tray');
     if (tr) { tr.style.top = ''; tr.style.height = ''; }
   }
+  placeStop();
+}
+/* ⛔ STOP NEVER SITS ON THE BELL (Play queue round two). In landscape STOP lives top centre because the top centre
+   is sky, but The Fan and the Balloon hangs its bell up there and a running machine had half the goal under the
+   button. If the bell would be under STOP, STOP steps sideways away from the bell until it is just clear of it. In portrait
+   STOP is on the drawer and never meets the board, so nothing moves. */
+function placeStop() {
+  var b = document.getElementById('btnStop');
+  if (!b || typeof G === 'undefined' || !G || !G.level) return;
+  b.style.marginLeft = '';
+  if (V.portrait) return;
+  var was = b.hidden; b.hidden = false;
+  var r = b.getBoundingClientRect(), f = G.level.fixed || [], i;
+  for (i = 0; i < f.length; i++) {
+    if (f[i].type !== 'bell') continue;
+    var bx = sx(f[i].x), by = sy(f[i].y), rad = ss(CONFIG.BELL_R) + 10;
+    if (bx + rad > r.left && bx - rad < r.right && by + rad > r.top && by - rad < r.bottom) {
+      var mid = (r.left + r.right) / 2, side = bx < mid ? 1 : -1;
+      var want = bx + side * (rad + r.width / 2 + 6);
+      b.style.marginLeft = Math.round(want - mid) + 'px';
+      break;
+    }
+  }
+  b.hidden = was;
 }
 /* the drawer's tiles live between its top edge and its FRONT, and the front is
    where GO sits. Set from here because the band layout above is the only place
@@ -2888,7 +2912,7 @@ function drawScene(ctx, world, level, touched) {
 }
 
 /* ========================= 17. THE GAME ========================= */
-var STAMP = '20261113b';
+var STAMP = '20261114a';
 var G = {
   screen: 'title', levelId: 0, machine: newMachine(), world: null, level: null,
   running: false, touched: [], result: null, runT: 0, sandbox: -1

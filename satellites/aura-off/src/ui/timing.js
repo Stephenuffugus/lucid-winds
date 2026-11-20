@@ -46,7 +46,7 @@
  * what the player actually did, and battle.js applies the swell.
  */
 
-import { AMP_RANGE } from '../engine/battle.js?v=20260829b';
+import { AMP_RANGE } from '../engine/battle.js?v=20261114b';
 
 /* -------------------------------------------------------------------------- */
 /* TUNING — the feel of the thumb, and nothing else                            */
