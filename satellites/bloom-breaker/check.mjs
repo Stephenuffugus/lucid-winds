@@ -162,9 +162,9 @@ function staticChecks(src) {
         on the studio list of pages where the fab covers a control. Assert the
         local override that moves it off. */
   ok('fab: bloom breaker overrides the fleet fab position',
-    /\.lwfb-fab\.lwfb-mini\{[^}]*left:12px !important/.test(src));
+    /\.lwfb-fab\.lwfb-mini(:not\(\[data-lwfb-parked="1"\]\))?\{[^}]*left:12px !important/.test(src));
   ok('fab: the override actually clears the right rail',
-    /\.lwfb-fab\.lwfb-mini\{[^}]*right:auto !important/.test(src));
+    /\.lwfb-fab\.lwfb-mini(:not\(\[data-lwfb-parked="1"\]\))?\{[^}]*right:auto !important/.test(src));
   /* and prove the geometry it is correcting, so the numbers cannot silently
      drift out from under the override */
   const ab = /#actionBtn\{[^}]*?bottom:calc\((\d+)px[^)]*\)[^}]*?height:(\d+)px/.exec(src);

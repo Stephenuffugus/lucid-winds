@@ -803,6 +803,7 @@ function rareCheck(state, clock) {
 }
 
 /* ========================= 8. SIM ========================= */
+function localDay(ms) { return Math.floor((ms - new Date(ms).getTimezoneOffset() * 60000) / 86400000); }
 function newJar(seedN, hemi) {
   var s = {
     v: CONFIG.SAVE_V, seed: seedN >>> 0, rngState: mixSeed(seedN, 7),
@@ -873,8 +874,11 @@ function tick(state, clock) {
   var dayIdx = Math.floor(clock.ms / 86400000);
   if (dayIdx !== state.sporeDay) {
     state.sporeDay = dayIdx; state.sporesToday = 0;
-    if (state.startMs) state.dayCount = Math.max(1, Math.floor((clock.ms - state.startMs) / 86400000) + 1);
   }
+  /* ⛔ the day chip counts the player's own calendar days, every tick (20 Nov polish). It used to be worked out
+     only when the UTC day turned, from whole 24 hour spans: a jar started in the evening still said "Day 1" the
+     next evening and could stay on it for nearly two days. */
+  if (state.startMs) state.dayCount = Math.max(1, localDay(clock.ms) - localDay(state.startMs) + 1);
   var perDay = Object.keys(state.discovered).length * CONFIG.SPORES_PER_SPECIES_PER_DAY;
   var want = Math.min(perDay, CONFIG.SPORES_DAILY_CAP);
   var perTick = want / (1440 / CONFIG.TICK_MIN);
@@ -1557,10 +1561,107 @@ function drawRoom(ctx, state) {
   tg.addColorStop(0, mixHex(R.floor, T.warm, 0.10));
   tg.addColorStop(1, mixHex(R.floor, '#000000', 0.45));
   ctx.fillStyle = tg; ctx.fillRect(0, ty, V.W, V.H - ty);
+  if (!LOOK_CLASSIC && !state.plate) drawSillLight(ctx, state, R, T, ty);
   ctx.fillStyle = 'rgba(0,0,0,.34)';
   ctx.beginPath();
   ctx.ellipse(wx(JAR_W / 2), ty + 3 * V.k, JAR_W * 0.56 * V.k, 7 * V.k, 0, 0, 6.2832);
   ctx.fill();
+}
+
+/* ⛔ THE SILL (20 Nov polish, STYLE.md). The jar stood on a flat brown fill that took a third of the screen. It
+   stands on a wooden sill now: grain that runs off toward the player and widens as it comes, lit from the window
+   side and falling dark on the other; the jar's own shadow thrown down the boards away from the light, its edge a
+   penumbra; and inside the shadow the soft pool of light that the water in the glass gathers. The whole sill is
+   painted once into its own canvas for each size, hour and room, so a frame costs one drawImage.
+   ?look=classic draws the flat sill. */
+var LOOK_CLASSIC = /[?&]look=classic(&|$)/.test(location.search);
+var SILL = { key: '', cv: null };
+function drawSillLight(ctx, state, R, T, ty) {
+  var key = [V.W, V.H, Math.round(ty), state.env.phase, state.backdrop || 'sill', Math.round(V.k * 100)].join(':');
+  if (SILL.key !== key) {
+    if (!SILL.cv) SILL.cv = document.createElement('canvas');
+    SILL.cv.width = V.W; SILL.cv.height = Math.max(1, V.H - Math.floor(ty));
+    paintSill(SILL.cv.getContext('2d'), state, R, T, Math.floor(ty));
+    SILL.key = key;
+  }
+  ctx.drawImage(SILL.cv, 0, Math.floor(ty));
+}
+function paintSill(c, state, R, T, ty) {
+  var k = V.k, W = V.W, H = V.H - ty, night = state.env.phase === 'night';
+  var dir = R.lx < 0.5 ? 1 : -1;
+  var str = Math.max(0.15, Math.min(1, (0.25 + T.amb) * R.warm));
+  c.clearRect(0, 0, W, H);
+  /* the grain: lines that run across the boards, closer together far off (at the jar's foot) and wider near the
+     player, each one a slow wave of its own, a few darker, a few catching the light */
+  var i, x, n = 34;
+  for (i = 0; i < n; i++) {
+    var u = i / n, y = H * u * u * 1.05 + 1.5 * k;
+    var dark = hash01(i, 81) < 0.62;
+    var al = dark ? 0.10 + 0.12 * hash01(i, 82) : 0.025 + 0.04 * hash01(i, 83);
+    c.strokeStyle = dark ? 'rgba(0,0,0,' + al.toFixed(3) + ')' : 'rgba(255,226,180,' + (al * (0.4 + str)).toFixed(3) + ')';
+    c.lineWidth = (0.6 + u * 2.2) * k;
+    var ph1 = hash01(i, 84) * 6.28, ph2 = hash01(i, 85) * 6.28, amp = (0.4 + u * 2.2) * k;
+    c.beginPath();
+    for (x = -10; x <= W + 10; x += 6) {
+      var yy = y + Math.sin(x / (W * 0.33) + ph1) * amp + Math.sin(x / (W * 0.11) + ph2) * amp * 0.12;
+      if (x === -10) c.moveTo(x, yy); else c.lineTo(x, yy);
+    }
+    c.stroke();
+  }
+  /* two seams where the boards meet: a dark gap with the lip of the next board catching the light */
+  var seams = [0.36, 0.72], j;
+  for (j = 0; j < seams.length; j++) {
+    var sy = H * seams[j] * seams[j] * 1.05 + 4 * k;
+    c.fillStyle = 'rgba(0,0,0,.34)'; c.fillRect(0, sy, W, (0.8 + seams[j] * 1.6) * k);
+    c.fillStyle = 'rgba(255,226,180,' + (0.05 + 0.06 * str).toFixed(3) + ')';
+    c.fillRect(0, sy + (0.8 + seams[j] * 1.6) * k, W, Math.max(1, 0.8 * k));
+  }
+  /* the light across the boards: bright on the window side, dark on the other */
+  var lx = dir > 0 ? 0 : W;
+  var lgr = c.createLinearGradient(lx, 0, W - lx, 0);
+  lgr.addColorStop(0, 'rgba(255,230,185,' + (0.05 * str).toFixed(3) + ')');
+  lgr.addColorStop(0.5, 'rgba(0,0,0,0)');
+  lgr.addColorStop(1, 'rgba(0,0,0,.22)');
+  c.fillStyle = lgr; c.fillRect(0, 0, W, H);
+  /* the jar's shadow, laid three times a little wider each time so its edge is a penumbra and not a cut */
+  var x0 = wx(-RIM), x1 = wx(JAR_W + RIM), bw = x1 - x0;
+  var len = Math.min(H, bw * 0.95), dx = dir * bw * 0.34, pass;
+  var sa = (0.46 * str + 0.14) / 3;
+  for (pass = 0; pass < 3; pass++) {
+    var sp = bw * (0.015 + pass * 0.035);
+    var sg = c.createLinearGradient(0, 0, 0, len);
+    sg.addColorStop(0, 'rgba(0,0,0,' + sa.toFixed(3) + ')');
+    sg.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = sg;
+    c.beginPath();
+    c.moveTo(x0 + bw * 0.04 - sp * 0.3, 0);
+    c.lineTo(x1 - bw * 0.04 + sp * 0.3, 0);
+    c.lineTo(x1 + dx + bw * 0.06 * dir + sp * 2, len);
+    c.lineTo(x0 + dx + bw * 0.06 * dir - sp * 2, len);
+    c.closePath(); c.fill();
+  }
+  /* the pool of light the water gathers, no outline: a wide soft pool and a small bright heart, warm green by
+     day, cold at night */
+  var col = night ? '170,205,230' : (state.env.phase === 'day' ? '228,240,170' : '246,206,140');
+  var a = (night ? 0.14 : 0.24) * str;
+  /* ⛔ the pool lies wholly below the 26 unit ring the seal gate watches (outsideInk): light on the sill is the
+     room's, but a bright heart inside that ring is exactly what the gate is there to catch */
+  var rx = bw * 0.30;
+  var cx = (x0 + x1) / 2 + dx * 0.25, cy = 30 * k + rx * 0.34 + rx * 0.1;
+  c.save();
+  c.globalCompositeOperation = 'lighter';
+  c.translate(cx, cy); c.scale(1, 0.34);
+  var pg = c.createRadialGradient(0, 0, 0, 0, 0, rx);
+  pg.addColorStop(0, 'rgba(' + col + ',' + a.toFixed(3) + ')');
+  pg.addColorStop(0.5, 'rgba(' + col + ',' + (a * 0.4).toFixed(3) + ')');
+  pg.addColorStop(1, 'rgba(' + col + ',0)');
+  c.fillStyle = pg; c.beginPath(); c.arc(0, 0, rx, 0, 6.2832); c.fill();
+  var hx = -dir * rx * 0.18, hr = rx * 0.32;
+  var hg = c.createRadialGradient(hx, -rx * 0.1, 0, hx, -rx * 0.1, hr);
+  hg.addColorStop(0, 'rgba(' + col + ',' + Math.min(0.8, a * 1.9).toFixed(3) + ')');
+  hg.addColorStop(1, 'rgba(' + col + ',0)');
+  c.fillStyle = hg; c.beginPath(); c.arc(hx, -rx * 0.1, hr, 0, 6.2832); c.fill();
+  c.restore();
 }
 
 /* ---- the jar shell, drawn twice: behind everything and in front of it ---- */
@@ -2388,7 +2489,7 @@ function draw(state) {
 }
 
 /* ========================= 17. INPUT ========================= */
-var STAMP = '20261114a';
+var STAMP = '20261120a';
 var PREFERS_STILL = false;
 var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
 /* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
@@ -2602,6 +2703,26 @@ function closeScreens() {
   var i, all = ['scrJournal', 'scrPouch', 'scrAbout'];
   for (i = 0; i < all.length; i++) el(all[i]).classList.remove('on');
 }
+
+/* ⛔ THE PHONE'S OWN BACK (20 Nov polish). Nothing listened to it, so inside the Play app the back gesture on the
+   journal, the pouch or a menu closed the whole game. Any open screen or sheet now holds one history entry; back
+   closes them all and leaves the jar; closing them with a button takes the entry away again. */
+var NAV = { held: false, skip: false };
+function anyOpen() { return !!document.querySelector('.screen.on, .sheet.on'); }
+function navSync() {
+  var open = anyOpen();
+  try {
+    if (open && !NAV.held) { history.pushState({ wardian: 1 }, ''); NAV.held = true; }
+    else if (!open && NAV.held) { NAV.held = false; NAV.skip = true; history.back(); }
+  } catch (e) {}
+}
+window.addEventListener('popstate', function () {
+  if (NAV.skip) { NAV.skip = false; return; }
+  NAV.held = false;
+  if (!anyOpen()) return;
+  closeScreens(); el('scrMenu').classList.remove('on'); el('scrSettings').classList.remove('on');
+});
+document.addEventListener('click', function () { setTimeout(navSync, 0); }, true);
 
 /* ========================= 18. SOUND ========================= */
 /* Three sounds, made on the fly, no files. The fleet's music chip owns music. */
@@ -3007,7 +3128,7 @@ function setBackdrop(id) {
    they are code and nobody reads them, and renaming them would touch the save. */
 function renderPouch() {
   var list = el('pouchList'), html = '', k, i;
-  el('sporeCount2').textContent = Math.floor(G.spores) + ' spores gathered';
+  el('sporeCount2').textContent = Math.floor(G.spores) + ' spores gathered. More gather each day, a few for every kind of thing the jar has met.';
   html += '<div class="cap" style="margin-top:2px">Seeds</div>';
   for (k in CONFIG.SEED_COST) {
     html += '<div class="shoprow"><span><span class="nm">' + FLORA[k].name
@@ -3595,8 +3716,10 @@ window.WARDIAN_TEST = {
     applyClock(G, clockFromMs(nowMs(), G.hemi));
     return G.tickN;
   },
+  /* the hour of the jar's OWN day (20 Nov): it set the hour of today's real date, so a jar aged a month by
+     advance() was put back to day one's date and its chip read "Day 8" over a four week jar in the store shots */
   setHour: function (h) {
-    var d = new Date(); d.setHours(h, 0, 0, 0);
+    var d = new Date(nowMs()); d.setHours(h, 0, 0, 0);
     NOW_OFF = d.getTime() - Date.now();
     G.lastSeen = nowMs();
     applyClock(G, clockFromMs(nowMs(), G.hemi));

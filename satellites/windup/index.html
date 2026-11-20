@@ -1196,7 +1196,7 @@ function stealVoices(A, now) {
   }
 }
 /* ============================ 17. THE PAGE ============================ */
-var STAMP = '20261114c';
+var STAMP = '20261120a';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0 };
 var G = { screen: 'box', strip: null, audio: null, ready: false,
@@ -1403,6 +1403,7 @@ function drawPaper(ctx) {
     ctx.beginPath();
     ctx.arc(hx, hy - 0.5, hr, 3.6, 5.8);
     ctx.stroke();
+    holeLip(ctx, hx, hy, hr);
   }
 }
 function rowY(row) {
@@ -1461,12 +1462,58 @@ function drawBox(ctx) {
   ctx.lineTo(read, L.win.y + L.win.h + 4);
   ctx.stroke();
 }
+/* ⛔ THE LAMP (20 Nov polish, STYLE.md). One warm lamp, up and to the left, falls on the two things a music box is:
+   the comb is polished brass now, each tine a rod with its dark side away from the lamp, a bright streak down its
+   length, a rounded tip and a thin shadow on the case beside it; and a punched hole is a hole, dark inside with the
+   lamp catching the cut lip on its far side. ?look=classic draws the flat comb and the plain dots. */
+var LOOK_CLASSIC = /[?&]look=classic(&|$)/.test(location.search);
+function holeLip(ctx, hx, hy, hr) {
+  if (LOOK_CLASSIC) return;
+  var g = ctx.createRadialGradient(hx - hr * 0.35, hy - hr * 0.35, 0, hx, hy, hr);
+  g.addColorStop(0, 'rgba(0,0,0,.55)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,238,200,.85)';
+  ctx.lineWidth = Math.max(1, hr * 0.22);
+  ctx.beginPath(); ctx.arc(hx, hy, hr - ctx.lineWidth * 0.5, 0.15, 1.75); ctx.stroke();
+}
+function brassTine(ctx, x, y0, w, len, bend, lit) {
+  var tipR = w * 0.5, y1 = y0 + len;
+  /* its shadow on the case, down and right of it */
+  ctx.fillStyle = 'rgba(0,0,0,.32)';
+  ctx.beginPath();
+  ctx.moveTo(x + w, y0 + 2); ctx.lineTo(x + w + 2.5, y0 + 4);
+  ctx.lineTo(x + w + 2.5 + bend, y1 + 1); ctx.lineTo(x + w + bend, y1 - tipR);
+  ctx.closePath(); ctx.fill();
+  /* the rod: across its width, a lit edge, a bright streak a third of the way in, and its dark side */
+  var g = ctx.createLinearGradient(x, 0, x + w, 0);
+  g.addColorStop(0, lit ? '#FFE9A8' : '#B28A2A');
+  g.addColorStop(0.28, lit ? '#FFF8DC' : '#F4D77A');
+  g.addColorStop(0.55, lit ? '#E8C25A' : '#B88F25');
+  g.addColorStop(1, '#4E3A08');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(x, y0);
+  ctx.lineTo(x + w, y0);
+  ctx.lineTo(x + w + bend, y1 - tipR);
+  ctx.arc(x + tipR + bend, y1 - tipR, tipR, 0, 3.1416);
+  ctx.closePath();
+  ctx.fill();
+  /* and the length falls away from the lamp */
+  var v = ctx.createLinearGradient(0, y0, 0, y1);
+  v.addColorStop(0, 'rgba(0,0,0,0)');
+  v.addColorStop(1, 'rgba(40,24,0,.35)');
+  ctx.fillStyle = v;
+  ctx.fill();
+}
 /* the comb: fifteen brass tines, longest at the low end, each one flicking when
    its row is struck */
 function drawComb(ctx) {
   var c = LAY.comb, i;
   var plate = ctx.createLinearGradient(0, c.y, 0, c.y + c.h * 0.34);
-  plate.addColorStop(0, '#A8842A');
+  plate.addColorStop(0, LOOK_CLASSIC ? '#A8842A' : '#E2BE5E');
+  if (!LOOK_CLASSIC) plate.addColorStop(0.35, '#B08A2C');
   plate.addColorStop(1, '#5C4708');
   ctx.fillStyle = plate;
   roundRect(ctx, c.x, c.y, c.w, Math.max(6, c.h * 0.30), 4);
@@ -1480,6 +1527,7 @@ function drawComb(ctx) {
     var x = c.x + i * slot + slot * 0.16;
     var wgt = G.flick[i] || 0;
     var bend = (REDUCED ? 0 : wgt) * Math.min(5, slot * 0.45);
+    if (!LOOK_CLASSIC) { brassTine(ctx, x, c.y + c.h * 0.26, slot * 0.66, len, bend, wgt > 0.02); continue; }
     var g = ctx.createLinearGradient(x, c.y, x, c.y + len);
     g.addColorStop(0, wgt > 0.02 ? '#FFEDB4' : '#C9A227');
     g.addColorStop(1, '#6E5310');
@@ -1913,6 +1961,7 @@ function drawPunch(ctx) {
     ctx.beginPath();
     ctx.arc(hx, hy, hr, 0, 6.2832);
     ctx.fill();
+    holeLip(ctx, hx, hy, hr);
     if (G.flick[h[1]] > 0.02 && Math.abs(h[0] - PUN.play) < 0.6) {
       ctx.strokeStyle = '#C9A227';
       ctx.lineWidth = 2.5;
@@ -2022,6 +2071,9 @@ function punchOpen() {
   el('btnPunch').hidden = true;
   el('nameChip').hidden = false;
   G.screen = 'punch';
+  /* the crank's hint lay over the punch paper's top row (20 Nov polish): it waits under the editor and comes back */
+  el('hint').classList.remove('on');
+  navSync();
 }
 function punchClose() {
   PUN.on = false;
@@ -2031,6 +2083,8 @@ function punchClose() {
   el('btnPunch').hidden = false;
   G.screen = 'box';
   saveNow();
+  if (hint.stay) el('hint').classList.add('on');
+  navSync();
 }
 /* AUTO PLAY, THE SWELL SCHEDULER. Two clocks. The audio clock owns every note:
    each hole is given its exact time on that clock up to AUTO_LOOKAHEAD ahead,
@@ -2265,10 +2319,35 @@ function showScreen(name) {
     SWS_MANNERS.hold(name !== 'Menu');
     if (name === 'Menu') SWS_MANNERS.brk(function () { return G.screen === 'menu'; });
   }
+  navSync();
 }
+/* ⛔ THE PHONE'S OWN BACK (20 Nov polish). Nothing listened to it, so inside the Play app the back gesture on the
+   shelf, the menu or the punch editor closed Windup. Anything but the box holds one history entry, and back does what
+   that screen's own button does: the shelf, give and export go to the menu, the menu and a gift go to the box, the
+   punch editor is DONE. Coming back to the box by a button takes the entry away again. */
+var NAV = { held: false, skip: false };
+function navSync() {
+  var away = G.screen !== 'box';
+  try {
+    if (away && !NAV.held) { history.pushState({ windup: 1 }, '', location.href); NAV.held = true; }
+    else if (!away && NAV.held) { NAV.held = false; NAV.skip = true; history.back(); }
+  } catch (e) {}
+}
+window.addEventListener('popstate', function () {
+  if (NAV.skip) { NAV.skip = false; return; }
+  NAV.held = false;
+  var sc = G.screen;
+  if (sc === 'punch') el('btnPunchDone').click();
+  else if (sc === 'shelf' || sc === 'give' || sc === 'export') showScreen('Menu');
+  else if (sc !== 'box') showScreen('Box');
+});
 function saveNow() {
   try {
     SAVE.settings = SETTINGS;
+    /* ⛔ the strip on the box is kept too (20 Nov polish): the box always woke on Twinkle Twinkle, so a tune punched
+       halfway and left for a phone call was gone when the phone dropped the page */
+    if (G && G.strip) SAVE.box = { name: G.strip.name, holes: G.strip.holes, wrap: G.strip.wrap,
+      dedication: G.strip.dedication || '', by: G.strip.by || '' };
     localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(SAVE));
   } catch (e) {}
 }
@@ -2316,8 +2395,10 @@ function boot() {
   V.ctx = V.cv.getContext('2d');
   loadSave();
   seedShelf();
-  G.strip = newStrip(STARTERS.twinkle);
+  G.strip = (SAVE.box && SAVE.box.holes && SAVE.box.holes.length) ? newStrip(SAVE.box) : newStrip(STARTERS.twinkle);
   el('nameChip').textContent = G.strip.name;
+  window.addEventListener('pagehide', saveNow);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) saveNow(); });
   fitCanvas();
   window.addEventListener('resize', function () { fitCanvas(); kick(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) kick(); });

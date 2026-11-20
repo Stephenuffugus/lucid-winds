@@ -93,12 +93,14 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .ls-endless .ed{ font-size:12px; color:var(--muted); margin-top:3px; }
 .ls-world{ margin-top:18px; }
 .ls-world h3{ font-size:14px; font-weight:900; color:var(--gold); letter-spacing:.03em; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
-.ls-world h3 .wnum{ background:var(--coal2); border:1px solid #3a4230; border-radius:6px; padding:1px 7px; font-size:10px; color:var(--muted); font-weight:700; }
-.ls-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+.ls-world h3 .wnum{ background:var(--coal2); border:1px solid #3a4230; border-radius:6px; padding:1px 7px; font-size:11px; color:var(--muted); font-weight:700; }
+/* 20 Nov polish: four to a row, so a level's name can be read (it was 8 px in a fifth of the width) */
+.ls-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .ls-cell{ aspect-ratio:1/1; min-height:48px; border-radius:12px; border:1px solid #3a4230; background:var(--coal2);
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:var(--cream); position:relative; padding:2px; }
 .ls-cell .lnum{ font-size:17px; font-weight:900; line-height:1; }
-.ls-cell .lnm{ font-size:8px; color:var(--muted); text-align:center; line-height:1.05; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ls-cell .lnm{ font-size:11px; color:var(--muted); text-align:center; line-height:1.1; max-width:100%; overflow:hidden; white-space:normal;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow-wrap:anywhere; }
 .ls-cell.locked{ opacity:.4; }
 .ls-cell.done{ border-color:var(--sage); background:linear-gradient(160deg,rgba(122,179,86,.14),var(--coal2)); }
 .ls-cell.done .lnm{ color:var(--sage); }
@@ -119,7 +121,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .card.equipped{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; }
 .card canvas{ width:100%; height:64px; border-radius:8px; background:#0a0d08; }
 .card .nm{ font-weight:800; font-size:13px; line-height:1.1; }
-.card .rar{ font-size:10px; text-transform:uppercase; letter-spacing:1px; font-weight:800; }
+.card .rar{ font-size:11px; text-transform:uppercase; letter-spacing:1px; font-weight:800; }
 .rar.common{ color:#b9c3a8 } .rar.rare{ color:#67b0ff } .rar.epic{ color:#c98bff } .rar.legendary{ color:var(--gold) }
 .card .act{ width:100%; min-height:48px; border-radius:10px; border:none; font-weight:800; font-size:13px; cursor:pointer; }
 .act.buy{ background:var(--gold); color:#241c06 } .act.buy.cant{ background:#3a3f30; color:#6f775f }
@@ -133,7 +135,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .toggle .kn{ position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#6f775f; transition:.15s; }
 .toggle.on{ background:var(--sage2); } .toggle.on .kn{ left:27px; background:#eafbe0; }
 .seg{ display:flex; gap:6px; }
-.seg button{ min-height:48px; padding:6px 12px; border-radius:10px; border:1px solid #3a4230; background:var(--coal); color:var(--muted); font-weight:700; font-size:12px; cursor:pointer; }
+.seg button{ min-height:48px; min-width:48px; padding:6px 10px; border-radius:10px; border:1px solid #3a4230; background:var(--coal); color:var(--muted); font-weight:700; font-size:12px; cursor:pointer; }
 .seg button.on{ background:var(--gold); color:#241c06; border-color:var(--gold); }
 
 /* in-play controls */
@@ -166,8 +168,16 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
    feedback.js is fleet-wide and not this game's to edit, so the override lives
    here: move the fab to the LEFT rail, clear of both the action button and the
    right-handed thumb arc that drives the paddle. */
-.lwfb-fab.lwfb-mini{ right:auto !important; left:12px !important;
+/* ⛔ AND ITS HEIGHT (20 Nov polish). feedback.js now places the fab by an inline TOP in pixels when it steps aside,
+   and with this BOTTOM held !important the circle stretched between the two: a 48 x 802 outlined pill ran down the
+   whole left edge of every screen and cut the first letters off the song card. Held to 48 tall, it stays a circle. */
+/* and it stands aside while feedback.js has the fab PARKED. The script parks it somewhere free by an inline inset,
+   and this rule's left:12px !important dragged it back on top of All Games; let go, it parked on the Music button in
+   the shop at 360 wide. Parked, it is not shown: it comes back the moment its own corner is free. */
+.lwfb-fab.lwfb-mini[data-lwfb-parked="1"]{ opacity:0 !important; pointer-events:none !important; }
+.lwfb-fab.lwfb-mini:not([data-lwfb-parked="1"]){ right:auto !important; left:12px !important;
   bottom:calc(18px + env(safe-area-inset-bottom,0px)) !important; }
+.lwfb-fab.lwfb-mini{ height:48px !important; max-height:48px !important; }
 .lwfb-fab.lwfb-mini .lwfb-fab-x{ left:auto !important; right:-30px !important; }
 </style>
 <!-- Same-origin Sunbeam SDK (2026-07-28: this game announced earn moments over
@@ -177,6 +187,36 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 <script>window.Sunbeam&&Sunbeam.init({gameId:"bloombreaker"}).catch(function(){});</script>
 <meta name="description" content="A botanical brick breaker with sixty levels, 24 powerups, and a boss.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/bloom-breaker/">
+<style id="musicHeld">/* the soundtrack held (SWS_MANNERS sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
+.sws-music-held #sws-music-chip,.sws-music-held #sws-music-pill,.sws-music-held #sws-music-toast{display:none!important}</style>
+<script id="musicFirst">/* ⛔ THE SOUNDTRACK'S MANNERS (20 Nov polish, the recipe of Windup and the Play queue). A new player's first
+   screen opened under a song card ("you unlocked a song and 1 more") before a ball had moved, and the New song and
+   Music buttons sat under the field all through a rally. The shared script is held on a first launch and while a
+   ball is on the field (SWS_MUSIC_HOLD before it runs, then its own hold()); a natural break (back on the menu, a
+   game over, the garden won) lets it go and shows a song that waited, if the break is still on screen 1.4 s later.
+   /music-unlocks.js itself is not edited. */
+(function () {
+  var first = false;
+  try { first = !localStorage.getItem("lw_brickbreaker_v1"); } catch (e) {}
+  var M = { first: first, want: false, sent: false, t: 0 };
+  if (M.first) { window.SWS_MUSIC_HOLD = true; M.sent = true; }
+  function sync() {
+    var on = M.want || M.first;
+    try { document.documentElement.classList.toggle("sws-music-held", on); } catch (e) {}
+    try { var m = window.SWSMusic; if (m && m.hold && on !== M.sent) { m.hold(on); M.sent = on; } } catch (e) {}
+  }
+  window.SWS_MANNERS = {
+    hold: function (on) { M.want = !!on; sync(); },
+    brk: function (still) {
+      M.first = false; sync(); clearTimeout(M.t);
+      M.t = setTimeout(function () {
+        try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+      }, 1400);
+    }
+  };
+  sync();
+  document.addEventListener("DOMContentLoaded", sync);
+})();</script>
 <script src="/music-unlocks.js" defer></script>
 </head>
 <body>
@@ -297,7 +337,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 <!-- WIN -->
 <div class="screen" id="scr-win">
   <div class="title" style="margin-top:16vh"><span class="l2" style="font-size:11vw">GARDEN</span><span class="l1" style="font-size:11vw">RECLAIMED</span></div>
-  <div class="sub" style="margin-top:14px">You broke the Warden and cleared all 16 fields.</div>
+  <div class="sub" style="margin-top:14px">You broke the Warden and cleared every field.</div>
   <div class="menu-stats">
     <div class="chip">Score <b id="winScore" style="margin-left:6px">0</b></div>
     <div class="chip coins"><span class="ico">🪙</span>+<span id="winCoins">0</span></div>
@@ -778,7 +818,7 @@ function cb(){ return CBPAL[store.settings.cb]||CBPAL['default']; }
 
 /* ================= BACKGROUNDS ================= */
 var BG_DRAW = {
-  'bg-default':function(g,t){ g.fillStyle=vgrad(g,0,0,VH,'#0d100c','#05060a'); g.fillRect(0,0,VW,VH);
+  'bg-default':function(g,t){ g.fillStyle=LOOK_CLASSIC?vgrad(g,0,0,VH,'#0d100c','#05060a'):midnightMoon(g); g.fillRect(0,0,VW,VH);
     g.fillStyle='rgba(230,230,255,0.5)'; for(var i=0;i<20;i++){ var x=(i*97+31)%VW, y=(i*53+17)%(VH*0.7); g.fillRect(x,y,1.4,1.4); } },
   'bg-greenhouse-dusk':function(g,t){ g.fillStyle=vgrad(g,0,0,VH,'#20301c','#0b0f0a'); g.fillRect(0,0,VW,VH);
     var rm=store.settings.reducedMotion; g.fillStyle='rgba(200,220,150,0.28)';
@@ -1399,6 +1439,32 @@ function update(dt){
 }
 
 /* ---------------- render ---------------- */
+/* ⛔ THE MOONLIGHT (20 Nov polish, STYLE.md). The field was black with twenty stars and the bricks floated on it with
+   nothing under them. One moon, up and to the left: a cool light lifts the top left of the field and falls away to
+   true black at the bottom right, and every brick throws its shadow down and to the right, away from it, so the
+   bramble stands off the dark garden. The moon is the Midnight scene's (the default) own gradient, turned (see
+   midnightMoon); the shadows fall in every scene, two filled paths a frame. Measured with the CPU slowed 4x: the
+   same frame time as before. ?look=classic draws the old flat field. */
+var LOOK_CLASSIC = /[?&]look=classic(&|$)/.test(location.search);
+/* the Midnight scene's moon: the scene's own single gradient fill, turned to run from the upper left and lifted
+   there, so the light costs nothing (a cached picture laid over the field, measured, cost a third of a frame) */
+var _moonG=null;
+function midnightMoon(g){
+  if(!_moonG){ _moonG=g.createLinearGradient(0,0,VW*0.55,VH);
+    _moonG.addColorStop(0,'#26331f'); _moonG.addColorStop(0.32,'#141a11'); _moonG.addColorStop(0.7,'#080a08'); _moonG.addColorStop(1,'#040508'); }
+  return _moonG;
+}
+function brickShadows(g){
+  /* one layer, plain shapes, one fill: two soft layers of rounded shapes cost a frame in four on a slow phone */
+  var i, b, R, dx=6, dy=9;
+  g.save(); g.fillStyle='rgba(0,0,0,0.62)'; g.beginPath();
+  for(i=0;i<S.bricks.length;i++){ b=S.bricks[i]; if(b.dead) continue; R=brickRect(b);
+    if(b.type==='bomb'||b.type==='mover'){ var r0=Math.min(R.w,R.h)/2; g.moveTo(R.x+R.w/2+dx+r0,R.y+R.h/2+dy); g.arc(R.x+R.w/2+dx,R.y+R.h/2+dy,r0,0,6.2832); }
+    else if(b.type==='gem'){ var gx=R.x+R.w/2+dx, gy=R.y+R.h/2+dy; g.moveTo(gx,gy-R.h/2); g.lineTo(gx+R.w/2,gy); g.lineTo(gx,gy+R.h/2); g.lineTo(gx-R.w/2,gy); g.closePath(); }
+    else g.rect(R.x+dx,R.y+dy,R.w,R.h);
+  }
+  g.fill(); g.restore();
+}
 function render(){
   var t=S.bg.t, i;
   ctx.setTransform(view.dpr,0,0,view.dpr,0,0);
@@ -1411,6 +1477,7 @@ function render(){
   // ground band + loss line below the paddle
   var soil=ctx.createLinearGradient(0,SOIL_Y,0,VH); soil.addColorStop(0,'rgba(40,30,20,0)'); soil.addColorStop(0.45,'rgba(32,23,14,0.7)'); soil.addColorStop(1,'rgba(16,11,7,0.96)'); ctx.fillStyle=soil; ctx.fillRect(0,SOIL_Y,VW,VH-SOIL_Y);
   ctx.strokeStyle='rgba(224,83,58,0.22)'; ctx.setLineDash([7,9]); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(0,LOSS_Y); ctx.lineTo(VW,LOSS_Y); ctx.stroke(); ctx.setLineDash([]);
+  if(!LOOK_CLASSIC) brickShadows(ctx);
   for(i=0;i<S.bricks.length;i++) drawBrick(ctx,S.bricks[i],t);
   if(S.fx.net>0){ ctx.save(); ctx.globalCompositeOperation='lighter'; for(var nlayer=0;nlayer<S.fx.net;nlayer++){ ctx.strokeStyle='rgba(122,208,110,'+(0.5-nlayer*0.15)+')'; ctx.lineWidth=3; ctx.beginPath(); var yy=LOSS_Y-4-nlayer*6; for(var xx=0;xx<=VW;xx+=16){ ctx.lineTo(xx,yy+Math.sin(xx*0.1+t*4)*3); } ctx.stroke(); } ctx.restore(); }
   if(S.fx.bumperT>0){ for(i=0;i<S.bumpers.length;i++){ var bm=S.bumpers[i]; var gr=ctx.createRadialGradient(bm.x,bm.y,2,bm.x,bm.y,bm.r); gr.addColorStop(0,'#ffe9a0'); gr.addColorStop(1,'#8a6f1e'); ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(bm.x,bm.y,bm.r,0,7); ctx.fill(); ctx.strokeStyle='#3a2c08'; ctx.lineWidth=2; ctx.stroke(); } }
@@ -1468,19 +1535,22 @@ function drawHUD(t){
   var g=ctx.createLinearGradient(0,0,0,64); g.addColorStop(0,'rgba(6,8,6,0.9)'); g.addColorStop(1,'rgba(6,8,6,0)'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,72);
   ctx.textBaseline='middle';
   // lives
-  ctx.font='18px sans-serif'; ctx.textAlign='left'; var lx=14; for(var i=0;i<Math.min(S.lives,6);i++){ ctx.fillStyle='#e0533a'; ctx.fillText('♥',lx+i*20,26); } if(S.lives>6){ ctx.fillStyle='#e8dcc8'; ctx.font='700 13px sans-serif'; ctx.fillText('x'+S.lives,lx+6*20,26); }
+  /* 20 Nov polish: the field is 540 wide and drawn to the screen, so 13 px here was under 9 on a 360 phone; every
+     line of the bar is at least 11.5 screen px */
+  var hp=function(b){ return Math.max(b, Math.ceil(11.5/(view.scale||1))); };
+  ctx.font='18px sans-serif'; ctx.textAlign='left'; var lx=14; for(var i=0;i<Math.min(S.lives,6);i++){ ctx.fillStyle='#e0533a'; ctx.fillText('♥',lx+i*20,26); } if(S.lives>6){ ctx.fillStyle='#e8dcc8'; ctx.font='700 '+hp(13)+'px sans-serif'; ctx.fillText('x'+S.lives,lx+6*20,26); }
   // coins
-  ctx.textAlign='right'; ctx.font='800 16px sans-serif'; ctx.fillStyle='#c8a84b'; ctx.fillText('🪙 '+S.coinsRun, VW-14, 26);
+  ctx.textAlign='right'; ctx.font='800 '+hp(16)+'px sans-serif'; ctx.fillStyle='#c8a84b'; ctx.fillText('🪙 '+S.coinsRun, VW-14, 26);
   // score
-  ctx.fillStyle='#e8dcc8'; ctx.font='800 15px sans-serif'; ctx.fillText(S.score.toLocaleString(), VW-14, 50);
+  ctx.fillStyle='#e8dcc8'; ctx.font='800 '+hp(15)+'px sans-serif'; ctx.fillText(S.score.toLocaleString(), VW-14, 50);
   // level
-  ctx.textAlign='center'; ctx.fillStyle='#8a9178'; ctx.font='700 13px sans-serif';
+  ctx.textAlign='center'; ctx.fillStyle='#8a9178'; ctx.font='700 '+hp(13)+'px sans-serif';
   var hudLabel = (S.mode==='endless') ? ('∞ Endless '+(S.endlessN+1)+' · '+curLevelName()) : ((S.levelIndex+1)+'/'+LEVELS.length+' · '+curLevelName());
   ctx.fillText(hudLabel, VW/2, 20);
   // active powerup icons
   var f=S.fx, act=[]; if(f.wideT>0)act.push('↔'); if(f.laserT>0)act.push('🔫'); if(f.stickyT>0)act.push('🧲'); if(f.slowT>0)act.push('🐌'); if(f.fastT>0)act.push('⏩'); if(f.fireT>0)act.push('🔥'); if(f.gravT>0)act.push('🌀'); if(f.portalT>0)act.push('🌐'); if(f.chainT>0)act.push('⚡'); if(f.surgeT>0)act.push('⭐'); if(f.megaT>0)act.push('⬤'); if(f.reverseT>0)act.push('🔄'); if(f.curseT>0)act.push('💀'); if(f.blackoutT>0)act.push('🌑');
   if(f.net>0)act.push('🛡'+f.net); if(f.shock>0)act.push('💥'+f.shock); if(f.bloom>0)act.push('🌸'+f.bloom);
-  ctx.textAlign='center'; ctx.font='15px sans-serif'; ctx.fillText(act.slice(0,10).join(' '), VW/2, 48);
+  ctx.textAlign='center'; ctx.font=hp(15)+'px sans-serif'; ctx.fillText(act.slice(0,10).join(' '), VW/2, 48);
   ctx.restore();
 }
 
@@ -1505,6 +1575,17 @@ function refreshControls(){
     if(stuck) label='RELEASE'; else if(S.fx.shock>0) label='SLAM '+S.fx.shock; }
   if(label){ ab.classList.add('show'); if(ab.textContent!==label) ab.textContent=label; } else ab.classList.remove('show');
   el('exitBtn').style.display=(S.state==='MENU')?'flex':'none';
+  mannersTick();
+}
+/* the soundtrack's manners (see #musicFirst): held while a ball is on the field, a break when the run comes to rest */
+var _mannersState='';
+function mannersTick(){
+  if(S.state===_mannersState || !window.SWS_MANNERS) return;
+  var was=_mannersState; _mannersState=S.state;
+  var onField=(S.state==='PLAY'||S.state==='SERVE'||S.state==='CLEAR'||S.state==='PAUSE');
+  SWS_MANNERS.hold(onField);
+  var rest=(S.state==='OVER'||S.state==='WIN'||(S.state==='MENU'&&was!==''&&was!=='MENU'));
+  if(rest){ var at=S.state; SWS_MANNERS.brk(function(){ return S.state===at; }); }
 }
 
 /* ---------------- navigation ---------------- */

@@ -110,7 +110,7 @@ const photo = await page.evaluate(() => {
 say(photo.w === 1080 && photo.h === 1440, 'the photograph is 1080 by 1440 (' + photo.w + 'x' + photo.h + ')');
 say(photo.lit > 0.2, 'and it is not a black rectangle (' + (photo.lit * 100).toFixed(0) + ' percent lit)');
 say(photo.green > 0.008, 'and the jar is in it (' + (photo.green * 100).toFixed(2) + ' percent green)');
-say(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec) \d+, (dawn|morning|afternoon|evening|night)/.test(photo.stamp),
+say(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec) \d+, (the small hours|dawn|morning|afternoon|evening|night)/.test(photo.stamp),
   'the stamp reads like a field note: "' + photo.stamp + '"');
 say(!/\d+\.\d{3}|latitude|longitude|-?\d{2}\.\d{2}/.test(photo.stamp), 'and it carries no coordinates');
 const btn = await centre(page, '#btnPhoto');
