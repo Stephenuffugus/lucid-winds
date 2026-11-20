@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WHISTLESTOP">
-<link rel="manifest" href="./manifest.webmanifest?v=20261114a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20261114a">
-<link rel="icon" href="./icon-192.png?v=20261114a">
+<link rel="manifest" href="./manifest.webmanifest?v=20261120a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261120a">
+<link rel="icon" href="./icon-192.png?v=20261120a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/whistlestop/">
 <style>
 /*  WHISTLESTOP
@@ -76,6 +76,9 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
   background:rgba(251,243,226,.9);border-radius:12px;padding:6px 12px;max-width:66%;
   text-align:center;line-height:1.35;border:2px solid var(--line)}
 #goalLine[hidden]{display:none}
+/* POLISH 20 Nov: the par and the flips get their own line, so a long goal at 360 wide
+   does not leave "flips 0." alone on a fourth line */
+#goalLine{white-space:pre-line}
 /* ⛔ NOT the middle of the rug, and NOT stacked under the goal either. On a
    375 tall landscape phone the middle of the play band is exactly where the
    layout is; and a hint under the goal line made two boxes of different widths
@@ -110,6 +113,18 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
      thumb corner, as in landscape. */
   #btnWhistle{bottom:calc(14px + var(--safeB));z-index:7}
   body.tray-on #btnWhistle{right:calc(50% - min(150px,48vw) - 23px);bottom:calc(103px + var(--safeB))}
+  /* POLISH 20 Nov: upright, the build row (undo, redo, trains) is 178 px of a 360 px top
+     edge, and the one message box sat over the redo and the TRAINS button, the only way
+     to put a train on a rug. Building, the box drops under that row. */
+  body.tray-on #hint{top:calc(70px + var(--safeT))}
+  /* the title's buttons sit low, under the railway, not in the middle of it (the
+     column was centred, and WHISTLESTOP and its tag line sat on the oval's bottom rail);
+     84 px is kept for the music chip's corner */
+  #scrTitle{padding-bottom:calc(84px + var(--safeB))}
+  #scrTitle::after{margin:0}
+  /* the win card stands in the lower band and the camera gives way above it, so the
+     railway the player just ran is still in the picture (it was hidden behind the card) */
+  body #winCard{top:auto;bottom:calc(90px + var(--safeB));transform:translateX(-50%)}
   #tray{left:50%;right:auto;transform:translateX(-50%);width:min(300px,96vw);
     bottom:calc(126px + var(--safeB));flex-wrap:wrap;justify-content:center;
     overflow-x:hidden;overflow-y:auto;max-height:40%;
@@ -181,6 +196,12 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .col{width:100%;max-width:360px;display:flex;flex-direction:column;align-items:stretch;gap:10px}
 .row{display:flex;gap:10px;width:100%;max-width:360px}
 .row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
+/* four engines in a row at 360 wide cut GREEN to GREE */
+#engineRow .btn{padding-left:2px;padding-right:2px;letter-spacing:.02em}
+/* POLISH 20 Nov: on the rug the ghost buttons and captions were #6B5636 on #AE7A52,
+   about 1.9 to 1; ink on the rug reads */
+.screen .btn.ghost{color:var(--ink);border-color:var(--ink);background:rgba(251,243,226,.16)}
+.screen .cap{color:#4A3820}
 .title{font-size:2rem;font-weight:800;letter-spacing:.12em;text-align:center;margin:0 0 2px}
 .tag{font-size:.86rem;text-align:center;color:#6B5636;margin:0 0 16px;line-height:1.6}
 .cap{font-size:.74rem;letter-spacing:.18em;color:#6B5636;text-transform:uppercase;margin:8px 0 2px}
@@ -221,7 +242,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 (function(){ try{ var n=+(localStorage.getItem("whistlestop_launches")||0)||0;
   localStorage.setItem("whistlestop_launches",String(n+1));
   if(n<1&&!localStorage.getItem("lw_whistlestop_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
-<script src="/music-unlocks.js?v=20261114a" defer></script>
+<script src="/music-unlocks.js?v=20261120a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">WHISTLESTOP</h1>
@@ -283,7 +304,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
       <p class="lede">Drag pieces from the tray. Ends snap together.</p>
       <p class="lede">Tap the whistle. Tap a train to change its speed.</p>
       <p class="lede">Tap a switch to send the next train the other way.</p>
-      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261114a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
+      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261120a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <button class="btn ghost" id="btnHowBack">BACK</button>
     </div>
   </div>
@@ -2460,7 +2481,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20261114a';
+var STAMP = '20261120a';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -2507,7 +2528,12 @@ function measureChrome() {
      backdrop behind the fade instead of a smudge squeezed into the top */
   if (G.demo) {
     V.padL = 0; V.padR = 0;
-    if (V.h > V.w) { V.padT = 24; V.padB = Math.round(V.h * 0.56); }
+    if (V.h > V.w) {
+      V.padT = 24; V.padB = Math.round(V.h * 0.56);
+      /* the railway stays above the title column wherever it lands (POLISH 20 Nov) */
+      var tc = document.querySelector('#scrTitle .col'), tr0 = tc && tc.getBoundingClientRect();
+      if (tr0 && tr0.height > 4) V.padB = Math.max(Math.round(V.h * 0.4), Math.round(V.h - tr0.top + 8));
+    }
     else { V.padT = 8; V.padB = 8; }
     return;
   }
@@ -2516,14 +2542,18 @@ function measureChrome() {
      railway centred behind it, so the moment the player won they could no
      longer see the thing they had just done. The camera gives way to the card
      the same way it gives way to the tray. */
+  var wcTop = 0;
   if (wc && wc.classList.contains('on')) {
     r = wc.getBoundingClientRect();
     if (r.width > 4 && r.width < V.w * 0.7) V.padL = Math.max(V.padL, r.right + 14);
+    else if (V.h > V.w && r.height > 4) wcTop = r.top;
   }
   /* the whistle is a single round button in one corner, so the bottom band it
      needs is its own height and not a strip across the whole screen; the tray
      is a different matter and is measured below. */
   V.padB = 46;
+  /* upright the win card is the lower band (POLISH 20 Nov) */
+  if (wcTop) V.padB = Math.max(V.padB, V.h - wcTop + 10);
   if (g && !g.hidden && g.getBoundingClientRect) {
     r = g.getBoundingClientRect();
     if (r.height > 4) V.padT = Math.max(V.padT, r.bottom + 10);
@@ -3022,6 +3052,7 @@ function paintTrackCache() {
   drawBuffers(c, G.st.g);
   drawStations(c, G.st.g);
   drawYards(c, G.st.g);
+  drawLight(c);
   TRACK.key = key;
 }
 /* where a station stands: beside its own line, on the side away from the
@@ -3786,6 +3817,65 @@ function frame(ts) {
   drawSelection(c);
   drawGhost(c);
 }
+/* THE AFTERNOON (POLISH 20 Nov, STYLE.md): one light for the whole room. The sun comes
+   through a four pane window off the top left and lies on the rug as a long warm patch
+   with the window's cross in it; away from it the room falls to a true dark at the
+   corners. It is laid into the track cache (the floor, the rug and the track), so it is
+   paid when that cache repaints and never per frame: laid over every frame it tripled
+   the frame time at 4x CPU (46 to 134 ms). The toys stand in it unlit, as toys do.
+   ?look=classic is the old flat rug. */
+var LOOK_CLASSIC = /[?&]look=classic(&|$)/.test(location.search);
+var LIGHT = { key: '', sun: null, shade: null };
+function paintLight() {
+  var key = V.w + 'x' + V.h + '@' + V.dpr;
+  if (LIGHT.key === key) return;
+  LIGHT.key = key;
+  var W = V.w, H = V.h, m = Math.min(W, H), q;
+  function mk() {
+    var cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.round(W * V.dpr)); cv.height = Math.max(1, Math.round(H * V.dpr));
+    var cx = cv.getContext('2d'); cx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+    return { cv: cv, c: cx };
+  }
+  /* the shade: a room, darker the further from the window, darkest bottom right */
+  var sh = mk(), g = sh.c.createRadialGradient(W * 0.3, H * 0.28, m * 0.2, W * 0.42, H * 0.42, Math.sqrt(W * W + H * H) * 0.78);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.55, 'rgba(226,204,178,1)');
+  g.addColorStop(1, 'rgba(92,60,34,1)');
+  sh.c.fillStyle = g; sh.c.fillRect(0, 0, W, H);
+  /* the sun: four panes, sheared down and to the right the way a low sun lays a window */
+  var su = mk(), c = su.c;
+  var ox = -0.06 * W, oy = 0.06 * H;                 /* the window's top left on the floor */
+  var ux = 0.36 * m, uy = 0.05 * m;                   /* across one pane */
+  var vx = 0.2 * m, vy = 0.34 * m;                    /* down one pane, sheared */
+  var gap = 0.07;                                     /* the mullion, as a share of a pane */
+  if (H > W) { vy = 0.3 * H * 0.62; vx = 0.14 * W; }
+  c.filter = 'blur(' + Math.round(m * 0.018) + 'px)';
+  c.fillStyle = 'rgba(255,206,128,0.62)';
+  var i, j;
+  for (i = 0; i < 2; i++) for (j = 0; j < 2; j++) {
+    var a0 = i + (i ? gap / 2 : 0), a1 = i + 1 - (i ? 0 : gap / 2);
+    var b0 = j + (j ? gap / 2 : 0), b1 = j + 1 - (j ? 0 : gap / 2);
+    c.beginPath();
+    c.moveTo(ox + ux * a0 + vx * b0, oy + uy * a0 + vy * b0);
+    c.lineTo(ox + ux * a1 + vx * b0, oy + uy * a1 + vy * b0);
+    c.lineTo(ox + ux * a1 + vx * b1, oy + uy * a1 + vy * b1);
+    c.lineTo(ox + ux * a0 + vx * b1, oy + uy * a0 + vy * b1);
+    c.closePath(); c.fill();
+  }
+  c.filter = 'none';
+  LIGHT.sun = su.cv; LIGHT.shade = sh.cv;
+}
+function drawLight(c) {
+  if (LOOK_CLASSIC) return;
+  paintLight();
+  c.save();
+  c.globalCompositeOperation = 'multiply';
+  c.drawImage(LIGHT.shade, 0, 0, V.w, V.h);
+  c.globalCompositeOperation = 'soft-light';
+  c.drawImage(LIGHT.sun, 0, 0, V.w, V.h);
+  c.restore();
+}
 
 /* ========================= 12. AUDIO ========================= */
 /* Everything is synthesised: no file is fetched, so the game is the same size
@@ -3949,10 +4039,18 @@ function tick(dt) {
   var steps = Math.min(4, Math.max(1, Math.round(dt * CONFIG.SIM_HZ)));
   var sdt = 1 / CONFIG.SIM_HZ;
   for (i = 0; i < steps; i++) consumeEvents(stepSim(G.st, sdt));
+  if (G.mode === 'puzzle' && !G.result && !LOST_SAID && G.st.t > 25) {
+    LOST_SAID = 1;
+    hint('Not home yet. Flip a switch as a train comes, or tap the arrow to start again.', 7);
+  }
   AUDIO.clackFor(bogies, fastest, dt * steps * sdt * CONFIG.SIM_HZ);
 }
 var ASSEMBLED = 0;
 var BUMP_SAID = 0;
+/* POLISH 20 Nov: a run that can never get home (no flips, or the wrong ones) circled or
+   shuttled for ever with nothing said; every puzzle's own answer is home inside 14 s,
+   so at 25 s the box says what to do. Once a puzzle start. */
+var LOST_SAID = 0;
 /* what the game DOES when the rules say something happened. The test hook that
    winds the clock forward calls this too, so a gate hears what a player hears;
    the only thing it skips is the wall clock, never the sound and never the win. */
@@ -4508,17 +4606,17 @@ function toast(msg) {
   clearTimeout(t._t);
   t._t = setTimeout(function () { t.classList.remove('on'); }, 2200);
 }
-function hint(msg) {
+function hint(msg, secs) {
   var h = el('hint');
   h.textContent = msg;
   h.classList.add('on');
   el('goalLine').classList.add('behind');
-  HINT_T = 3.6;
+  HINT_T = secs || 3.6;
 }
 function updateGoal() {
   if (G.mode !== 'puzzle' || G.puzzleId < 0) return;
   var pz = PUZZLES[G.puzzleId];
-  el('goalLine').textContent = pz.goal + '   Par ' + pz.par + ', flips ' + G.st.flips + '.';
+  el('goalLine').textContent = pz.goal + '\nPar ' + pz.par + ', flips ' + G.st.flips + '.';
 }
 
 /* ---- the sandbox ---- */
@@ -4578,7 +4676,7 @@ function startPuzzle(id) {
   G.undo.length = 0; G.redo.length = 0;
   G.selected = -1;
   G.props = [];
-  BUMP_SAID = 0;
+  BUMP_SAID = 0; LOST_SAID = 0;
   G.propSeed = 'puzzle' + id;
   G.st = takeSettings(makePuzzle(pz));
   G.st.stationSpec = pz.stations;

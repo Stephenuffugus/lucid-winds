@@ -62,7 +62,8 @@ for (const [w, h] of SIZES) {
   /* ---- how to play ---- */
   await tap(page, '#btnHow');
   await waitFrames(page, 2);
-  await group(page, at, 'how to play', '#scrHow .btn', 1);
+  /* two since 13 Nov: PRIVACY and BACK (the privacy link went on the How screen; this gate still counted one) */
+  await group(page, at, 'how to play', '#scrHow .btn', 2);
   const lines = await page.evaluate(() => [...document.querySelectorAll('#scrHow .lede')].length);
   say(lines === 3, at + ' how to play: three lines and no more (' + lines + ')');
   await tap(page, '#btnHowBack');

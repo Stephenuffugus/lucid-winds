@@ -166,6 +166,11 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
   #winCard{left:calc(16px + var(--safeL));transform:translateY(-50%);width:44%;max-width:320px}
 }
 #winCard.on{display:flex}
+/* POLISH 20 Nov: upright the card sat over the board and hid the replay it is there for;
+   it stands on the drawer now, under the paper, and the replay runs above it */
+@media (orientation:portrait){
+  body #winCard{top:auto;bottom:calc(14px + var(--safeB));transform:translateX(-50%)}
+}
 #winStars{font-size:2rem;text-align:center;letter-spacing:.14em;color:var(--yellow)}
 #winLine{text-align:center;font-size:.9rem;color:#6B5C42}
 #toast{position:fixed;left:50%;bottom:calc(96px + var(--safeB));transform:translateX(-50%);
@@ -186,7 +191,28 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 (function(){ try{ var n=+(localStorage.getItem("doohickey_launches")||0)||0;
   localStorage.setItem("doohickey_launches",String(n+1));
   if(n<1&&!localStorage.getItem("lw_doohickey_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
-<script src="/music-unlocks.js?v=20261114a" defer></script>
+<script src="/music-unlocks.js?v=20261120a" defer></script>
+<style>
+/* THE DRAWING (POLISH 20 Nov, STYLE.md). The title was a cream page with words on it; it
+   is a drafting sheet now: the board's own graph paper, FIG. 1 of a marble machine in the
+   game's ink and colours, and the name lettered in a drawing's title block. All static,
+   all CSS and inline SVG. ?look=classic puts the plain page back. */
+html:not(.classic) .screen{background-color:var(--paper);
+  background-image:linear-gradient(rgba(201,185,142,.38) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(201,185,142,.38) 1px,transparent 1px),
+    linear-gradient(rgba(201,185,142,.22) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(201,185,142,.22) 1px,transparent 1px);
+  background-size:96px 96px,96px 96px,24px 24px,24px 24px;background-position:-1px -1px}
+#fig1{display:none}
+html:not(.classic) #fig1{display:block;width:100%;height:auto;margin:0 0 6px}
+html:not(.classic) #scrTitle .tblock{border:3px solid var(--ink);background:var(--paper);
+  box-shadow:4px 4px 0 rgba(44,36,24,.85);padding:10px 12px 8px;margin:0 0 18px;transform:rotate(-.6deg)}
+html:not(.classic) #scrTitle .tblock .title{font-size:2.25rem;letter-spacing:.14em;margin:0;
+  border-bottom:2px solid var(--ink);padding-bottom:4px}
+html:not(.classic) #scrTitle .tblock .tag{margin:6px 0 0;color:#4A3E2A}
+html:not(.classic) .btn.ghost{color:var(--ink);border-color:#8C7A52}
+</style>
+<script id="lookPick">if(/[?&]look=classic(&|$)/.test(location.search))document.documentElement.className+=' classic';</script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">DOOHICKEY</h1>
@@ -220,8 +246,26 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 
   <div class="screen on" id="scrTitle">
     <div class="col">
-      <div class="title">DOOHICKEY</div>
-      <p class="tag">Build something needlessly complicated. Watch it almost work.</p>
+      <svg id="fig1" viewBox="0 0 320 172" aria-hidden="true" fill="none" stroke="#2C2418" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 150H314" stroke-width="3"/>
+        <path d="M14 150l-8 9M34 150l-8 9M54 150l-8 9M74 150l-8 9M94 150l-8 9M114 150l-8 9M134 150l-8 9M154 150l-8 9M174 150l-8 9M194 150l-8 9M214 150l-8 9M234 150l-8 9M254 150l-8 9M274 150l-8 9M294 150l-8 9M314 150l-8 9" stroke-width="1.4"/>
+        <path d="M30 52L132 82" stroke-width="7" stroke="#2C2418"/><path d="M30 52L132 82" stroke-width="3.6" stroke="#8A5A9B"/>
+        <path d="M118 80V150M110 150h16" />
+        <circle cx="46" cy="44" r="10" fill="#3D6FB4"/><circle cx="43" cy="41" r="3" fill="#FFF7E4" stroke="none"/>
+        <path d="M60 50C90 58 120 70 140 86C156 100 160 112 162 118" stroke-width="1.6" stroke-dasharray="2 6"/>
+        <path d="M166 150V108h9v42zM190 150V108h9v42zM214 150V108h9v42z" fill="#F4EBD3"/>
+        <path d="M241 150l11-40 8.5 2.3-11 40z" fill="#F4EBD3"/>
+        <path d="M286 150v-26M278 150h16"/>
+        <path d="M274 124c0-14 6-22 12-22s12 8 12 22z" fill="#E8B33C"/><circle cx="286" cy="99" r="3" fill="#2C2418"/><path d="M272 124h28"/>
+        <path d="M262 96c4-6 8-8 12-8M304 92c-3-5-6-7-10-8" stroke-width="1.6"/>
+        <g stroke-width="1.2"><path d="M46 30L58 10"/><path d="M84 66L96 30"/><path d="M194 106L206 78"/><path d="M296 110L312 74"/></g>
+        <g fill="#F4EBD3" stroke-width="1.6"><circle cx="62" cy="10" r="8"/><circle cx="100" cy="24" r="8"/><circle cx="210" cy="72" r="8"/><circle cx="312" cy="66" r="7.5"/></g>
+        <g fill="#2C2418" stroke="none" font-family="Georgia,serif" font-style="italic" font-size="12" text-anchor="middle">
+          <text x="62" y="14">1</text><text x="100" y="28">2</text><text x="210" y="76">3</text><text x="312" y="70">4</text>
+          <text x="160" y="171" font-size="13" letter-spacing="2">FIG. 1</text></g>
+      </svg>
+      <div class="tblock"><div class="title">DOOHICKEY</div>
+      <p class="tag">Build something needlessly complicated. Watch it almost work.</p></div>
       <button class="btn big" id="btnPlay">PLAY</button>
       <button class="btn" id="btnSandbox">SANDBOX</button>
       <button class="btn ghost" id="btnHow">HOW</button>
@@ -250,7 +294,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
       <p class="lede">Drag parts from the tray. Turn them with the dial.</p>
       <p class="lede">Press GO and watch.</p>
       <p class="lede">Tap to stop and fix it.</p>
-      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261114a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
+      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261120a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <button class="btn ghost" id="btnHowBack">BACK</button>
     </div>
   </div>
@@ -2912,7 +2956,7 @@ function drawScene(ctx, world, level, touched) {
 }
 
 /* ========================= 17. THE GAME ========================= */
-var STAMP = '20261114a';
+var STAMP = '20261120a';
 var G = {
   screen: 'title', levelId: 0, machine: newMachine(), world: null, level: null,
   running: false, touched: [], result: null, runT: 0, sandbox: -1
@@ -3015,7 +3059,10 @@ function machineChanged() {
   if (G.sandbox >= 0) saveSandbox();
 }
 function updateCount() {
-  el('partCount').textContent = G.machine.parts.length + ' of ' + G.level.par + ' parts';
+  /* the sandbox has no par worth reading (it is the body cap, 120) */
+  el('partCount').textContent = G.levelId < 0
+    ? G.machine.parts.length + (G.machine.parts.length === 1 ? ' part' : ' parts')
+    : G.machine.parts.length + ' of ' + G.level.par + ' parts';
 }
 function trayLeft(type) {
   var used = 0, i;
@@ -3064,7 +3111,7 @@ function goRun() {
   if (!G.machine.parts.length) { toast('Put something on the board first.'); return; }
   G.running = true;
   G.result = null;
-  G.runT = 0;
+  G.runT = 0; G.restT = 0;
   ACC = 0;
   TAPE.length = 0; REPLAY = null; CONFETTI.length = 0;
   G.world = buildWorld(G.level, cloneMachine(G.machine));
@@ -3110,7 +3157,19 @@ function tickRun(dt) {
     ACC -= step;
     guard++;
   }
-  if (G.runT > CONFIG.RUN_MAX_S && !G.result) { toast('It ran out of time. Have another go.'); stopRun(); }
+  if (G.runT > CONFIG.RUN_MAX_S && !G.result) { toast('It ran out of time. Have another go.'); stopRun(); return; }
+  /* POLISH 20 Nov: a machine that came to rest short of the bell sat still for the whole
+     45 s with STOP the only thing on the screen. Every level's own answer rings the bell
+     with something always moving (checked: the longest all still stretch before a win is
+     0 s), so two seconds of everything asleep ends the run and says what to do. */
+  if (!G.result && G.runT > 1) {
+    var still = true, b;
+    for (b = 0; b < G.world.bodies.length; b++) {
+      if (!G.world.bodies[b].isStatic && G.world.bodies[b].awake) { still = false; break; }
+    }
+    G.restT = still ? (G.restT || 0) + Math.min(0.25, dt / 1000) : 0;
+    if (G.restT > 2) { G.restT = 0; toast('It stopped short. Move a part and press GO again.'); stopRun(); }
+  }
 }
 function onWin() {
   startReplay();
@@ -3158,6 +3217,13 @@ function setGoalCard() {
   var lv = G.level;
   if (!lv) return;
   var nm = document.getElementById('goalName'), sb = document.getElementById('goalSub');
+  /* POLISH 20 Nov: the sandbox kept the last level's name and par on its card
+     (A Row of Dominoes, par 10, over an empty table); it says which table it is */
+  if (G.levelId < 0 && G.sandbox >= 0) {
+    if (nm) nm.textContent = 'Table ' + (G.sandbox + 1);
+    if (sb) sb.textContent = 'Build anything, then ring the bell';
+    return;
+  }
   if (nm) nm.textContent = lv.name || '';
   if (sb) sb.textContent = (lv.goal === 'bell' ? 'Ring the bell' : 'Finish it') + ', par ' + lv.par;
 }
@@ -3409,7 +3475,7 @@ function openSandbox(slot) {
     if (got) G.machine = got.machine;
   }
   G.running = false; G.result = null; G.touched = [];
-  rebuildPreview(); resetCamera(); showScreen('Build'); renderTray(); updateCount();
+  rebuildPreview(); resetCamera(); showScreen('Build'); renderTray(); updateCount(); setGoalCard();
   UNDO.length = 0; REDO.length = 0; SEL = -1; GHOST = null; hideHandles(); refreshEditChrome();
 }
 function saveSandbox() {

@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STRATA">
-<link rel="manifest" href="./manifest.webmanifest?v=20261114a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20261114a">
-<link rel="icon" href="./icon-192.png?v=20261114a">
+<link rel="manifest" href="./manifest.webmanifest?v=20261120a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261120a">
+<link rel="icon" href="./icon-192.png?v=20261120a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
 <style>
 /*  STRATA
@@ -102,6 +102,16 @@ html,body{margin:0;padding:0;height:100%;background:var(--rock2);color:var(--ink
 #scrTitle .title{color:#F4E8CB;text-shadow:0 2px 8px rgba(28,20,10,.8)}
 #scrTitle .tag{color:#E6D4B4;text-shadow:0 1px 5px rgba(28,20,10,.75)}
 #scrTitle .btn.ghost{border-color:#E0CDA6;color:#EFE2C8;background:rgba(40,29,17,.4)}
+/* POLISH 20 Nov: upright, the column was centred and STRATA and its tag line sat on the
+   freed skeleton; it sits low now, under the cliff's find, with 84 px kept for the music
+   chip's corner */
+@media (orientation:portrait){
+  #scrTitle{padding-bottom:calc(84px + var(--safeB))}
+  #scrTitle::after{margin:0}
+}
+/* POLISH 20 Nov: on the rock, ghost buttons were #6B5B3E on #8A6A44 (about 1.6 to 1:
+   PRIVACY and BACK on How could hardly be seen); ink on the rock reads */
+.screen .btn.ghost{color:var(--ink);border-color:var(--ink);background:rgba(239,226,200,.18)}
 @media (orientation:landscape){
   #scrTitle{background:linear-gradient(to bottom,rgba(58,42,26,.10) 0%,rgba(46,34,20,.46) 26%,
     rgba(40,29,17,.78) 44%,rgba(36,26,15,.93) 100%)}
@@ -242,7 +252,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 (function(){ try{ var n=+(localStorage.getItem("strata_launches")||0)||0;
   localStorage.setItem("strata_launches",String(n+1));
   if(n<1&&!localStorage.getItem("lw_strata_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
-<script src="/music-unlocks.js?v=20261114a" defer></script>
+<script src="/music-unlocks.js?v=20261120a" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
@@ -280,7 +290,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
       <p class="lede">Brush the dust away. Something is under there.</p>
       <p class="lede">The chisel is quicker, and it cracks a bone if you rest on one. The pick cracks anything it touches.</p>
       <p class="lede">Trace a freed bone along its length to lift it out. Mount it, name it, and hang it up.</p>
-      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261114a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
+      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261120a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <button class="btn ghost" id="btnHowBack">BACK</button>
     </div>
   </div>
@@ -1585,7 +1595,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20261114a';
+var STAMP = '20261120a';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -1656,8 +1666,17 @@ function ss(v) { return v * V.zoom; }
 function gx(px) { return (px - midX()) / V.zoom + V.cx; }
 function gy(py) { return (py - midY()) / V.zoom + V.cy; }
 
+/* THE CUT (POLISH 20 Nov, STYLE.md): one low light from the top left on the cliff. Where
+   the brush has taken rock away, the wall above and left of a hollow throws it into a true
+   dark and the far wall, facing the light, catches it, so every stroke is a carved cut in
+   the face and not a flat stain with stepped edges. It reads the density two cells up left
+   and two down right of each cell: a few sums on the same pass, no extra drawing.
+   ?look=classic is the flat face. */
+var LOOK_CLASSIC = /[?&]look=classic(&|$)/.test(location.search);
+var CUT_LIGHT = 96, CUT_OFF = 3;
 function paintCliff() {
   var d = G.dig, data = V.img.data, W = d.W, H = d.H, i, n = W * H;
+  var den0 = d.density, off = CUT_OFF * W + CUT_OFF, lit = !LOOK_CLASSIC;
   for (i = 0; i < n; i++) {
     var den = d.density[i], o = i * 4, c;
     if (d.bone[i]) {
@@ -1686,6 +1705,19 @@ function paintCliff() {
       data[o] = clamp(PAL.dust[0] + (c[0] - PAL.dust[0]) * k + g2, 0, 255);
       data[o + 1] = clamp(PAL.dust[1] + (c[1] - PAL.dust[1]) * k + g2 * 0.9, 0, 255);
       data[o + 2] = clamp(PAL.dust[2] + (c[2] - PAL.dust[2]) * k + g2 * 0.7, 0, 255);
+    }
+    if (lit && !d.bone[i] && i >= off && i + off < n) {
+      /* positive: this cell faces the light (rock rises behind it to the bottom right);
+         negative: it lies under the lip of the rock to its top left */
+      var sl = (den0[i + off] - den0[i - off]) * CUT_LIGHT;
+      if (sl > 1 || sl < -1) {
+        /* the dark side is the strong one: a lit wall that shines as much as a shadow is
+           deep reads as a glow, which is the one thing this face must not do */
+        sl = sl < 0 ? sl * 1.3 : sl * 0.5;
+        data[o] = clamp(data[o] + sl, 0, 255);
+        data[o + 1] = clamp(data[o + 1] + sl * 0.92, 0, 255);
+        data[o + 2] = clamp(data[o + 2] + sl * 0.78, 0, 255);
+      }
     }
     data[o + 3] = 255;
   }
@@ -1922,7 +1954,12 @@ function tick(dt) {
   if (G.scan > 0) G.scan -= dt;
   if (HINT_T > 0) {
     HINT_T -= dt;
-    if (HINT_T <= 0) { el('banner').classList.remove('on'); el('siteChip').style.opacity = ''; }
+    if (HINT_T <= 0) {
+      el('banner').classList.remove('on');
+      /* POLISH 20 Nov: the chip came back at once while the banner took 220 ms to fade, so
+         for a moment the two sat on each other half drawn; it waits for the fade */
+      setTimeout(function () { if (!el('banner').classList.contains('on')) el('siteChip').style.opacity = ''; }, 240);
+    }
   }
   stepDust(dt);
   if (G.screen === 'Mount') drawMount();
