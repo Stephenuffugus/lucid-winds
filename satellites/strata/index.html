@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STRATA">
-<link rel="manifest" href="./manifest.webmanifest?v=20261120a">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20261120a">
-<link rel="icon" href="./icon-192.png?v=20261120a">
+<link rel="manifest" href="./manifest.webmanifest?v=20261120b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261120b">
+<link rel="icon" href="./icon-192.png?v=20261120b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
 <style>
 /*  STRATA
@@ -74,7 +74,10 @@ html,body{margin:0;padding:0;height:100%;background:var(--rock2);color:var(--ink
   padding:6px 14px;pointer-events:auto;box-shadow:0 3px 0 var(--ink)}
 #siteChip .er{font-size:.82rem;font-weight:700;letter-spacing:.02em}
 #siteChip .dp{font-size:.7rem;color:#6B5B3E}
-#banner{position:absolute;left:50%;transform:translateX(-50%);top:calc(13px + var(--safeT));
+/* POLISH 20 Nov, round 3: the banner lives on its own row UNDER the chip and the menu, so the two can never
+   sit on each other whatever the timing (hiding the chip during a hint and fading it back raced the fade on a busy
+   phone, and the complete dig still showed both half drawn). */
+#banner{position:absolute;left:50%;transform:translateX(-50%);top:calc(70px + var(--safeT));
   pointer-events:none;font-size:.8rem;font-weight:700;color:var(--ink);
   background:rgba(239,226,200,.94);border-radius:12px;padding:6px 12px;max-width:60%;
   text-align:center;line-height:1.35;border:2px solid var(--line);
@@ -252,7 +255,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 (function(){ try{ var n=+(localStorage.getItem("strata_launches")||0)||0;
   localStorage.setItem("strata_launches",String(n+1));
   if(n<1&&!localStorage.getItem("lw_strata_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
-<script src="/music-unlocks.js?v=20261120a" defer></script>
+<script src="/music-unlocks.js?v=20261120b" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
@@ -290,7 +293,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
       <p class="lede">Brush the dust away. Something is under there.</p>
       <p class="lede">The chisel is quicker, and it cracks a bone if you rest on one. The pick cracks anything it touches.</p>
       <p class="lede">Trace a freed bone along its length to lift it out. Mount it, name it, and hang it up.</p>
-      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261120a" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
+      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261120b" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <button class="btn ghost" id="btnHowBack">BACK</button>
     </div>
   </div>
@@ -1595,7 +1598,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20261120a';
+var STAMP = '20261120b';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -1956,9 +1959,6 @@ function tick(dt) {
     HINT_T -= dt;
     if (HINT_T <= 0) {
       el('banner').classList.remove('on');
-      /* POLISH 20 Nov: the chip came back at once while the banner took 220 ms to fade, so
-         for a moment the two sat on each other half drawn; it waits for the fade */
-      setTimeout(function () { if (!el('banner').classList.contains('on')) el('siteChip').style.opacity = ''; }, 240);
     }
   }
   stepDust(dt);
@@ -2838,9 +2838,8 @@ function banner(msg) {
   var b = el('banner');
   b.textContent = msg;
   b.classList.add('on');
-  /* ⛔ ONE MESSAGE AT A TIME. The banner is pinned to the top middle and the
-     site chip to the top left, and on a 375 wide phone they sat on each other. */
-  el('siteChip').style.opacity = '0';
+  /* ⛔ The banner has its own row under the site chip (see #banner), so the chip
+     stays put; hiding it and fading it back raced the banner's fade. */
   HINT_T = 3.4;
 }
 function toast(msg) {

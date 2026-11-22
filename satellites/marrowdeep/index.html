@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MARROWDEEP">
-<link rel="manifest" href="./manifest.webmanifest?v=20261114b">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20261114b">
-<link rel="icon" href="./icon-192.png?v=20261114b">
+<link rel="manifest" href="./manifest.webmanifest?v=20261122a">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261122a">
+<link rel="icon" href="./icon-192.png?v=20261122a">
 <link rel="canonical" href="https://lucidwinds.com/satellites/marrowdeep/">
 <style>
 /*  MARROWDEEP
@@ -70,6 +70,8 @@ html,body{margin:0;padding:0;height:100%;background:var(--ink);color:var(--bone)
   overflow:hidden;overscroll-behavior:contain}
 .screen.on{display:flex}
 .screen.veil{background:rgba(12,10,16,.94)}
+#deepBg{position:absolute;inset:0;width:100%;height:100%;z-index:9;pointer-events:none}
+.deep .screen:not(.veil){background:transparent}
 .spacer{flex:1 1 auto;min-height:6px}
 .body{flex:1 1 auto;min-height:0;width:100%;max-width:420px;overflow-y:auto;overscroll-behavior:contain;
   display:flex;flex-direction:column;align-items:center}
@@ -151,6 +153,10 @@ h1,h2,p{margin:0}
 
 /* the four dice at creation. A die is its SHAPE first: a colour blind player and
    a player at arm's length read the same thing. */
+#chBody .card{width:100%;margin-top:8px;cursor:default}
+#chBody .label{margin:16px 0 4px}
+#chBody .small{margin:0}
+.strikeline{font-size:.85rem;color:var(--bone);margin:6px 0 0}
 .dicerow{display:flex;gap:8px;justify-content:center;width:100%;max-width:340px;margin-top:12px}
 .dietile{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;
   padding:8px 2px;border:1px solid rgba(230,220,198,.16);border-radius:10px;background:var(--ink-2)}
@@ -481,7 +487,7 @@ h1,h2,p{margin:0}
     <div id="howLines" style="width:100%"></div>
     <div class="spacer"></div>
   </div>
-  <div class="pin col"><a class="btn small" id="lnkPrivacy" href="privacy.html?v=20261114b" style="text-decoration:none">PRIVACY</a><button class="btn small" id="btnCoachAgain">SHOW ME AGAIN</button><button class="btn primary" id="btnGotIt">GOT IT</button></div>
+  <div class="pin col"><a class="btn small" id="lnkPrivacy" href="privacy.html?v=20261122a" style="text-decoration:none">PRIVACY</a><button class="btn small" id="btnCoachAgain">SHOW ME AGAIN</button><button class="btn primary" id="btnGotIt">GOT IT</button></div>
 </section>
 
 <!-- ROLLING A CHARACTER IS THE THRILL (pillar 1): one screen, one tap, then one choice. -->
@@ -723,7 +729,7 @@ h1,h2,p{margin:0}
   sync();
   document.addEventListener("DOMContentLoaded", sync);
 })();</script>
-<script src="/music-unlocks.js?v=20261114b" defer></script>
+<script src="/music-unlocks.js?v=20261122a" defer></script>
 <script>
 /*  MARROWDEEP, one file.
     Layer order: BALANCE, RNG, DATA, EFFECTS, DICE, GEN, SIM  (the engine, between
@@ -2879,7 +2885,7 @@ var MD = (function () {
       diedAt: 'the Hall', depth: 0, consecrated: false, retired: true };
     state.account.legacies.push(legacy);
     state.account.wall.unshift({ name: ch.name, origin: ch.origin, calling: ch.calling,
-      quests: ch.questsSurvived, depth: 0, cause: 'retired after ' + ch.questsSurvived + ' quests', retired: true });
+      quests: ch.questsSurvived, depth: 0, cause: 'retired after ' + ch.questsSurvived + (ch.questsSurvived === 1 ? ' quest' : ' quests'), retired: true });
     var gear = stripGear(ch);
     state.pendingDrops = (state.pendingDrops || []).concat(gear);                          // R2.6 to the drop screen
     state.roster = state.roster.filter(function (c) { return c.id !== ch.id; });
@@ -5409,7 +5415,7 @@ var DATA_BANKS = {
       "legacy": "{calling}. The line of {name}, who {cause}.",
       "scar": "{name} takes a Scar, and Toughness drops by one.",
       "title": "Bone and salt under the world, and the dice you send down into it.",
-      "wall": "{name}. {origin} {calling}. {quests} quests. {cause}.",
+      "wall": "{name}, {origin} {calling}, {quests}. {cause}.",
       "lesson": "{name} on that {shape} would pass {better} times in 100, against {taken} for {other}."
     },
     "coach": {
@@ -6692,6 +6698,12 @@ var GAME = (function () {
     var sh = clear($('shBody'));
     $('shTitle').textContent = 'THE ROUND CLOSES';
     sh.appendChild(el('p', 'small', 'Every Aspect still standing strikes.'));
+    /* what each one did: the sheet said only that they strike, and the party's pips were the only way to find out */
+    (strike || []).forEach(function (r) {
+      var who = ch(r.id), dead = who && !who.alive;
+      sh.appendChild(el('p', 'strikeline', r.aspect + ' strikes ' + (who ? who.name.split(' ')[0] : 'someone') + ': '
+        + (r.landed ? r.landed + ' Strain' : 'nothing lands') + (dead ? ', and they fall.' : '.')));
+    });
     G.pending = function () { paintBoss(); };
     coachAt('strike', { strained: strainedParty() }, 'shCoach');
     VIEW.show('sheet');
@@ -6843,10 +6855,13 @@ var GAME = (function () {
     var org = (MD.data().lines.origins || {})[c.origin] || {};
     var cal = (MD.data().lines.callings || {})[c.calling] || {};
     var host = clear($('chBody'));
-    host.appendChild(el('div', 'cname', org.name || c.origin));
-    host.appendChild(el('div', 'cblurb', org.blurb || ''));
-    host.appendChild(el('div', 'cname', cal.name || c.calling));
-    host.appendChild(el('div', 'cblurb', cal.blurb || ''));
+    /* each in its own card, as on Creation: loose, the two names and their lines ran together at body size */
+    [[org.name || c.origin, org.blurb || ''], [cal.name || c.calling, cal.blurb || '']].forEach(function (nb) {
+      var cd = el('div', 'card');
+      cd.appendChild(el('div', 'cname', nb[0]));
+      cd.appendChild(el('div', 'cblurb', nb[1]));
+      host.appendChild(cd);
+    });
 
     var dr = el('div', 'dicerow');
     MD.STATS.forEach(function (st) {
@@ -6862,7 +6877,7 @@ var GAME = (function () {
     host.appendChild(el('p', 'small', 'Toughness ' + MD.effToughness(c)
       + ', Armor ' + MD.effArmor(c) + ', Strain ' + c.strain
       + ', ' + c.scars + (c.scars === 1 ? ' scar' : ' scars')
-      + ', ' + c.questsSurvived + ' quests survived.'));
+      + ', ' + c.questsSurvived + (c.questsSurvived === 1 ? ' quest' : ' quests') + ' survived.'));
 
     if (c.traits.length) {
       host.appendChild(el('p', 'label', 'WHAT THEY LEARNED'));
@@ -7125,10 +7140,10 @@ var GAME = (function () {
     h.wall.forEach(function (w) {
       var row = el('div', 'wallrow');
       row.textContent = VIEW.fill(VIEW.line('cards.wall'), {
-        name: w.name, quests: w.quests,
+        name: w.name, quests: w.quests + (w.quests === 1 ? ' quest' : ' quests'),
         origin: ((MD.data().lines.origins || {})[w.origin] || {}).name || w.origin,
         calling: ((MD.data().lines.callings || {})[w.calling] || {}).name || w.calling,
-        cause: w.cause
+        cause: String(w.cause || '').charAt(0).toUpperCase() + String(w.cause || '').slice(1)
       });
       host.appendChild(row);
     });
@@ -7611,7 +7626,7 @@ var TEST = (function () {
 // ---- TEST_EXPORT_END ----
 
 /* ============================== BOOT ============================== */
-var STAMP = '20261114b';
+var STAMP = '20261122a';
 
 var BOOT = (function () {
   'use strict';
@@ -7700,6 +7715,80 @@ var BOOT = (function () {
     sounds: function () { return AUDIO.played(); },
     resetSounds: function () { AUDIO.resetPlayed(); }
   };
+
+
+  /* THE DEEP (polish round 3, 22 Nov). The screens stand on the cut face of the shaft: salt strata, each ledge lit
+     along its top by the party's lantern above and dark beneath, a few salt drips, and the light falling to true black
+     toward the floor. Painted once per size into one canvas behind the screens; a frame costs nothing.
+     ?look=classic is the flat ground. The strata all dip the same three degrees to the right (STYLE.md). */
+  (function () {
+    if (/[?&]look=classic\b/.test(location.search)) return;
+    var app = document.getElementById('app');
+    var cv = document.createElement('canvas');
+    if (!app || !cv.getContext) return;
+    cv.id = 'deepBg'; cv.setAttribute('aria-hidden', 'true');
+    app.insertBefore(cv, app.firstChild);
+    document.documentElement.classList.add('deep');
+    function hash(i, s) {
+      var h = (Math.imul(i | 0, 374761393) ^ Math.imul(s | 0, 668265263)) >>> 0;
+      h ^= h >>> 13; h = Math.imul(h, 1274126177) >>> 0;
+      return ((h ^ (h >>> 16)) >>> 8) / 16777216;
+    }
+    function paint() {
+      var d = Math.min(2, window.devicePixelRatio || 1), W = window.innerWidth, H = window.innerHeight;
+      if (!W || !H) return;
+      cv.width = Math.round(W * d); cv.height = Math.round(H * d);
+      var g = cv.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0);
+      g.fillStyle = '#0c0a10'; g.fillRect(0, 0, W, H);
+      /* the lantern, above and a little left of centre */
+      var lx = W * 0.44, ly = -H * 0.08;
+      var lg = g.createRadialGradient(lx, ly, 0, lx, ly, H * 0.95);
+      lg.addColorStop(0, 'rgba(232,180,92,.16)'); lg.addColorStop(0.45, 'rgba(150,110,70,.06)'); lg.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = lg; g.fillRect(0, 0, W, H);
+      /* the strata: slabs that dip three degrees to the right, each lit along its top by the lantern and falling
+       to shade at its foot, so every ledge stands out of the face */
+    var tilt = Math.tan(3 * Math.PI / 180), k = 0, x, i, ledges = [], y = 18;
+    while (y < H + 80) {
+      var amp = 1.5 + hash(k, 2) * 4, pts = [];
+      for (x = -10; x <= W + 10; x += 10) {
+        pts.push([x, y + x * tilt + Math.sin(x / (40 + hash(k, 3) * 70) + k * 1.7) * amp + (hash(k * 97 + (x | 0), 4) - 0.5) * 1.4]);
+      }
+      ledges.push({ y: y, pts: pts }); y += 22 + hash(k, 1) * 54; k++;
+    }
+    for (k = 0; k < ledges.length - 1; k++) {
+      var A = ledges[k].pts, Bp = ledges[k + 1].pts, top = ledges[k].y, bot = ledges[k + 1].y;
+      var lit = Math.max(0, 1 - Math.hypot(W * 0.5 - lx, top - ly) / (H * 1.05));
+      var tone = 0.5 + hash(k, 9) * 0.5;
+      g.beginPath(); g.moveTo(A[0][0], A[0][1]);
+      for (i = 1; i < A.length; i++) g.lineTo(A[i][0], A[i][1]);
+      for (i = Bp.length - 1; i >= 0; i--) g.lineTo(Bp[i][0], Bp[i][1]);
+      g.closePath();
+      var sg = g.createLinearGradient(0, top, 0, bot);
+      sg.addColorStop(0, 'rgba(214,200,176,' + ((0.025 + lit * 0.07) * tone).toFixed(3) + ')');
+      sg.addColorStop(0.55, 'rgba(120,110,100,' + (0.012 * tone).toFixed(3) + ')');
+      sg.addColorStop(1, 'rgba(0,0,0,' + (0.28 + lit * 0.2).toFixed(3) + ')');
+      g.fillStyle = sg; g.fill();
+      /* the lip that catches the light */
+      g.beginPath(); g.moveTo(A[0][0], A[0][1]);
+      for (i = 1; i < A.length; i++) g.lineTo(A[i][0], A[i][1]);
+      g.strokeStyle = 'rgba(230,220,198,' + (0.02 + lit * 0.09).toFixed(3) + ')'; g.lineWidth = 1; g.stroke();
+    }
+    /* salt in the rock: grains lit by the lantern, and pits */
+    var n = Math.round(W * H / 70);
+    for (i = 0; i < n; i++) {
+      var sx = hash(i, 11) * W, sy = hash(i, 12) * H, sl = Math.max(0, 1 - Math.hypot(sx - lx, sy - ly) / (H * 1.05));
+      g.fillStyle = hash(i, 13) < 0.5 ? 'rgba(230,220,198,' + (0.02 + sl * 0.10).toFixed(3) + ')' : 'rgba(0,0,0,.25)';
+      g.fillRect(sx, sy, 1 + hash(i, 14), 1);
+    }
+    /* the floor of the shaft is true black, and so are the far corners */
+      var fg = g.createLinearGradient(0, H * 0.45, 0, H);
+      fg.addColorStop(0, 'rgba(6,5,8,0)'); fg.addColorStop(1, 'rgba(6,5,8,.85)');
+      g.fillStyle = fg; g.fillRect(0, 0, W, H);
+    }
+    var t = 0;
+    paint();
+    window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(paint, 120); });
+  })();
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

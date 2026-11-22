@@ -250,6 +250,9 @@ const audit = (page, W, H, TAPSEL, K) => page.evaluate((W, H, TAPSEL, K) => {
     if (el.id && skipId[el.id]) return;
     if (el.classList.contains('screen') || el.classList.contains('body') ||
         el.classList.contains('pin') || el.classList.contains('spacer')) return;
+    /* the studio's name sits in the band ONLY while the chip is held off a first launch (.sws-music-held), and the
+       chip never shows with it: they cannot meet, so it is not an intruder (polish round 3, 22 Nov). */
+    if (el.classList.contains('brandcorner') && document.documentElement.classList.contains('sws-music-held') + document.body.classList.contains('sws-music-held')) return;
     if (!shown(el)) return;
     /* one fault per thing in the corner: a party card in the chip's seat takes
        its four Strain pips and its name in with it, and five lines about one

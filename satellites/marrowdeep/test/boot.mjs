@@ -170,6 +170,9 @@ const intruders = await page.evaluate(() => {
     if (el.id && skip[el.id]) return;
     if (el.classList.contains('screen') || el.classList.contains('body') ||
         el.classList.contains('pin') || el.classList.contains('spacer')) return;
+    /* the studio's name sits in the band ONLY while the chip is held off a first launch (.sws-music-held), and the
+       chip never shows with it: they cannot meet, so it is not an intruder (polish round 3, 22 Nov). */
+    if (el.classList.contains('brandcorner') && document.documentElement.classList.contains('sws-music-held') + document.body.classList.contains('sws-music-held')) return;
     const scr = el.closest('.screen');
     if (!scr || !scr.classList.contains('on')) return;
     const cs = getComputedStyle(el);

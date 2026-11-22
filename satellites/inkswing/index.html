@@ -111,6 +111,7 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 #strip{position:absolute;z-index:5;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;
   touch-action:pan-x;scrollbar-width:none}
 #strip::-webkit-scrollbar{display:none}
+#strip[hidden]{display:none}
 .tchip{flex:0 0 48px;width:48px;height:48px;border-radius:12px;border:2px solid rgba(251,246,232,.35);
   padding:0;position:relative;font-family:inherit;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
 .tchip.on{border-color:#FBF6E8;box-shadow:inset 0 0 0 3px var(--brass)}
@@ -171,7 +172,9 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 .card.on{border-color:var(--brass);background:rgba(176,141,62,.18)}
 .card .nm{display:block;font-size:.95rem;font-weight:700}
 .card .sub{display:block;font-size:.74rem;color:var(--muted);margin-top:3px}
-.card[disabled]{opacity:.5}
+.card[disabled]{border-style:dashed}
+/* a locked rig dims its name, never the line that says how to open it (it read grey on black at half strength) */
+.card[disabled] .nm{opacity:.5}
 #folioList,#rigList,#posterList{display:flex;flex-direction:column;gap:8px}
 /* ⛔ THE FOLIO SHOWS WHAT YOU KEPT (Play queue round four). KEEP saved up to 48 drawings and the folio screen was a
    title and BACK: nothing ever filled the list. Two thumbnails a row, newest first, each one a tap that opens it
@@ -1905,7 +1908,7 @@ function suitePurity(T, src) {
 }
 // ---- TEST_EXPORT_END ----
 /* ============================ 16. THE PAGE ============================ */
-var STAMP = '20261114d';
+var STAMP = '20261122a';
 function el(id) { return document.getElementById(id); }
 var V = { cv: null, ctx: null, W: 0, H: 0, dpr: 1, t: 0, ppu: 0.34, ox: 0, oy: 0 };
 /* the throw strip's row (call 60): a 48 px chip with 4 px of air above and below it */
@@ -2290,9 +2293,76 @@ function tearOff() {
 }
 
 /* ============================ 18. THE RIG, DRAWN ============================ */
+/* THE RAG SHEET (polish round 3, 22 Nov): the paper is a heavy laid sheet, its laid and chain lines showing, a
+   soft deckle edge, a plate mark pressed into it, and the one light from the upper left on all of it. Painted once
+   per size into PAPER.cv; a frame draws one image (cheaper than the gradient and 700 grains it replaces).
+   ?look=classic is the plain sheet. The sand table keeps its own dark board. */
+var LOOK_CLASSIC = /[?&]look=classic\b/.test(location.search);
+var PAPER = { cv: null, key: '' };
+function paperCache(w, h) {
+  var m = 14, d = V.dpr || 1, key = Math.round(w) + 'x' + Math.round(h) + '@' + d;
+  if (PAPER.key === key && PAPER.cv) return PAPER.cv;
+  var cv = document.createElement('canvas');
+  cv.width = Math.ceil((w + 2 * m) * d); cv.height = Math.ceil((h + 2 * m) * d);
+  var c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0);
+  var X = m, Y = m, i, k, r = function (a, b) { return grainAt(a, b); };
+  /* the deckle: every edge wanders a little, the same way every time */
+  function edge() {
+    var q; c.beginPath(); c.moveTo(X, Y);
+    for (q = 1; q <= 40; q++) c.lineTo(X + w * q / 40, Y + (r(q, 11) - 0.5) * 1.6);
+    for (q = 1; q <= 50; q++) c.lineTo(X + w + (r(q, 12) - 0.5) * 1.6, Y + h * q / 50);
+    for (q = 1; q <= 40; q++) c.lineTo(X + w - w * q / 40, Y + h + (r(q, 13) - 0.5) * 1.6);
+    for (q = 1; q <= 50; q++) c.lineTo(X + (r(q, 14) - 0.5) * 1.6, Y + h - h * q / 50);
+    c.closePath();
+  }
+  /* its shadow falls down and to the right, away from the light */
+  for (k = 5; k >= 1; k--) {
+    c.save(); c.translate(1 + k * 0.9, 2 + k * 1.1); edge(); c.fillStyle = 'rgba(0,0,0,' + (0.07 + 0.02 * (5 - k)) + ')'; c.fill(); c.restore();
+  }
+  edge(); c.fillStyle = '#EFE6D2'; c.fill();
+  c.save(); edge(); c.clip();
+  var g = c.createRadialGradient(X + w * 0.18, Y + h * 0.08, 0, X + w * 0.3, Y + h * 0.3, Math.hypot(w, h) * 0.95);
+  g.addColorStop(0, '#F8F2E3'); g.addColorStop(0.55, '#F0E7D2'); g.addColorStop(1, '#E6DBC6');
+  c.fillStyle = g; c.fillRect(X, Y, w, h);
+  /* laid lines across, chain lines down: the mould the sheet was made on */
+  c.fillStyle = 'rgba(150,128,90,.045)';
+  for (i = Y + 1; i < Y + h; i += 2.6) c.fillRect(X, i, w, 0.7);
+  c.strokeStyle = 'rgba(150,128,90,.045)'; c.lineWidth = 1.1;
+  for (i = X + 13; i < X + w; i += 26) {
+    c.beginPath(); c.moveTo(i, Y);
+    for (k = 1; k <= 12; k++) c.lineTo(i + (r(k + i | 0, 21) - 0.5) * 0.9, Y + h * k / 12);
+    c.stroke();
+  }
+  /* the fibre */
+  var n = Math.round(w * h / 300);
+  for (i = 0; i < n; i++) {
+    c.fillStyle = r(i, 3) < 0.55 ? 'rgba(120,100,66,.07)' : 'rgba(255,252,242,.5)';
+    var fx = X + r(i, 1) * w, fy = Y + r(i, 2) * h, a = r(i, 4) * 3.1416, L = 1 + r(i, 5) * 3;
+    c.save(); c.translate(fx, fy); c.rotate(a); c.fillRect(0, 0, L, 0.6); c.restore();
+  }
+  /* the plate mark: pressed in, so its top and left walls are in shade and its bottom and right walls catch the light */
+  var pi = Math.max(8, Math.min(w, h) * 0.045), px = X + pi, py = Y + pi, pw = w - 2 * pi, ph = h - 2 * pi;
+  c.lineWidth = 1.2;
+  c.strokeStyle = 'rgba(110,88,52,.20)';
+  c.beginPath(); c.moveTo(px, py + ph); c.lineTo(px, py); c.lineTo(px + pw, py); c.stroke();
+  c.strokeStyle = 'rgba(255,253,245,.85)';
+  c.beginPath(); c.moveTo(px + pw + 0.9, py + 0.9); c.lineTo(px + pw + 0.9, py + ph + 0.9); c.lineTo(px + 0.9, py + ph + 0.9); c.stroke();
+  c.fillStyle = 'rgba(110,88,52,.035)'; c.fillRect(px, py, pw, ph);
+  c.restore();
+  /* the lit lip of the deckle on the light side */
+  c.strokeStyle = 'rgba(255,253,245,.55)'; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(X + 0.5, Y + h); c.lineTo(X + 0.5, Y + 0.5); c.lineTo(X + w, Y + 0.5); c.stroke();
+  PAPER.cv = cv; PAPER.key = key; PAPER.m = m;
+  return cv;
+}
 function drawPaper(ctx) {
   var w = CONFIG.SHEET_W * V.ppu, h = CONFIG.SHEET_H * V.ppu;
   var x = V.ox - w / 2, y = V.oy - h / 2;
+  if (!LOOK_CLASSIC && G.sheet.mode !== 'sand') {
+    var pc = paperCache(w, h), pm = PAPER.m;
+    ctx.drawImage(pc, x - pm, y - pm, w + 2 * pm, h + 2 * pm);
+    return;
+  }
   ctx.fillStyle = 'rgba(0,0,0,.45)';
   ctx.fillRect(x + 3, y + 5, w, h);
   var g = ctx.createLinearGradient(x, y, x, y + h);
@@ -2706,7 +2776,9 @@ function soundRip() {
 var RIG_ARM_MS = 3000;
 function toast(msg, ms) {
   var t = el('toast');
-  t.classList.remove('top');
+  /* on the sheet the low band is the ink rail and the buttons: a two line toast there lay on the swatches
+     ("Today it is ...") and on UNDO and KEEP. It comes from the top, over the rig's pivot, as KEEP's does. */
+  t.classList.toggle('top', G.screen === 'sheet');
   t.textContent = msg;
   t.classList.add('on');
   clearTimeout(toast._h);
@@ -2840,13 +2912,26 @@ function boot() {
   });
   el('btnPosterExport').addEventListener('click', function () { exportPoster(); });
   el('btnDaily').addEventListener('click', function () {
+    /* ⛔ TODAY'S RATIO IS A NEW SHEET, so a drawn sheet says so first, as a rig card does (call 59): it threw an
+       unkept drawing away without a word (polish round 3, 22 Nov). The same button again while the warning is up
+       goes on; an empty sheet switches at once. */
+    var now = Date.now();
+    var me = this;
+    if (G.sheet && G.sheet.throws.length && !(G.dailyArm && now - G.dailyArm < RIG_ARM_MS)) {
+      G.dailyArm = now;
+      me.textContent = 'SURE? IT CLEARS THE SHEET';
+      setTimeout(function () { me.textContent = "TODAY'S RATIO"; }, RIG_ARM_MS);
+      return;
+    }
+    G.dailyArm = 0;
+    me.textContent = "TODAY'S RATIO";
     var d = dailyRig(Date.now());
     G.sheet = newSheet({ rig: d.rig, lengths: d.lengths });
     G.t = 0;
     resetLayers();
     renderRigScreen();
     showScreen('Sheet');
-    toast('Today it is ' + (RIGS[d.rig] || RIGS.single).name.toLowerCase().replace('the ', '')
+    toast('Today: ' + (RIGS[d.rig] || RIGS.single).name
       + ', ' + noteName(d.lengths[0]) + ' against ' + noteName(d.lengths[1]));
   });
   el('btnKeepMine').addEventListener('click', function () {

@@ -72,6 +72,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 .row > *{flex:1 1 0;min-width:0;width:auto;max-width:none}
 .title{font-size:1.9rem;font-weight:700;letter-spacing:.12em;text-align:center;margin:0}
 .tag{font-size:.9rem;text-align:center;color:var(--pencil);margin:2px 0 16px;line-height:1.6}
+#hud .nw{white-space:nowrap}
 .cap{font-size:.72rem;letter-spacing:.18em;color:var(--pencil);text-transform:uppercase;margin:8px 0 0}
 /* call 61: where a free throw goes. Four words in one row under the big button; at 320 each is
    66 px wide, so the letters close up rather than the row wrapping and pushing HOW off the phone */
@@ -312,7 +313,7 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #hangarActions.on{display:flex}
 /* ⛔ on a screen that is a LIST, a toast anchored to the bottom sits on the
    button at the end of it. On those screens it comes from the top instead. */
-body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
+body.listing #toast,body.inshop #toast{top:calc(72px + var(--safeT));bottom:auto}
 #toast{position:fixed;left:50%;bottom:calc(96px + var(--safeB));transform:translateX(-50%);
   background:var(--ink);color:var(--sheet);padding:10px 16px;border-radius:10px;font-size:.82rem;
   z-index:40;opacity:0;pointer-events:none;transition:opacity 170ms ease-out;max-width:84%;text-align:center}
@@ -320,6 +321,9 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 #testPanel{position:absolute;inset:0;z-index:60;background:#1b1a17;color:#dfe;overflow:auto;
   font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px;display:none;white-space:pre-wrap}
 #testPanel.on{display:block}
+#creaseBg{position:absolute;inset:0;width:100%;height:100%;z-index:9;pointer-events:none;display:none}
+body.creased.listing #creaseBg{display:block}
+body.creased .screen{background:transparent}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
 <style id="musicHeld">/* the soundtrack held (SWS_MANNERS sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
@@ -487,7 +491,7 @@ body.listing #toast{top:calc(72px + var(--safeT));bottom:auto}
 
   <div class="screen" id="scrHangar">
     <div class="col">
-      <div class="cap">The hangar</div>
+      <div class="title" style="font-size:1.3rem">The hangar</div>
       <div id="hangarList"></div>
       <div id="hangarActions">
         <button class="btn go" id="btnHangarFly">FLY THIS ONE</button>
@@ -4294,7 +4298,8 @@ function drawTunnel(ctx) {
   var L = clamp(R.lift / ref, -1.2, 1.2) * unit, Dg = clamp(R.drag / ref, 0, 1.2) * unit;
   TUN.liftLen = Math.abs(L); TUN.dragLen = Dg;
   tunArrow(ctx, r.x + TUN_WX * sx, cy, 0, -L, '#8FD08A', 'LIFT');
-  tunArrow(ctx, r.x + TUN_WX * sx, cy, Dg, 0, '#E8897A', 'DRAG');
+  /* a short drag arrow ends on the paper, so its name drops below the plane */
+  tunArrow(ctx, r.x + TUN_WX * sx, cy, Dg, 0, '#E8897A', 'DRAG', s * 0.42 + 14);
   /* where its own weight would reach on the same scale, so the arrow is not
      just long, it is long ENOUGH */
   var wy = clamp(R.weight / ref, 0, 1.2) * unit;
@@ -4336,7 +4341,7 @@ function drawTunnel(ctx) {
   ctx.lineWidth = 2;
   ctx.strokeRect(r.x, r.y, r.w, r.h);
 }
-function tunArrow(ctx, x, y, dx, dy, col, label) {
+function tunArrow(ctx, x, y, dx, dy, col, label, dropY) {
   var len = Math.sqrt(dx * dx + dy * dy);
   if (len < 3) return;
   ctx.save();
@@ -4357,6 +4362,7 @@ function tunArrow(ctx, x, y, dx, dy, col, label) {
   /* the head, and then clear of it: the up arrow labels above its point, the
      back arrow labels beyond its point */
   if (Math.abs(uy) > Math.abs(ux)) { ctx.textAlign = 'center'; ctx.fillText(label, hx, hy - 7); }
+  else if (dropY) { ctx.textAlign = 'center'; ctx.fillText(label, hx, y + dropY); }
   else { ctx.textAlign = 'left'; ctx.fillText(label, hx + 6, hy + 4); }
   ctx.restore();
 }
@@ -4461,7 +4467,7 @@ function toTunnel() {
 }
 
 /* ========================= 17. THE FIELD ========================= */
-var STAMP = '20261114c';
+var STAMP = '20261122a';
 var G = {
   screen: 'title', spec: null, res: null, live: null, liveT: 0, flying: false,
   trail: [], ghost: null, best: null, lastClass: null, throws: 0,
@@ -4490,6 +4496,8 @@ function showScreen(name) {
   el('shop').classList.toggle('on', shop);
   el('tunnel').classList.toggle('on', tun);
   document.body.classList.toggle('listing', !field && !shop && !tun);
+  /* the workshop's drawer fills the bottom: a toast there lay over the plane's numbers */
+  document.body.classList.toggle('inshop', shop);
   if (!shop) SHOP.on = false;
   el('btnBack').hidden = !(field || shop || tun);
   if (!field) el('btnSling').hidden = true;
@@ -4551,9 +4559,10 @@ function updateHud() {
         : G.live.x.toFixed(1) + ' m out, ' + G.live.y.toFixed(1) + ' m up') : '')
     : (ch ? 'gold at ' + ch.medals.gold + ' ' + ch.unit + (ch.high ? '' : ' from the middle')
       : (G.armed || !G.best ? 'pull back and let go' : 'best ' + G.best.distance.toFixed(1) + ' m'));
-  el('hud').innerHTML = name + '<br>' + line
-    + '  &middot;  elev ' + trimWord(G.spec.elev)
-    + '  &middot;  ' + (D.mass * 1000).toFixed(1) + ' g';
+  /* each piece holds together: at 360 the line broke inside "elev / level" */
+  var nw = function (t) { return '<span class="nw">' + t + '</span>'; };
+  el('hud').innerHTML = name + '<br>' + (line ? nw(line) + ' &middot; ' : '')
+    + nw('elev ' + trimWord(G.spec.elev)) + ' &middot; ' + nw((D.mass * 1000).toFixed(1) + ' g');
 }
 
 /* the throw: a pull back from the plane, released the other way */
@@ -5427,6 +5436,75 @@ window.AIRWORTHY_TEST = {
   trimOpen: function () { return el('scrTrim').classList.contains('on'); },
   renderDoodads: function () { renderDoodads(); }
 };
+
+/* THE CREASED SHEET (20 Nov polish). The menu screens stand on the sheet a plane was folded from and opened
+   out again: its creases, each facet catching the one light from the upper left, and the paper's own fibre.
+   Painted once per size into one canvas behind the screens, so a frame costs nothing. ?look=classic is the flat
+   page. The creases bow the same small way every time they are drawn (STYLE.md, the one imperfection). */
+(function () {
+  if (/[?&]look=classic\b/.test(location.search)) return;
+  var cv = document.createElement('canvas'); cv.id = 'creaseBg'; cv.setAttribute('aria-hidden', 'true');
+  var app = document.getElementById('app'); if (!app || !cv.getContext) return;
+  app.insertBefore(cv, app.firstChild); document.body.classList.add('creased');
+  var LX = -0.55, LY = -0.62, LZ = 0.56; /* the light: upper left, a little low */
+  function seeded(s) { return function () { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
+  function paint() {
+    var dpr = Math.min(2, window.devicePixelRatio || 1), W = window.innerWidth, H = window.innerHeight;
+    if (!W || !H) return;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.fillStyle = '#EFE9DC'; g.fillRect(0, 0, W, H);
+    /* the sheet, upright, apex at the top centre, a little larger than the screen so its edges never show */
+    var sw = Math.max(W * 1.08, H / 1.414 * 1.08), sh = sw * 1.414, ox = (W - sw) / 2, oy = -sh * 0.04;
+    var P = function (u, v) { return [ox + u * sw, oy + v * sw]; };
+    var A = P(0.5, 0), bot = 1.414;
+    /* rays from the apex to the bottom edge (or the side), left to right: the dart's folds */
+    var ends = [P(0, 0.5), P(0, 1.10), P(0.12, bot), P(0.33, bot), P(0.5, bot), P(0.67, bot), P(0.88, bot), P(1, 1.10), P(1, 0.5)];
+    var poly = [P(0, 0)].concat(ends).concat([P(1, 0)]);
+    /* facets between neighbouring rays, each tilted the other way from the last: valley, mountain */
+    var corners = [P(0, 0), P(0, 0.5), P(0, 1.10), P(0, bot), P(0.12, bot), P(0.33, bot), P(0.5, bot), P(0.67, bot), P(0.88, bot), P(1, bot), P(1, 1.10), P(1, 0.5), P(1, 0)];
+    var rayIdx = [1, 2, 4, 5, 6, 7, 8, 10, 11]; /* which corner each ray ends on */
+    var segs = [[0, 1]]; for (var i = 0; i < rayIdx.length - 1; i++) segs.push([rayIdx[i], rayIdx[i + 1]]); segs.push([11, 12]);
+    for (var f = 0; f < segs.length; f++) {
+      var pts = [A]; for (var c = segs[f][0]; c <= segs[f][1]; c++) pts.push(corners[c]);
+      var mid = corners[Math.round((segs[f][0] + segs[f][1]) / 2)];
+      var ax = mid[0] - A[0], ay = mid[1] - A[1], al = Math.hypot(ax, ay) || 1; ax /= al; ay /= al;
+      var th = (f % 2 ? 1 : -1) * 0.16, s = Math.sin(th);
+      var nx = -ay * s, ny = ax * s, nz = Math.cos(th);
+      var d = (nx * LX + ny * LY + nz * LZ) - LZ; /* brighter or darker than flat paper */
+      g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (var k = 1; k < pts.length; k++) g.lineTo(pts[k][0], pts[k][1]); g.closePath();
+      g.fillStyle = d > 0 ? 'rgba(255,253,246,' + Math.min(0.55, d * 3.2).toFixed(3) + ')' : 'rgba(90,72,48,' + Math.min(0.10, -d * 0.75).toFixed(3) + ')';
+      g.fill();
+    }
+    /* the creases: a soft shadow on the dark side and a lit lip on the light side, bowed the same small way */
+    function crease(a, b, bow) {
+      var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1;
+      var cx = mx - dy / l * bow * l, cy = my + dx / l * bow * l;
+      g.lineCap = 'round';
+      g.strokeStyle = 'rgba(110,96,70,0.20)'; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(a[0] + 0.8, a[1] + 0.8); g.quadraticCurveTo(cx + 0.8, cy + 0.8, b[0] + 0.8, b[1] + 0.8); g.stroke();
+      g.strokeStyle = 'rgba(255,255,250,0.75)'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(a[0] - 0.6, a[1] - 0.6); g.quadraticCurveTo(cx - 0.6, cy - 0.6, b[0] - 0.6, b[1] - 0.6); g.stroke();
+    }
+    for (var r = 0; r < ends.length; r++) crease(A, ends[r], 0.006);
+    crease(P(0.05, 1.0), P(0.05, bot), 0.01); crease(P(0.95, 1.0), P(0.95, bot), -0.01);
+    /* the fibre: short hairs and specks, seeded, so it is the same sheet every visit */
+    var rnd = seeded(20261120), n = Math.round(W * H / 260);
+    var dark = new Path2D(), lit = new Path2D();
+    for (var q = 0; q < n; q++) {
+      var x = rnd() * W, y = rnd() * H, len = 1 + rnd() * 4, ang = rnd() * Math.PI, hp = rnd() < 0.5 ? dark : lit;
+      hp.moveTo(x, y); hp.lineTo(x + Math.cos(ang) * len, y + Math.sin(ang) * len);
+    }
+    g.lineWidth = 0.6; g.strokeStyle = 'rgba(120,104,78,0.10)'; g.stroke(dark);
+    g.strokeStyle = 'rgba(255,255,250,0.35)'; g.stroke(lit);
+    /* the room falls off to the far corner, away from the light */
+    var vg = g.createRadialGradient(W * 0.2, H * 0.12, Math.min(W, H) * 0.2, W * 0.4, H * 0.4, Math.max(W, H) * 1.05);
+    vg.addColorStop(0, 'rgba(60,48,30,0)'); vg.addColorStop(1, 'rgba(60,48,30,0.16)');
+    g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  }
+  var t = 0; function later() { clearTimeout(t); t = setTimeout(paint, 120); }
+  paint(); window.addEventListener('resize', later); window.addEventListener('orientationchange', later);
+})();
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
 else boot();
