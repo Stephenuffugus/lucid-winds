@@ -109,14 +109,17 @@ button:active:not(:disabled), button.press:not(:disabled) { transform: scale(0.9
 #tighter { position: absolute; left: 0; right: 0; top: 40%; margin: 0; padding: 10px; text-align: center; background: var(--brick); color: var(--glare); font-weight: 700; }
 #cropbar { display: flex; gap: 12px; padding: 10px 16px 14px; }
 /* R10 FILM STOCKS: six film boxes above Develop (Auto and the five biomes); placeholder tiles with the biome badge until Astra's boxes */
-#stocks { display: flex; gap: 3px; padding: 8px 6px 0; }
+#stocks { display: flex; gap: 2px; padding: 8px 4px 0; }
+#stocks[hidden] { display: none; }   /* sb-m2-30: the very first crop shows no film row (the roll already skips the first room) */
 #stocks .stock { flex: 1; min-width: 0; min-height: 48px; padding: 3px 1px; border: 1px solid var(--ash); border-radius: 8px; background: var(--paper); color: var(--ink); font-size: 0.7rem; font-weight: 700; line-height: 1.1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
 #stocks .stock i { width: 48px; height: 48px; max-width: 100%; background: center / contain no-repeat; image-rendering: pixelated; }   /* R10 art: Astra's 48 px film box; the locked state is her own sheet with its lock */
 #stocks .stock.on { border: 2px solid var(--amber); background: var(--film); }
 /* sb-m2-28: a locked film reads at a glance, dark with a dashed edge: its name, a small pixel lock, and the rank that opens
    it in 12 px Film (it was 11 px Pewter on Ash, "Frost at Focus Puller" hard to read); the name steps its own size down
    to fit its tile (ui.drawStocks), the rank wraps a word a line, and the row stays one line of tiles at 360 */
-#stocks .stock b { display: block; max-width: 100%; font-weight: 700; white-space: nowrap; }
+#stocks .stock b { display: block; max-width: 100%; font-size: 12px; font-weight: 700; white-space: nowrap; }
+#stocks .stock b.two { white-space: normal; hyphens: manual; text-align: center; }
+#stocks .stock:not(.locked) { min-width: 48px; }   /* sb-m2-29: an open film is 48 px wide or more and its name 12 px (Auto and Attic were 34 to 44 px, names 11 px, Overgrowth 7 px) */
 #stocks .stock.locked { flex-grow: 1.8; padding: 3px 0; color: var(--paper); background: var(--soot); border: 1px dashed var(--pewter); justify-content: flex-start; }   /* an open film needs only its box and a short name: a locked one takes the wider share for its rank */
 #stocks .stock.locked i { width: 36px; height: 36px; opacity: 0.8; }
 #stocks .stock.locked small { display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: 100%; font-size: 12px; font-weight: 400; letter-spacing: -0.03em; line-height: 1.1; color: var(--film); text-align: center; }
@@ -154,8 +157,11 @@ button:active:not(:disabled), button.press:not(:disabled) { transform: scale(0.9
 #rolltiles button.lit { outline: 4px solid var(--sun); outline-offset: 2px; }
 #roll.landed #rolltiles button:not(.lit) { opacity: 0.45; }
 #rolltiles button.dim { opacity: 0.35; }
-#rolltiles span { white-space: nowrap; }
+#rolltiles span { white-space: nowrap; font-size: 12px; font-weight: 700; line-height: 1.15; text-align: center; }
+#rolltiles span.two { white-space: normal; hyphens: manual; }   /* sb-m2-29: no name under 12 px (Overgrowth stepped down to 6 px at 320): the long one breaks at its own hyphen */
 #roll.choosing #rolltiles button:not(.dim) { box-shadow: 0 0 0 2px var(--paper); }
+#roll.choosing #rolltiles button.shut { display: none; }   /* sb-m2-29: a film the rank has not opened is not offered */
+#rolltiles { justify-content: center; } #roll.choosing #rolltiles button { max-width: 96px; }
 #rollsay { margin: 0; min-height: 1.4em; text-align: center; font-size: 1.05rem; }
 #rollbar { display: flex; gap: 12px; width: 100%; max-width: 420px; }
 #rollbar button { flex: 1; min-height: 56px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
@@ -348,7 +354,7 @@ body:not(.playing) #floorname { display: none; }
 #paused h2, #clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
 #paused button, #clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
 #resume, #nextroom, #deathagain, #deathcp { background: var(--sun); color: var(--ink); }
-#clearbank { margin: 0; font-size: 0.95rem; } #clearkept, #clearprint, #cleartime, #clearbeat { margin: 0; font-size: 0.95rem; } #clearbeat, #sharetime { font-weight: 700; }   /* the print line had the default margins (5 Nov look) */
+#clearbank { margin: 0; font-size: 0.95rem; } #clearhalf { margin: 0; font-size: 0.85rem; opacity: 0.8; } #clearkept, #clearprint, #cleartime, #clearbeat { margin: 0; font-size: 0.95rem; } #clearbeat, #sharetime { font-weight: 700; }   /* the print line had the default margins (5 Nov look) */
 /* the share sheet (T1.8): the record's 16 colour grid, the three sentences, the link and its buttons; it scrolls on short phones */
 #sharesheet { position: absolute; left: 0; right: 0; top: 2%; bottom: 2%; margin: 0 auto; width: min(360px, 96vw); padding: 14px; overflow-y: auto;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
@@ -426,7 +432,8 @@ body:not(.playing) #floorname { display: none; }
 #trbar { display: flex; align-items: center; gap: 12px; } #trbar h2 { margin: 0; font-size: 1.3rem; }
 #trback { min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--slate); background: transparent; color: var(--ash); }
 #trophies h3 { margin: 6px 0 0; font-size: 1rem; color: var(--ash); }
-#trlist { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#trlist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 379px) { #trlist { grid-template-columns: minmax(0, 1fr); } }   /* sb-m2-29: two columns ran off the right edge under 360 (Housewarming set the column's width) */
 .tr { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--slate); }
 .tr b { display: block; font-size: 0.95rem; } .tr span { display: block; font-size: 0.8rem; color: var(--ash); }
 .tr i { flex: none; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--slate); box-sizing: border-box; }
@@ -528,7 +535,8 @@ body:not(.playing) #floorname { display: none; }
 /* R10 RANK: the title's rank line, a name, a bar to the next rank, the XP left */
 #rankline { margin: 4px 0 0; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--film); }
 #rankline[hidden] { display: none; }
-#rankbar { flex: 1; height: 4px; background: var(--slate); border-radius: 2px; overflow: hidden; } #rankbar i { display: block; height: 100%; width: 0; background: var(--sun); }
+#rankline { flex-wrap: wrap; row-gap: 2px; }   /* sb-m2-30: at 320 the next rank line wraps under, the bar keeps a readable width */
+#rankbar { flex: 1 1 64px; min-width: 64px; height: 4px; background: var(--slate); border-radius: 2px; overflow: hidden; } #rankbar i { display: block; height: 100%; width: 0; background: var(--sun); }
 #rankline small { color: var(--ash); font-size: 0.78rem; white-space: nowrap; }
 #rankbadge { width: 24px; height: 24px; flex: none; background: 0 0 / 24px 24px no-repeat; image-rendering: pixelated; }   /* R10 art: Astra's iris badge, one stop wider a rank */
 #clearrank { margin: 0; font-size: 0.95rem; }
@@ -630,6 +638,8 @@ body:has(#clear.on) #dp { visibility: hidden; }
 #settings button.act { min-height: 48px; border-radius: 10px; border: 2px solid var(--paper); background: transparent; color: var(--paper); font-weight: 700; }
 #setdamaged { color: var(--sun); font-weight: 700; margin: 0; } #setperf, #setbuild { color: var(--ash); font-size: 0.85rem; margin: 0; }
 #setinstall { display: flex; align-items: center; gap: 10px; margin: 0; } #setinstall span { flex: 1 1 auto; }
+#setinstall[hidden] { display: none; }
+#setmove { margin: 4px 0 0; } #setmove > summary { min-height: 48px; display: flex; align-items: center; cursor: pointer; opacity: 0.75; font-size: 0.95rem; } #setmove[open] > summary { opacity: 1; } #setmove > summary::-webkit-details-marker { display: none; } #setmove > summary::after { content: '\25B8'; margin-left: 10px; } #setmove[open] > summary::after { content: '\25BE'; } #setmove > :not(summary) { margin-top: 8px; }   /* sb-m2-30 */   /* sb-m2-29: the flex above beat the hidden attribute, so an installed app still showed the row */
 /* sb-m2-28: Install is a real button when the browser offers the install (it was the browser's grey box with Paper text
    on it, so it read as an empty control; now Paper on the dark, as Copy the save); without the offer it is hidden and the line says how to add the game */
 #install { flex: none; min-height: 48px; min-width: 96px; padding: 0 16px; border-radius: 10px; border: 2px solid var(--paper); background: transparent; color: var(--paper); font-weight: 700; }   /* as Settings' other buttons (.act) */
@@ -662,9 +672,11 @@ body:has(#clear.on) #dp { visibility: hidden; }
    death card the chip is hidden too (below), so the box stays released there and the stick never moves under a held
    thumb when the hero falls (the stick's review) */
 #strip { --btn: 64px; --res: 120px; }
-body.playing #strip, body:has(#death.on) #strip { --res: 0px; }
+body.playing #strip, body:has(#death.on) #strip, body:has(#clear.on) #strip { --res: 0px; }
 #reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); }
-body.playing #reserve, body:has(#death.on) #reserve { display: none; }
+body.playing #reserve, body:has(#death.on) #reserve, body:has(#clear.on) #reserve { display: none; }
+/* sb-m2-29: the clear card releases the box too. Since sb-m2-28 the chip's one seat is the title's and Settings' top row,
+   never the clear card, so the box reserved nothing there and only pushed the stick's "slide to run" line under B and A */
 /* the stick (Q140): nothing is drawn where a thumb can land until it lands but a quiet line (the two arrows and
    "slide to run", no box, no ring: it must never read as a button); then the pad and its knob appear centred under the
    landing point (the stick's review: kept off the room and off B only, so at the screen's edge and its bottom the pad
@@ -865,11 +877,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <div class="lookset"><p data-copy="lookFrame"></p><div id="lookframe" role="radiogroup" data-aria="lookFrame"></div></div></div>
   <label class="row"><span data-copy="setMotion"></span><select id="setmotion"><option value="os" data-copy="motionOs"></option><option value="on" data-copy="motionOn"></option><option value="off" data-copy="motionOff"></option></select></label>
   <p id="setinstall"><span id="setinstalltext"></span> <button id="install" type="button" data-copy="install" hidden></button></p>
+  <details id="setmove"><summary data-copy="setMove"></summary>   <!-- sb-m2-30: the save boxes and the performance line behind one quiet row, closed -->
   <textarea id="setexport" readonly data-aria="setExport"></textarea>
   <button id="setcopy" class="act" type="button" data-copy="setCopy"></button>
   <textarea id="setimport" data-aria="setImportBox"></textarea>
   <button id="setimportgo" class="act" type="button" data-copy="setImportGo"></button>
   <p id="setperf"></p>
+  </details>
   <p id="setbuild"></p>
 </main>
 <main id="crop" class="screen" aria-label="Crop">
@@ -899,6 +913,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="pausetitle" type="button" data-copy="toTitle"></button></div></div>
     <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
       <p id="clearbank" hidden></p>
+      <p id="clearhalf" data-copy="bankedHalf" hidden></p>
       <p id="clearwhat" class="what" hidden></p>
       <p id="cleartime" hidden></p>
       <p id="clearbeat" hidden></p>
@@ -1200,7 +1215,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-28';
+  SB.BUILD = 'sb-m2-30';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1572,7 +1587,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
       settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0, vibrate: true },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
-      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false, wind: false }, seen: { dp: false, darkroom: false, rank: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
+      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false, wind: false }, seen: { dp: false, darkroom: false, rank: false, slots: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0, curios: 0, curioSets: 0 }, trophies: [], trophySeen: 0, album: [], curios: [],
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null, rank: 0 };   /* R10: the rank last granted (its rewards given) */
   }
@@ -10500,14 +10515,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     tighterDark: 'Too dark to find a floor. Try a brighter photo.',
     nothingClimbs: 'Nothing in this photo can be climbed. Try another photo.',
     nothingDark: 'This photo is too dark to climb. A dim room or a night sky reads as one wall. Try a brighter photo.',
-    cropHint: 'Drag and pinch to frame the room. Tap a shape to hide the chest there.',
+    cropHint: 'Drag and pinch to frame the room. Tap a shape to hide the chest there.', cropHintFirst: 'Drag and pinch to frame the room.', setMove: 'Move your save to a new phone',
     seeking: 'Looking for a box that builds',
     seekHint: 'Looking for a box that builds. Touch the photo to stop.',
     seekFound: 'Found a box that builds.',
     nothingHint: 'Tap Retake for another photo.',
     badPhoto: 'That photo did not open. Try another.',
-    photoRoom: 'Your room',
-    rollHead: 'The biome', rollPrint: 'Your photo', rollStop: 'Tap to stop', rollLanded: '{name}. Tap to climb.', rollChoose: 'Choose', rollPhoto: 'From my photo', rollPick: 'Tap a biome to climb it', rollNo: 'This room does not climb as {name}.',
+    photoRoom: 'Your room', photoRoomShort: 'Room',
+    rollHead: 'The biome', rollPrint: 'Your photo', rollStop: 'Tap to stop', rollLanded: '{name}. Tap to climb.', rollChoose: 'Choose', rollPhoto: 'From my photo', rollPick: 'Tap a biome to climb it', rollPickMore: 'Tap a biome to climb it. Your rank opens more.', rollNo: 'This room does not climb as {name}.',
     death: 'The bug fell out of the picture', toTripod: 'Back to the tripod', floorFurniture: 'The furniture', floorCeiling: 'The ceiling',
     dp: 'Dead pixels', dpGain: '+{n}',
     shareTitle: 'Share this room',
@@ -10525,7 +10540,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     holdHead: 'Hold jump', holdLine: 'Hold the jump button down to go higher', dropHead: 'Drop through', dropLine: 'Hold down and press jump to drop through this ledge', tripodHead: 'The tripod', tripodLine: 'A fall brings you back here', windHead: 'The crosswind', windLine: 'The window breathes: lean into it, or ride it',
     rankGiftStock: '{name} film is yours.', rankGiftLook: 'A new look is yours, worn now.', rankGiftNone: '',
     /* R10 keepsakes: thirty small photographs hidden on the furniture, six a biome */
-    curioHead: 'A keepsake', curioNames: ['The Dusty Globe', 'A Doll\'s Eye', 'The Stopped Clock', 'Grandmother\'s Fan', 'The Tin Soldier', 'A Moth in Amber', 'The Frozen Key', 'A Snow Globe', 'The Blue Bottle', 'The Icicle Comb', 'A Lost Mitten', 'The Last Match', 'The Glass Float', 'A Ship in a Bottle', 'The Anchor Charm', 'A Pearl Button', 'The Diver\'s Watch', 'The Conch', 'The Seed Packet', 'A Pressed Fern', 'The Garden Gnome', 'The Watering Can', 'A Snail Shell', 'The Thorn Crown', 'The Brass Lantern', 'A Matchbook', 'The Kiln Key', 'The Ash Jar', 'A Red Thread', 'The Coal Heart'], curioCount: 'Keepsakes {n} of 30', curioNone: 'None found yet. One hides on the furniture of some rooms, off the climb', curioUnknown: 'Not found', curioSet: 'The {biome} set is complete, its frame is yours, worn now',
+    curioHead: 'A keepsake', curioNames: ['The Dusty Globe', 'A Doll\'s Eye', 'The Stopped Clock', 'Grandmother\'s Fan', 'The Tin Soldier', 'A Moth in Amber', 'The Frozen Key', 'A Snow Globe', 'The Blue Bottle', 'The Icicle Comb', 'A Lost Mitten', 'The Last Match', 'The Glass Float', 'A Ship in a Bottle', 'The Anchor Charm', 'A Pearl Button', 'The Diver\'s Watch', 'The Conch', 'The Seed Packet', 'A Pressed Fern', 'The Garden Gnome', 'The Watering Can', 'A Snail Shell', 'The Thorn Crown', 'The Brass Lantern', 'A Matchbook', 'The Kiln Key', 'The Ash Jar', 'A Red Thread', 'The Coal Heart'], curioCount: 'Keepsakes {n} of 30', curioToFind: '{n} keepsakes to find', curioNone: 'None found yet. One hides on the furniture of some rooms, off the climb', curioUnknown: 'Not found', curioSet: 'The {biome} set is complete, its frame is yours, worn now',
     tr_curio6: 'Six keepsakes', trg_curio6: 'Find six keepsakes', tr_curio30: 'Every keepsake', trg_curio30: 'Find all thirty keepsakes', tr_set1: 'A set', trg_set1: 'Complete one biome\'s keepsakes', tr_set5: 'Every set', trg_set5: 'Complete all five sets',
     levelCode: 'Level code', codePaste: 'Paste', codePlay: 'Play',
     settingsLink: 'Settings', settings: 'Settings', recentRooms: 'Recent rooms', recentRoom: 'A recent room',
@@ -10540,7 +10555,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     codeNewer: 'This room was made by a newer Shutterbug. Update and try again.',
     nextRoom: 'Shoot the next room',
     playAgain: 'Play it again',
-    banked: 'Banked {n} dead pixels', bankedOne: 'Banked 1 dead pixel', bankedOf: 'Banked {n} of {of} dead pixels',
+    banked: 'Banked {n} dead pixels', bankedOne: 'Banked 1 dead pixel', bankedOf: 'Banked {n} of {of} dead pixels', bankedHalf: 'Free play banks half.',
     qrShow: 'Show QR code', qrHide: 'Hide QR code', qrLong: 'Long code, the link is easier.',
     /* Weapons v1 step 1 (docs/WEAPONS-V1.md 10): each built weapon's name (DESIGN 9.1's) and the one sentence the pickup
        card says; the slot boxes' labels. The lint holds wpn and wpnSays to exactly the built ids */
@@ -10573,7 +10588,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     doorCleared: 'Room {n} of {of} cleared', doorTougher: 'Room {n} is tougher', doorLast: 'The last room is next', enterRoom: 'Play room {n}',
     doorHearts: '{n} of {max} hearts, one back', doorHeartsFull: '{n} of {max} hearts', cropBack: 'Back',
     useRecent: 'Use a recent room', noRecent: 'No recent rooms yet.', leaveHouse: 'Leave the house',
-    houseLost: 'The house is lost', lost: 'Lost {n} dead pixels', lostOne: 'Lost 1 dead pixel', retryHouse: 'Retry House', newHouse: 'New house',
+    houseLost: 'The house is lost', lost: 'Lost {n} dead pixels', lostOne: 'Lost 1 dead pixel', retryHouse: 'Retry house', newHouse: 'New house',
     houseReplace: 'Start a new house? The saved house will be lost.', houseCleared: 'House cleared', houseSum: '{rooms} rooms, {n} dead pixels', houseSumOne: '{rooms} rooms, 1 dead pixel',
     /* HOUSE-B: the guardian, the prize, the looks */
     guardHint: 'Beat the guardian to light the exit', trophiesLink: 'Trophies and bugs', trophiesNew: 'Trophies and bugs, {n} new', trophiesHead: 'Trophies {n} of {max}', bugsHead: 'Bugs {n} of {max}', framesHead: 'Frames {n} of {max}', trophyOf: '{n} of {max}', trophyNew: 'New trophy: {name}', nextPrize: 'Clear a house to win the {name}', allLooks: 'Every bug and frame is yours', tr_first: 'First room', trg_first: 'Clear a room', tr_rooms10: 'Ten rooms', trg_rooms10: 'Clear 10 rooms', tr_rooms50: 'Fifty rooms', trg_rooms50: 'Clear 50 rooms', tr_rooms100: 'A hundred rooms', trg_rooms100: 'Clear 100 rooms', tr_house1: 'Housewarming', trg_house1: 'Clear a house', tr_house5: 'Five houses', trg_house5: 'Clear 5 houses', tr_house10: 'Ten houses', trg_house10: 'Clear 10 houses', tr_wall25: 'Wall jumper', trg_wall25: 'Wall jump 25 times', tr_wall250: 'Up the walls', trg_wall250: 'Wall jump 250 times', tr_keys10: 'Key finder', trg_keys10: 'Find 10 keys', tr_keys100: 'Key ring', trg_keys100: 'Find 100 keys', tr_clean1: 'Not a scratch', trg_clean1: 'Clear a room without a hit', tr_clean10: 'Untouchable', trg_clean10: 'Clear 10 rooms without a hit', story_camera: 'The bug lives in your camera.', story_climb: 'Every photo you take becomes a room. It climbs up to the light.', story_print: 'Each light it reaches develops your photo into the album.', storyNext: 'Next', storyDone: 'Fill the album', storyLink: 'Why the bug climbs', albumLink: 'Album', albumEmpty: 'Clear a room and its photo lands here', albumCount: 'Photos {n}, full pages {pages}', albumOne: '1 photo', albumN: '{n} photos', albumPinned: 'Pinned to your album: {biome} page, {n} of 6', albumFull: 'A full {biome} page in your album', albumPlay: 'Play this room again, cleared {date}', albumRoom: 'From your album', biome_attic: 'Attic', biome_frost: 'Frost', biome_deep: 'Deep', biome_overgrowth: 'Overgrowth', biome_ember: 'Ember', biomeHint_attic: 'Shoot wood, browns and warm yellows', biomeHint_frost: 'Shoot a bright, white room', biomeHint_deep: 'Shoot blues and teals', biomeHint_overgrowth: 'Shoot greens and plants', biomeHint_ember: 'Shoot reds and pinks', tr_page1: 'Full page', trg_page1: 'Fill an album page with 6 rooms', tr_pages5: 'Photo album', trg_pages5: 'Fill 5 album pages', tr_biomes5: 'Every biome', trg_biomes5: 'Fill a page in every biome', itemSpeck: 'Dead pixels', itemSpeckSays: 'Spend them in the Darkroom on new weapons', itemBlueprint: 'Blueprint', itemBlueprintSays: 'Carry it out to print a new weapon in the Darkroom', stat_vigor: 'Vigor up', stat_focus: 'Focus up', stat_grit: 'Grit up', statSays_vigor: 'Your dive weapons hit harder', statSays_focus: 'Your jump weapons hit harder', statSays_grit: 'Your charm works stronger', statHeart: '{stat} and one more heart', wallHead: 'Wall jump', wallLine: 'Press jump to kick off the wall', stuckHead: 'Stuck in a pit?', stuckLine: 'Jump at a wall, hold toward it, jump again', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkDevelop: 'Develop for {n}', dkNoPrints: 'No prints yet. Some rooms hide a blueprint: carry it out of the room and it prints here.',
@@ -11004,16 +11019,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
      name 18 px), the hearts take their count form, one heart and 6/8, for the rest of the room. A photo's own name
      keeps its ellipsis. Measured only when the name or the hearts change and on a resize, never in a step */
   function fitName() {
-    var el = document.getElementById('roomname'), forms = G.nameForms && G.nameForms.length ? G.nameForms : [G.name || ''];
+    var el = document.getElementById('roomname'), house = !!(G.nameForms && G.nameForms.length), forms = house ? G.nameForms : G.name === ui.COPY.photoRoom ? [G.name, ui.COPY.photoRoomShort] : [G.name || ''];   /* sb-m2-30: free play's Your room, then Room */
     /* the words first (the tiny form only once the hearts are folded: 5/5 read worse than one heart and 8/8) */
-    var last = G.nameForms && !ui.heartsCount && G.state ? forms.length - 1 : forms.length;
+    var last = forms.length > 1 && !ui.heartsCount && G.state ? forms.length - 1 : forms.length;
     for (var k = 0; k < last; k++) { el.textContent = forms[k]; if (!el.getClientRects().length || el.scrollWidth <= el.clientWidth) return; }   /* hidden (no box), the full form; a shown name squeezed to 0 px is not hidden (HOUSE-ART3: the biome badge and the 28 px slots leave it 0 px at 320 beside 8 hearts) */
     /* the strip steps down before the hearts fold (2 Nov: at 360 three keys, three slots and big hearts pushed the 4th heart
        off the edge and the name to 0 px): first the hearts back to 2x, then the keys to one key and n/max */
     var hb = document.getElementById('hearts');
     if (G.state && !ui.heartsSmall && hb.classList.contains('hbig')) { ui.heartsSmall = true; hearts(G.state.hero.hearts, G.state.hero.heartsMax); return; }
     if (G.state && !ui.keysCount && SB.sim.keysOf(G.state) > 1) { ui.keysCount = true; ui.keys(G.state); return; }
-    if (last < forms.length) { ui.heartsCount = true; hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* hearts() measures again */
+    /* sb-m2-30: a free play room's one name (Your room) folds the hearts to 4/4 too, as a house does, before it is cut */
+    if (G.state && !ui.heartsCount && (last < forms.length || !house)) { ui.heartsCount = true; hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* hearts() measures again */
   }
   ui.fitName = fitName;
   function nameForms(r) {
@@ -11084,7 +11100,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the line over the photo says what the screen is doing (PHOTO1R): how to frame at rest, that the search is looking
      and that a touch stops it, that it found a box, and after a search that found nothing, the button that gets
      another photo (Retake, set apart in Sun while the message shows) */
-  function cropHint(key) { var h = document.getElementById('crophint'); if (h.getAttribute('data-copy') !== key) { h.setAttribute('data-copy', key); h.textContent = ui.COPY[key]; } }
+  function cropHint(key) { if (key === 'cropHint' && !ui.firstRoomDone) key = 'cropHintFirst';   /* sb-m2-30: no chest talk before the first room */
+    var h = document.getElementById('crophint'); if (h.getAttribute('data-copy') !== key) { h.setAttribute('data-copy', key); h.textContent = ui.COPY[key]; } }
   /* a picker opened (Shoot, Choose, Retake, Next room) ends any search first: a box found behind the chooser would
      develop the old photo's room under it (PHOTO1R) */
   function openPicker(id) { seekStop(); CR.from = id; var inp = document.getElementById(id); inp.value = ''; inp.click(); }
@@ -11318,18 +11335,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var C = ui.COPY, B = SB.palette.BIOMES, h = '';
     rollClear(); RL.tok++; RL.on = true; RL.landed = false; RL.choosing = false; RL.built = {}; RL.no = {}; RL.hops = 0; RL.at = -1;
     RL.photo = CR.lastRec.biome - 1; RL.runs++; RL.t0 = performance.now(); RL.tl = 0;
-    for (var k = 0; k < B.length; k++) h += '<button type="button" role="radio" aria-checked="false" class="' + B[k] + '" data-biome="' + k + '"><i style="background-image:var(--film-' + B[k] + '-ready)"></i><span>' + C.stockNames[k] + '</span></button>';
+    for (var k = 0; k < B.length; k++) h += '<button type="button" role="radio" aria-checked="false" class="' + B[k] + '" data-biome="' + k + '"><i style="background-image:var(--film-' + B[k] + '-ready)"></i>' + ui.tileName(C.stockNames[k], 'span') + '</button>';
     document.getElementById('rolltiles').innerHTML = h;
     document.getElementById('roll').classList.remove('choosing'); document.getElementById('roll').classList.remove('landed');
     document.getElementById('roll').classList.toggle('still', SB.render.reduced()); rollLight(-1); rollPrint(true);
     document.getElementById('rollchoose').hidden = false; document.getElementById('rollphoto').hidden = true;
     rollSay(C.rollStop);
     ui.show('roll');
-    /* a name wider than its tile (Overgrowth at 320 px) steps its own size down until it fits */
-    [].forEach.call(document.querySelectorAll('#rolltiles span'), function (sp) {
-      var w = sp.parentNode.clientWidth - 4, fs = parseFloat(getComputedStyle(sp).fontSize);
-      for (var n = 0; n < 8 && sp.scrollWidth > w; n++) { fs *= 0.92; sp.style.fontSize = fs + 'px'; }
-    });
+    /* sb-m2-29: a name wider than its tile (Overgrowth under 412 px) breaks at its hyphen instead of shrinking under 12 px */
+    [].forEach.call(document.querySelectorAll('#rolltiles span'), function (sp) { if (sp.scrollWidth > sp.parentNode.clientWidth - 4) sp.classList.add('two'); });
     /* the target: picked, and built with the room's own options before the sweep (a refusing biome is skipped) */
     var rand = RL.rand || Math.random, tk;
     for (var tries = 0; tries < B.length; tries++) { tk = ui.rollPick(rand(), RL.photo, RL.no); if (rollBuild(tk)) break; }
@@ -11362,10 +11376,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function rollChoose() {
     rollClear(); RL.choosing = true; RL.landed = true;
     var bs = document.getElementById('rolltiles').children;
-    for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('dim', !!RL.no[i]);
+    /* sb-m2-29 (the lead's call): Choose offers only the films the player's rank has opened (ui.stockOpen, the crop's own
+       rule; the roll itself still lands on any biome) */
+    var d = SB.save.doc;
+    for (var i = 0; i < bs.length; i++) { bs[i].classList.toggle('dim', !!RL.no[i]); bs[i].classList.toggle('shut', !ui.stockOpen(d, i + 1)); }
     document.getElementById('roll').classList.add('choosing'); document.getElementById('roll').classList.remove('landed');
     document.getElementById('rollchoose').hidden = true; document.getElementById('rollphoto').hidden = false;
-    rollSay(ui.COPY.rollPick);
+    rollSay(document.querySelector('#rolltiles button.shut') ? ui.COPY.rollPickMore : ui.COPY.rollPick);
   }
   ui.rollBack = function () { rollClear(); RL.on = false; RL.tok++; rollPrint(false); ui.show('crop'); };
   ui.rollDev = {
@@ -11380,7 +11397,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (id === 'rollchoose') { rollChoose(); return; }
       if (id === 'rollphoto') { rollGo(RL.photo); return; }
       if (RL.choosing) {
-        if (!b || !b.hasAttribute('data-biome')) return;
+        if (!b || !b.hasAttribute('data-biome') || b.classList.contains('shut')) return;
         var k = b.getAttribute('data-biome') | 0;
         rollLight(k);
         if (!rollGo(k)) { b.classList.add('dim'); rollSay(ui.COPY.rollNo.replace('{name}', ui.COPY.stockNames[k])); }
@@ -11712,6 +11729,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var b = document.createElement('i'), cv = document.createElement('canvas');
       b.className = 'slot empty'; b.setAttribute('role', 'img'); cv.width = SB.render.ICON_PX; cv.height = SB.render.ICON_PX; b.appendChild(cv);
       if (k === 2) b.hidden = true;   /* shown once a charm is held (ui.slots, step 4) */
+      else b.hidden = !slotsSeen();   /* sb-m2-30: the two weapon boxes wait for the first weapon, then stay */
       box.appendChild(b); slotBoxes.push(b);
     }
     document.getElementById('top').insertBefore(box, document.getElementById('hearts'));
@@ -11725,8 +11743,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var id = SB.sim.WPN[code], slot = ui.COPY[SLOT_NAMES[k]] || '';
     return code > 0 && ui.COPY.wpn[id] ? ui.COPY.slotHas.replace('{slot}', slot).replace('{name}', ui.COPY.wpn[id]) : ui.COPY.slotNone.replace('{slot}', slot);
   }
+  /* sb-m2-30: two empty dashed boxes meant nothing to a stranger; they show from the first weapon held, for good (onboarding.seen.slots) */
+  function slotsSeen() { var d = SB.save.doc; return !!(d && d.onboarding.seen.slots); }
   ui.slots = function (st, fresh) {
     var h = st.hero, cool = h.cd[0] > 0 ? 1 : 0, put = 0;
+    if (!slotsSeen() && (h.slots[0] > 0 || h.slots[1] > 0) && SB.save.doc) { SB.save.doc.onboarding.seen.slots = true; SB.save.commit(); }
+    var hideTwo = !slotsSeen() && !(h.slots[0] > 0 || h.slots[1] > 0);
+    if (slotBoxes[0].hidden !== hideTwo) { slotBoxes[0].hidden = slotBoxes[1].hidden = hideTwo; if (!hideTwo && G.state && ui.fitName) ui.fitName(); }   /* the strip lost room: the name fits again (the hearts fold) */
     if (fresh) { shownSlots = [-1, -1, -1]; shownCool = -1; }
     for (var k = 0; k < 3; k++) {
       var c = h.slots[k];
@@ -12043,11 +12066,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   /* the settings screen (T1.10, section 2.4): every toggle writes the save at once */
   /* sb-m2-28: Settings' install row: the button only while the browser holds an install offer, else one plain line on
-     adding the game by hand; none at all once the game runs as an installed app */
+     adding the game by hand; none at all once the game runs as an installed app, or inside the Play app (sb-m2-29, the
+     lead's call: window.SWS_IN_TWA, the arcade exit's own test, since a Trusted Web Activity need not report standalone) */
   ui.installShow = function () {
     var row = document.getElementById('setinstall'), b = document.getElementById('install'), C = ui.COPY, mm = function (q) { return !!(window.matchMedia && window.matchMedia(q).matches); };
     if (!row || !b) return;
-    row.hidden = !!navigator.standalone || mm('(display-mode: standalone)') || mm('(display-mode: fullscreen)') || mm('(display-mode: minimal-ui)');
+    row.hidden = !!window.SWS_IN_TWA || !!navigator.standalone || mm('(display-mode: standalone)') || mm('(display-mode: fullscreen)') || mm('(display-mode: minimal-ui)');
     b.hidden = !ui.installPrompt;
     document.getElementById('setinstalltext').textContent = ui.installPrompt ? C.setInstall : C.setInstallHow;
   };
@@ -12329,7 +12353,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function curioPage() {
     var d = SB.save.doc, C = ui.COPY, T = SB.TUNING, sec = document.createElement('section'), h = document.createElement('h3'), grid = document.createElement('div'), b, k;
     sec.className = 'albiome curios'; h.className = 'curiohead'; h.textContent = C.curioCount.replace('{n}', d.curios.length); sec.appendChild(h);
-    if (!d.curios.length) { var hint = document.createElement('p'); hint.className = 'alhint'; hint.textContent = C.curioNone; sec.appendChild(hint); }
+    if (!d.curios.length) { h.textContent = C.curioToFind.replace('{n}', T.CURIO_PER_BIOME * 5); var hint = document.createElement('p'); hint.className = 'alhint'; hint.textContent = C.curioNone; sec.appendChild(hint); return sec; }   /* sb-m2-30: one line, not 30 Not found tiles, until one is found */
     grid.className = 'curiogrid';
     for (b = 0; b < 5; b++) for (k = 0; k < T.CURIO_PER_BIOME; k++) {
       var id = b * T.CURIO_PER_BIOME + k, got = d.curios.indexOf(id) >= 0, tile = document.createElement('div'), cv = document.createElement('canvas'), nm = document.createElement('span');
@@ -12344,11 +12368,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var d = SB.save.doc, C = ui.COPY; if (!d) return;
     var box = document.getElementById('alpages'), per = [[], [], [], [], []], b, pg, k;
     box.innerHTML = '';
-    box.appendChild(curioPage());   /* R10 */
     d.album.forEach(function (q) { per[q.b | 0].push(q); });
+    /* sb-m2-30: the player's own pages first (the page just pinned at the top, then the others with photos, then the
+       empty ones), the keepsakes after */
+    var order = [0, 1, 2, 3, 4], lastB = d.album.length ? d.album[d.album.length - 1].b | 0 : -1;
+    order.sort(function (x, y) { return (y === lastB) - (x === lastB) || (per[y].length > 0) - (per[x].length > 0) || x - y; });
     document.getElementById('alcount').textContent = d.album.length
       ? C.albumCount.replace('{n}', d.album.length).replace('{pages}', d.stats.albumPages | 0) : C.albumEmpty;
-    for (b = 0; b < 5; b++) {
+    for (var oi = 0; oi < 5; oi++) { b = order[oi];
       /* round 7: the biome's cover, its name and count set as text in Astra's heading rectangle [47,11,88,24] */
       var nm = SB.palette.BIOMES[b], sec = document.createElement('section'), h = document.createElement('h3'), ccv = document.createElement('canvas'), lab = document.createElement('span');
       sec.className = 'albiome'; h.className = 'alcover' + (nm === 'frost' ? ' light' : '');
@@ -12362,6 +12389,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       sec.appendChild(row);
       box.appendChild(sec);
     }
+    box.appendChild(curioPage());   /* R10; sb-m2-30: after the player's pages */
   }
   /* where a cleared room landed, for the clear card and the doorway card ('' for a room already in the album) */
   ui.albumText = function (ai) {
@@ -12446,6 +12474,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.rankOf = function (xp) { var L = SB.TUNING.RANK_XP, i = 0; while (i + 1 < L.length && xp >= L[i + 1]) i++; return i; };
   ui.rankInfo = function (d) { var xp = ui.xpOf(d), i = ui.rankOf(xp), L = SB.TUNING.RANK_XP, top = i + 1 >= L.length;
     return { xp: xp, i: i, name: ui.COPY.rankNames[i], next: top ? '' : ui.COPY.rankNames[i + 1], toNext: top ? 0 : L[i + 1] - xp, frac: top ? 1 : (xp - L[i]) / (L[i + 1] - L[i]) }; };
+  /* sb-m2-29: a biome's name for a tile, the long one with a soft hyphen so a narrow tile breaks it instead of shrinking it */
+  ui.tileName = function (name, tag) { return '<' + tag + '>' + (name.length > 8 ? name.replace(/^(Over)(growth)$/, '$1&shy;$2') : name) + '</' + tag + '>'; };
   ui.stockOpen = function (d, k) { return k <= 1 || (d ? ui.rankOf(ui.xpOf(d)) : 0) >= SB.TUNING.RANK_STOCK_AT[k]; };
   /* the ranks reached since the last grant, their gifts given; returns the lines to say (the caller commits) */
   ui.rankCheck = function () {
@@ -12484,18 +12514,16 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.drawStocks = function () {
     var row = document.getElementById('stocks'), d = SB.save.doc, C = ui.COPY, B = SB.palette.BIOMES; if (!row) return;
     var cur = d ? d.settings.stock | 0 : 0, h = '';
+    row.hidden = !ui.firstRoomDone;   /* sb-m2-30: the very first crop shows no film row, from the second crop on it does */
     for (var k = 0; k <= 5; k++) {
       var open = ui.stockOpen(d, k), nm = k ? C.stockNames[k - 1] : C.stockAuto;
       h += '<button type="button" class="stock' + (k === cur ? ' on' : '') + (open ? '' : ' locked') + '" data-stock="' + k + '" role="radio" aria-checked="' + (k === cur) + '"' + (open ? '' : ' aria-disabled="true" aria-label="' + C.stockSays.replace('{name}', nm).replace('{rank}', C.rankNames[SB.TUNING.RANK_STOCK_AT[k]]) + '"') + '>'
-        + '<i style="background-image:var(--film-' + (k ? B[k - 1] : 'auto') + (open ? '-ready' : '-locked-locked') + ')"></i><b>' + nm + '</b>' + (open ? '' : '<small>' + C.rankNames[SB.TUNING.RANK_STOCK_AT[k]] + '</small>') + '</button>';   /* R10 art: her film box, locked with her lock */
+        + '<i style="background-image:var(--film-' + (k ? B[k - 1] : 'auto') + (open ? '-ready' : '-locked-locked') + ')"></i>' + ui.tileName(nm, 'b') + (open ? '' : '<small>' + C.rankNames[SB.TUNING.RANK_STOCK_AT[k]] + '</small>') + '</button>';   /* R10 art: her film box, locked with her lock */
     }
     row.innerHTML = h;
-    /* sb-m2-28: once the row is laid out, a name wider than its tile (Overgrowth at 360) steps its own size down to fit */
+    /* sb-m2-29: once the row is laid out, a name wider than its tile (Overgrowth under 412) breaks at its hyphen, never under 12 px */
     requestAnimationFrame(function () {
-      [].forEach.call(row.querySelectorAll('.stock b'), function (n) {
-        n.style.fontSize = ''; var w = n.parentNode.clientWidth - 4, fs = parseFloat(getComputedStyle(n).fontSize);
-        for (var j = 0; j < 10 && w > 0 && n.scrollWidth > w; j++) { fs *= 0.92; n.style.fontSize = fs + 'px'; }
-      });
+      [].forEach.call(row.querySelectorAll('.stock b'), function (n) { n.classList.remove('two'); if (n.scrollWidth > n.parentNode.clientWidth - 2) n.classList.add('two'); });
     });
   };
   /* the trophies earned and not yet on the save's list, appended (the caller commits) */
@@ -12874,6 +12902,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       dailyClear();
       ui.lastHash = SB.sim.hash(G.state);
       bank.textContent = n < dp ? ui.COPY.bankedOf.replace('{n}', n).replace('{of}', dp) : n === 1 ? ui.COPY.bankedOne : ui.COPY.banked.replace('{n}', n); bank.hidden = n <= 0;
+      document.getElementById('clearhalf').hidden = !(n > 0 && n < dp);   /* sb-m2-30: why the number is half, once, plainly */
       ui.what('clearwhat', 'dp', n > 0, ui.COPY.whatDp);   /* sb-m2-27 S3 */
       SB.Wallet.moment('first_clear', { mode: G.mode });
     }
@@ -12945,7 +12974,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     on('doortitle', function () { ui.toTitle(); });
     on('deathretry', function () { ui.houseRetry(); });
     on('deathnew', function () { ui.hideDeath(); ui.houseStart(); });
-    window.addEventListener('resize', function () { if (G.nameForms && G.state) { ui.heartsCount = false; hearts(G.state.hero.hearts, G.state.hero.heartsMax); fitName(); } });
+    window.addEventListener('resize', function () { if (G.state) {   /* sb-m2-30: free play's name folds the hearts too */ ui.heartsCount = false; hearts(G.state.hero.hearts, G.state.hero.heartsMax); fitName(); } });
     /* the crop screen opened from a doorway: its Title is Back, to that doorway (the review of HOUSE-A); a capture
        listener, so the crop's own Title handler stays as it is outside a house */
     document.getElementById('croptitle').addEventListener('click', function (e) {
@@ -13158,7 +13187,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=50').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=52').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
