@@ -61,10 +61,23 @@ var STADIUM = { pangkah:'chalk_ring', pass:'chalk_ring', field:'chalk_ring',
    rail is or the picture is lying about the game. */
 var STADIUM_R = { chalk_ring:150, posts:150, taya_circle:150, long_range:340 };
 
+/* THE STANDS (ART_ASSETS-ARENAS.md section 4). A world may own a stand: a few
+   props standing OUTSIDE the dish, one GLB, origin at the dish centre, 1 unit =
+   1 mm, built for the standard 150 mm dish. Only worlds listed here have one, so
+   no other world ever asks the host for a file it does not have.
+   ⛔ NEVER ON THE CRITICAL PATH. The round starts on the dish and the two tops;
+   the stand is asked for after the scene is up, and if it is not there within
+   STAND_WAIT_MS it does not pop in mid round: this round plays on the bare dish
+   and the next one takes it from the cache. A missing file is the bare dish,
+   which is the view as it always was. */
+var ARENAS = { market_lantern:{ stand:true }, kelantan_ground:{ stand:true } };
+var STAND_WAIT_MS = 2500;
+function standUrl(id){ return 'assets/3d/arena/' + id + '/stand.glb?v=' + BUILD; }
+
 var S = {
   lib:null, bootP:null, failed:false, ready:false, active:false,
   renderer:null, scene:null, cam:null, canvas:null, env:null,
-  stadium:null, stadiumName:'', arenaR:0.15,
+  stadium:null, stadiumName:'', arenaR:0.15, stand:null, standId:'',
   rimR:210, rimH:75, camDist:1000, floorLUT:null,
   tops:[null,null], topKey:['',''],
   vw:0, vh:0, seq:0, mesh:{}
@@ -350,6 +363,7 @@ function layoutCamera(){
   var distH = (FRAME * Rp) / Math.tan(hHalf);
   var distV = (S.rimR * Math.sin(ELEV) + S.rimH * Math.cos(ELEV)) * 1.02 / Math.tan(vHalf);
   S.camDist = Math.max(distH, distV);
+  if (S.stand) placeStand();
   cam.near = Math.max(1, S.camDist * 0.15);
   cam.far  = S.camDist * 3;
   placeCamera(1);
@@ -405,7 +419,7 @@ function show(on){ if (S.canvas) S.canvas.style.display = on ? 'block' : 'none';
 /* Called once per round, from the launch path. Never from the menu's demo
    battle: that one has A and B set too, and booting WebGL for a backdrop nobody
    asked for is exactly the sort of thing this flag exists to avoid. */
-function enter(mode, arenaR, cfgA, cfgB){
+function enter(mode, arenaR, cfgA, cfgB, arena){
   if (!wanted() || S.failed) return;
   var seq = ++S.seq;
   setActive(true);
@@ -425,6 +439,7 @@ function enter(mode, arenaR, cfgA, cfgB){
     buildFloorLUT();
     spawnPose();
     S.ready = true;
+    setStand(arena, seq);
   }, function(){
     /* no picture, no difference */
     S.failed = true; S.ready = false; setActive(false); show(false);
@@ -442,7 +457,107 @@ function sync(st){
   if (st.phase === 'drop' && !C3.seeded){ C3.seeded = true; C3.dir = -C3.dir; }
   if (st.phase !== 'drop') C3.seeded = false;
   placeCamera(st.camz || 1, st.camwx, st.camwz, st.dt, st.reduce);
+  /* The backdrop behind the dish is a still picture, so the stand stays with it:
+     it turns with the camera's slow orbit and is always BEHIND the dish, never
+     between the player and the tops, at any point of any round. */
+  if (S.stand) S.stand.rotation.y = C3.yaw;
   S.renderer.render(S.scene, S.cam);
+}
+
+/* ── the stand ───────────────────────────────────────────────────────────── */
+function setStand(id, seq){
+  var want = (id && ARENAS[id] && ARENAS[id].stand) ? id : '';
+  if (S.standId === want && S.stand){ placeStand(); return; }
+  dropStand();
+  if (!want) return;
+  var t0 = Date.now();
+  glb(standUrl(want)).then(function(root){
+    if (seq !== S.seq || !S.active || !S.ready) return;   // the round moved on
+    if (Date.now() - t0 > STAND_WAIT_MS) return;           // late: the next round has it
+    var g = root.clone(true);
+    /* No shadows either way: the key light's box only just holds the dish, so a
+       prop would cast half a shadow cut off by a straight line. */
+    g.traverse(function(o){ if (o.isMesh){ o.castShadow = false; o.receiveShadow = false; } });
+    /* ⛔ A SIBLING of the stadium, never its child: measureRim's box and the
+       floor rays read S.stadium, and a prop inside it would push the camera back
+       and could become the floor. */
+    S.scene.add(g);
+    S.stand = g; S.standId = want;
+    placeStand();
+    S.stand.rotation.y = C3.yaw;
+  }, function(){ /* no picture, no difference */ });
+}
+/* The stand is built round the standard 150 mm dish. A wider dish (the range,
+   340; The Giant, 230) moves every prop straight out by the difference rather
+   than scaling it, so a crate stays a crate and nothing stands in the bowl.
+   ⛔ LANDSCAPE. The file stands its props behind the dish, which is where a
+   portrait phone has room. A landscape phone has a thin strip above the dish
+   and a whole screen either side of it, and the first landscape picture cut the
+   lanterns and the banners off at the top of the frame. So in landscape every
+   prop swings round the dish centre (its origin) to the flanks, keeping its
+   left or right. */
+function placeStand(){
+  var g = S.stand, T = S.lib.T, push = Math.max(0, S.arenaR * 1000 - 150);
+  if (!g) return;
+  var wide = (S.vw || 1) > (S.vh || 1);
+  g.traverse(function(p){
+    if (!p.name || p.name.indexOf('prop_') !== 0) return;
+    if (!p.userData.dir){
+      p.position.set(0, 0, 0); p.rotation.set(0, 0, 0); p.updateMatrixWorld(true);
+      var c = new T.Box3().setFromObject(p).getCenter(new T.Vector3());
+      var l = Math.max(1e-6, Math.sqrt(c.x * c.x + c.z * c.z));
+      p.userData.dir = [c.x / l, c.z / l];
+      p.userData.ang = Math.atan2(c.x, -c.z);          // 0 = straight behind, + = right
+      p.userData.r = l;
+    }
+    if (!p.userData.foot) footShadow(p);
+    var a0 = p.userData.ang, r0 = p.userData.r;
+    if (!wide){
+      p.rotation.set(0, 0, 0); p.scale.setScalar(1);
+      p.position.set(p.userData.dir[0] * push, 0, p.userData.dir[1] * push);
+      return;
+    }
+    /* Swung to the flank, turned to face the camera (a prop built facing the
+       dish from behind would show a banner edge on from the side), and four
+       fifths the size, because the landscape frame is short. The turn and the
+       scale are about the dish centre, the prop's origin, so the position puts
+       its centre back where it belongs: turned by a0, the centre lands at
+       (0, -r0 x k), and that is taken off the target spot. */
+    var k = 0.8, a1 = (a0 < 0 ? -1 : 1) * (1.01 + Math.abs(a0) * 1.1);   // 58 degrees and out
+    var rr = r0 + push;
+    p.rotation.set(0, a0, 0); p.scale.setScalar(k);
+    p.position.set(Math.sin(a1) * rr, 0, -Math.cos(a1) * rr + r0 * k);
+  });
+}
+/* A prop on the backdrop with nothing under it is a sticker. One soft dark
+   disc under each, two triangles, one shared texture, drawn without depth so it
+   never fights the floor. It rides the prop, so it moves when the prop does. */
+var _footTex = null;
+function footShadow(p){
+  var T = S.lib.T;
+  if (!_footTex){
+    var c = document.createElement('canvas'); c.width = c.height = 64;
+    var x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(0,0,0,0.62)'); gr.addColorStop(0.55, 'rgba(0,0,0,0.38)');
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+    _footTex = new T.CanvasTexture(c);
+  }
+  var b = new T.Box3().setFromObject(p), sz = b.getSize(new T.Vector3()), ct = b.getCenter(new T.Vector3());
+  var r = Math.max(14, Math.min(60, Math.max(sz.x, sz.z) * 0.75));
+  var m = new T.Mesh(new T.PlaneGeometry(r * 2, r * 2),
+    new T.MeshBasicMaterial({ map:_footTex, transparent:true, depthWrite:false, toneMapped:false }));
+  m.rotation.x = -Math.PI / 2;
+  /* in the prop's own frame: the prop sits at its (pushed) place with no turn of
+     its own, so the world centre minus its position is the local spot */
+  m.position.set(ct.x - p.position.x, 0.6, ct.z - p.position.z);
+  m.renderOrder = -1;
+  p.add(m);
+  p.userData.foot = m;
+}
+function dropStand(){
+  if (S.stand) S.scene.remove(S.stand);
+  S.stand = null; S.standId = '';
 }
 
 /* Where the two of them stand before the first frame of the round arrives: the
@@ -545,6 +660,7 @@ function exit(full){
   if (!full) return;
   S.ready = false;
   dropTop(0); dropTop(1);
+  dropStand();
   if (S.stadium){ S.scene.remove(S.stadium); S.stadium = null; S.stadiumName = ''; }
   var urls = Object.keys(S.mesh);
   for (var i = 0; i < urls.length; i++)(function(p){
