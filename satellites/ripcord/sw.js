@@ -12,11 +12,10 @@
    ⛔ Bump SHELL_VERSION and the ?v= on the registration in index.html together.
       A bare sw.js URL is edge pinned for seven days on this host. */
 
-const SHELL_VERSION  = "rc-shell-v20261020a";
+const SHELL_VERSION  = "rc-shell-v20261122a";
 const NAV_TIMEOUT_MS = 8000;
 
 const SHELL_ASSETS = [
-  "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icon-192.png",
@@ -63,7 +62,27 @@ self.addEventListener("fetch", event => {
   // Navigations: network first with a hard timeout, cache as the safety net,
   // and a real Response no matter what happens, because a hung navigation is
   // the black screen bug.
+  /* ⛔ ONLY THE GAME'S OWN PAGE IS STORED AS THE GAME. Any other page in the
+     scope (privacy.html, opened from the store listing) used to be written over
+     ./index.html, so the next offline launch opened the privacy policy instead
+     of the game. Another page is network first and cached under its own URL. */
   if (req.mode === "navigate") {
+    const scopePath = new URL(self.registration.scope).pathname;
+    const isGame = url.pathname === scopePath || url.pathname === scopePath + "index.html";
+    if (!isGame) {
+      event.respondWith((async () => {
+        const fresh = await timedFetch(new Request(req.url, { cache: "no-cache" }), NAV_TIMEOUT_MS);
+        if (fresh && fresh.ok) {
+          try { (await caches.open(SHELL_VERSION)).put(url.pathname, fresh.clone()); } catch (e) {}
+          return fresh;
+        }
+        const own = await caches.match(url.pathname);
+        if (own) return own;
+        if (fresh) return fresh;
+        return (await caches.match("./index.html")) || new Response("", { status: 504, statusText: "offline" });
+      })());
+      return;
+    }
     event.respondWith((async () => {
       const fresh = await timedFetch(new Request(req.url, { cache: "no-cache" }), NAV_TIMEOUT_MS);
       if (fresh && fresh.ok) {
@@ -101,6 +120,10 @@ self.addEventListener("fetch", event => {
     })());
     return;
   }
+
+  /* Songs stream; they are never stored (the privacy page says so). The
+     browser fetches them itself, untouched by this worker. */
+  if (url.pathname.indexOf("/music/") === 0) return;
 
   // Everything else: cache first, then network, then a real 504 rather than a
   // rejected promise.

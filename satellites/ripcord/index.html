@@ -39,7 +39,7 @@ button{font:inherit;color:inherit}
 #top{top:calc(env(safe-area-inset-top) + 10px);left:var(--pad);right:var(--pad);
   display:flex;align-items:flex-start;justify-content:space-between;gap:10px;pointer-events:none}
 #score{font:700 22px/1 ui-sans-serif,system-ui;font-variant-numeric:tabular-nums;letter-spacing:.06em}
-#score small{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+#score small{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
   display:block;margin-top:4px;font-weight:600}
 #vs{font-size:12px;letter-spacing:.1em;color:var(--dim);text-align:right;line-height:1.5}
 #vs b{color:var(--chalk);font-weight:600;letter-spacing:.06em}
@@ -69,12 +69,15 @@ button{font:inherit;color:inherit}
   background:rgba(51,40,31,.96);border:1px solid var(--line);border-radius:16px;
   padding:13px 15px;backdrop-filter:blur(10px);
   transform:translateY(190%);opacity:0;
-  transition:transform .46s cubic-bezier(.2,.9,.3,1),opacity .40s ease}
+  transition:transform .46s cubic-bezier(.2,.9,.3,1),opacity .40s ease;
+  /* it has no controls, and it slides up from below THROUGH the dock: a Launch
+     tapped in that half second hit the card and was lost */
+  pointer-events:none}
 #card.up{transform:none;opacity:1}
 #card .row{display:flex;align-items:center;gap:14px}
 #gl{font:800 40px/1 ui-sans-serif,system-ui;min-width:50px;text-align:center}
 #note{font-size:15px}
-#sub{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:3px}
+#sub{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:3px}
 
 /* ---------- full screen sheets ---------- */
 .sheet{position:fixed;z-index:6;inset:0;background:var(--dirt);
@@ -82,6 +85,18 @@ button{font:inherit;color:inherit}
   transform:translateY(100%);transition:transform .34s cubic-bezier(.2,.9,.3,1);
   visibility:hidden}
 .sheet.up{transform:none;visibility:visible}
+/* A closed sheet is not laid out, so its lazy pictures (the Workshop's part art,
+   slot and trigger glyphs, about 300 KB) wait until the sheet opens instead of
+   loading on the first screen. The sheet already hid at once on close
+   (visibility), so this changes nothing a player sees. */
+.sheet:not(.up) .sheetBody{content-visibility:hidden}
+.privLink{display:inline-flex;align-items:center;min-height:48px;color:var(--rope)}
+/* the fleet music chrome waits off screen while the game is not on its bare
+   menu (musicSync). A class, not the script's own inline hide: its chip re-seats
+   itself for fifteen seconds and each re-seat rewrote the style, which brought
+   the chip back over the score mid battle. */
+body.rcHoldMusic #sws-music-chip,body.rcHoldMusic #sws-music-pill,
+body.rcHoldMusic #sws-music-card,body.rcHoldMusic #sws-music-toast{display:none!important}
 .sheetTop{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:calc(env(safe-area-inset-top) + 12px) var(--pad) 10px}
 .sheetTop h2{margin:0;font-size:13px;letter-spacing:.24em;text-transform:uppercase;font-weight:700}
@@ -122,7 +137,7 @@ button{font:inherit;color:inherit}
    flex, not just the width. */
 #menu .btn.go{flex:0 0 auto;max-width:none;min-height:56px;
   background:rgba(196,68,43,.90);border-color:rgba(255,150,130,.45)}
-#buildstamp{position:fixed;bottom:3px;left:0;right:0;text-align:center;font-size:11px;color:rgba(156,146,134,.5);
+#buildstamp{position:fixed;bottom:3px;left:0;right:0;text-align:center;font-size:12px;color:rgba(156,146,134,.5);
   letter-spacing:.06em;z-index:2;pointer-events:none;transition:opacity .4s ease}
 
 /* ---------- workshop innards ---------- */
@@ -151,7 +166,7 @@ button{font:inherit;color:inherit}
 .v em{font-style:normal;color:var(--good)}
 
 .slot{margin:12px 0}
-.slot label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+.slot label{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--dim);margin-bottom:7px}
 .slot label em{font-style:normal;color:var(--rope);text-transform:none;letter-spacing:.02em}
 .rail{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;
@@ -162,7 +177,7 @@ button{font:inherit;color:inherit}
   display:inline-flex;align-items:center;gap:7px;cursor:pointer}
 .chip.on{border-color:var(--rope);color:var(--chalk);background:rgba(201,162,39,.16)}
 .chip.lock{opacity:.40;border-style:dashed}
-.chip.lock::after{content:'locked';font-size:11px;letter-spacing:.1em;
+.chip.lock::after{content:'locked';font-size:12px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--dim)}
 
 /* ---------- the picture chip ----------
@@ -193,9 +208,11 @@ button{font:inherit;color:inherit}
   radial-gradient(circle at 50% 42%,rgba(237,230,216,.13),rgba(237,230,216,.03) 68%)}
 .chip.art .pip{position:absolute;right:-2px;bottom:-2px;width:8px;height:8px;
   border-radius:50%;border:2px solid var(--hi)}
-.chip.art .nm{font-size:11px;line-height:1.15;max-width:74px;overflow:hidden;
+.chip.art .nm{font-size:12px;line-height:1.15;max-width:84px;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap;display:block}
 .chip.art.on .frame{background:rgba(201,162,39,.14)}
+/* Text floor (22 Nov, the last pass): nothing in the game is under 12 px; the
+   labels, chip names and deltas that were 10 to 11.5 px are 12. */
 /* ⛔ .chip.lock{opacity:.40} applies to the whole subtree, so it dims painted
    art to 40 percent along with the text. On the `all` filter a hundred of the
    hundred and ten parts are locked, which is most of what any art would ever be
@@ -212,12 +229,12 @@ button{font:inherit;color:inherit}
 .chip.art.lock .pic{opacity:.82;filter:grayscale(.30)}
 .chip.art.lock .nm{opacity:.72}
 .chip.art.lock::after{display:none}
-.chip .t{font-size:11px;letter-spacing:.1em;color:var(--rope);font-weight:700}
+.chip .t{font-size:12px;letter-spacing:.1em;color:var(--rope);font-weight:700}
 /* what fitting this part would do to your numbers, on the chip itself (2026-09-02,
    Stephen: "as you flip through the pieces you can see how it will affect your stats") */
-.chip .dl{display:block;font-size:10px;letter-spacing:.02em;line-height:1.15;margin-top:3px;white-space:nowrap;text-transform:none}
+.chip .dl{display:block;font-size:12px;letter-spacing:.02em;line-height:1.15;margin-top:3px;white-space:nowrap;text-transform:none}
 .chip .dl b{font-weight:700}.chip .dl .up{color:var(--good)}.chip .dl .dn{color:var(--ember)}.chip .dl.same{color:var(--dim)}
-.chip.art .dl{max-width:74px;overflow:hidden;text-overflow:ellipsis}
+.chip.art .dl{max-width:84px;overflow:hidden;text-overflow:ellipsis}
 .chip .t.t3{color:var(--ember)}
 .cosmetic label em{color:var(--steel)}
 .fitted{margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--dim)}
@@ -360,7 +377,7 @@ button{font:inherit;color:inherit}
 #cerBox{width:100%;max-width:400px;text-align:center;margin:auto;
   transform:translateY(14px) scale(.98);transition:transform .48s cubic-bezier(.2,.9,.3,1)}
 #cer.up #cerBox{transform:none}
-#cerKick{font:700 11.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.22em;
+#cerKick{font:700 12px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.22em;
   text-transform:uppercase;color:var(--dim);margin-bottom:12px;min-height:12px}
 #cerBig{font:800 clamp(26px,7.4vw,40px)/1.06 ui-sans-serif,system-ui;letter-spacing:-.01em;
   margin-bottom:10px;text-wrap:balance}
@@ -369,7 +386,7 @@ button{font:inherit;color:inherit}
 #cerBtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 #cerBtns .btn{min-width:132px}
 #cerTap{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 22px);left:0;right:0;
-  text-align:center;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;
+  text-align:center;font-size:12px;letter-spacing:.2em;text-transform:uppercase;
   color:var(--dim);opacity:0;transition:opacity .5s;pointer-events:none}
 #cer.tap #cerTap{opacity:.7}
 
@@ -388,11 +405,11 @@ button{font:inherit;color:inherit}
    The sculpted hero under your finger. Loads three.js on first open and
    never before, so a player who never taps it pays nothing. */
 #v3d{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;
-  background:linear-gradient(rgba(12,9,8,.30),rgba(12,9,8,.30)),url(assets/ui/workshop-v3d-bg.webp?v=20261020a) center/cover no-repeat,#0C0908}
+  background:linear-gradient(rgba(12,9,8,.30),rgba(12,9,8,.30)),url(assets/ui/workshop-v3d-bg.webp?v=20261122a) center/cover no-repeat,#0C0908}
 #v3d.on{display:flex}
 #v3dHead{display:flex;align-items:center;gap:10px;padding:12px 14px 6px}
 #v3dName{flex:1;min-width:0;font-weight:800;font-size:19px;letter-spacing:.01em}
-#v3dName small{display:block;font-size:11px;letter-spacing:.14em;font-weight:700;
+#v3dName small{display:block;font-size:12px;letter-spacing:.14em;font-weight:700;
   color:var(--dim);text-transform:uppercase;margin-top:2px}
 #v3dClose{min-height:48px;min-width:76px}
 #v3dStage{flex:1;position:relative;min-height:0}
@@ -409,10 +426,10 @@ button{font:inherit;color:inherit}
 /* the part reveal: what you won, where it goes, what it changes */
 .cerPart{background:var(--surface,var(--hi));border:1px solid var(--line);
   border-radius:14px;padding:16px;text-align:left}
-.cerPart .slot{font:700 11px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;
+.cerPart .slot{font:700 12px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;
   text-transform:uppercase;color:var(--dim);margin-bottom:5px}
 .cerPart .job{font-size:13px;line-height:1.45;color:var(--dim);opacity:.72;margin-bottom:9px}
-.cerPart .tier{display:inline-block;font:700 11px/1 ui-sans-serif,system-ui,sans-serif;
+.cerPart .tier{display:inline-block;font:700 12px/1 ui-sans-serif,system-ui,sans-serif;
   letter-spacing:.12em;padding:4px 8px;border-radius:4px;margin-bottom:8px}
 .cerPart .tier.t2{background:rgba(201,162,39,.16);color:var(--rope)}
 .cerPart .tier.t3{background:rgba(196,68,43,.16);color:var(--ember)}
@@ -429,7 +446,7 @@ button{font:inherit;color:inherit}
   display:flex;flex-direction:column;gap:8px}
 .cmpRow{display:grid;grid-template-columns:82px 1fr auto;gap:10px;align-items:center}
 .cmpRow .k{color:var(--dim);text-transform:uppercase;
-  font:700 11px/1.3 ui-sans-serif,system-ui,sans-serif;letter-spacing:.07em}
+  font:700 12px/1.3 ui-sans-serif,system-ui,sans-serif;letter-spacing:.07em}
 .cmpBar{position:relative;height:7px;border-radius:4px;background:rgba(237,230,216,.09)}
 /* ⛔ The mark for what you are CURRENTLY wearing was a fill behind the new
    value, so on every improvement the new bar covered it completely and the
@@ -446,11 +463,11 @@ button{font:inherit;color:inherit}
   transition:width .55s cubic-bezier(.2,.9,.3,1)}
 .cmpBar i.up{background:var(--good)} .cmpBar i.dn{background:var(--ember)}
 .cmpBar i.nu{background:var(--rope)}
-.cmpRow .d{font:700 11px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;
+.cmpRow .d{font:700 12px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;
   min-width:34px;text-align:right}
 .cmpRow .d.up{color:var(--good)} .cmpRow .d.dn{color:var(--ember)}
 .cmpRow .d.nu{color:var(--dim)}
-.cmpKey{margin-top:9px;font-size:11px;color:var(--dim);opacity:.7;display:flex;
+.cmpKey{margin-top:9px;font-size:12px;color:var(--dim);opacity:.7;display:flex;
   align-items:center;gap:6px}
 .cmpKey b{display:inline-block;width:3px;height:13px;background:var(--cream);
   border-radius:2px;box-shadow:0 0 0 1.5px rgba(14,9,8,.9);margin:0 2px}
@@ -462,7 +479,7 @@ button{font:inherit;color:inherit}
   max-width:calc(100vw - 40px)}
 #unlock.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #unlock b{display:block;font-size:18px;color:var(--rope);margin-top:4px}
-#unlock small{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+#unlock small{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
 
 /* wind counter */
 #laps{position:fixed;z-index:3;left:0;right:0;top:50%;transform:translateY(-50%);
@@ -487,7 +504,7 @@ button{font:inherit;color:inherit}
   #card #bars{display:none}
   #gl{font-size:32px;min-width:40px}
   #note{font-size:14px}
-  #sub{font-size:10.5px}
+  #sub{font-size:12px}
   #laps{top:38%}
   #hint{bottom:calc(env(safe-area-inset-bottom) + 100px)}
 }
@@ -497,9 +514,15 @@ button{font:inherit;color:inherit}
 </style>
 <!-- fleet music unlocks (2026-09-02): in the SOURCE now. It used to be injected into the generated index.html, so
      the first rebundle after the injection dropped it and the game went silent. -->
+<!-- ⛔ HELD (22 Nov, the last pass): the fleet card and its "New song" pill used to land
+     on the very first second, over How to play, and then sat on the dock over the
+     Workshop gear and Launch for the whole battle. The game owns its screen: the
+     music chrome shows on the bare menu only (musicSync), and a song earned while
+     playing gets its card when the player comes back to the menu. -->
+<script>window.SWS_MUSIC_HOLD=true;</script>
 <script src="/music-unlocks.js" defer></script>
 </head>
-<body>
+<body class="rcHoldMusic">
 
 <div id="field"><canvas id="cv"></canvas></div>
 
@@ -556,7 +579,7 @@ button{font:inherit;color:inherit}
   <button class="btn" id="mSet">Settings</button>
   <button class="btn ghost" id="mExit">&#9668; Sky Wolf Studio Arcade</button>
 </div></div>
-<div id="buildstamp">build 20261020a</div>
+<div id="buildstamp">build 20261122a</div>
 
 <!-- ============================ HOW TO PLAY ============================ -->
 <div class="sheet" id="howto">
@@ -617,8 +640,9 @@ button{font:inherit;color:inherit}
        the round itself, from landing hits, taking them, and riding the rail.</p>
 
     <h3>Where parts come from</h3>
-    <p>Winning. Every rung of the ladder drops one and there is no shop, no currency
-       and nothing to buy. Beating a league boss is the only way to get a Relic.</p>
+    <p>Winning. Each opponent you beat on the ladder leaves you new parts, and there
+       is no shop, no currency and nothing to buy. Beating a league boss is the only
+       way to get a Relic.</p>
   </div>
 </div>
 
@@ -703,7 +727,8 @@ button{font:inherit;color:inherit}
       <button class="btn" id="wipe">Erase</button></div>
     <div class="setRow"><div class="lab"><h4>About</h4>
       <p>Ripcord, by Sky Wolf Studio. Works offline; nothing you do here leaves the
-         device. Build 20261020a.</p></div></div>
+         device. Build 20261122a.</p>
+      <p><a class="privLink" href="privacy.html">Privacy policy</a></p></div></div>
   </div>
 </div>
 
@@ -4388,7 +4413,7 @@ button{font:inherit;color:inherit}
 /* Substituted by tools/bundle.js exactly as it is everywhere else in this file,
    so every mesh URL carries the build and the host edge cache cannot serve a
    stale sculpt. */
-var BUILD = '20261020a';
+var BUILD = '20261122a';
 
 /* ── the numbers, and where each of them comes from ──────────────────────── */
 var ELEV    = 38 * Math.PI / 180;   // camera elevation above the dish
@@ -5235,13 +5260,29 @@ var SHEETS=['howto','ladder','modes','sheet','settings'];
 function closeSheets(){
   for(var i=0;i<SHEETS.length;i++)$(SHEETS[i]).classList.remove('up');
 }
-function openSheet(id){closeSheets();$(id).classList.add('up');}
+function openSheet(id){closeSheets();$(id).classList.add('up');musicSync();}
 (function(){
   var b=document.querySelectorAll('[data-close]');
   for(var i=0;i<b.length;i++)b[i].addEventListener('click',function(){
     $(this.getAttribute('data-close')).classList.remove('up');
+    musicSync();
   });
 })();
+/* The fleet music chrome (chip, card, pill) only on the bare menu; see the
+   SWS_MUSIC_HOLD note in the head. A round played since the last menu is the
+   break where a waiting song's card may show. */
+var musicPlayed=false;
+function musicSync(){
+  var free=$('menu').classList.contains('up');
+  for(var i=0;i<SHEETS.length&&free;i++)if($(SHEETS[i]).classList.contains('up'))free=false;
+  document.body.classList.toggle('rcHoldMusic',!free);
+  var M=window.SWSMusic; if(!M||!M.hold)return;
+  try{
+    M.hold(!free);
+    if(free&&musicPlayed){musicPlayed=false;if(M.reveal)M.reveal();}
+  }catch(e){}
+}
+window.addEventListener('load',function(){setTimeout(musicSync,0);});
 
 function showMenu(on){
   $('menu').classList.toggle('up',on);
@@ -5252,6 +5293,8 @@ function showMenu(on){
      menu is where it stops and where it gives its meshes back. */
   if(on&&window.B3D)B3D.exit(true);
   if(on){arena='chalk_yard';setBackdrop(arena);demoIdle();}
+  else musicPlayed=true;
+  musicSync();
 }
 
 /* ------------------------------------------------------------- SLOT PICKERS */
@@ -5297,7 +5340,7 @@ var PART_LISTS={core:SIM.CORES,blade:SIM.BLADES,assist:SIM.ASSISTS,ratchet:SIM.R
    ⛔ AND IT IS VERSIONED. The host edge-caches aggressively and has burned this
    studio repeatedly, so both the manifest and every picture carry the build
    stamp. */
-var LW_BUILD='20261020a';
+var LW_BUILD='20261122a';
 var ART = { ready:false, has:{}, count:0 };
 /* ⛔ THE VERSION COMES FROM THE FILE, NOT THE BUILD. The service worker caches
    every picture it fetches and never revalidates, so a re-cut part at the same
@@ -5630,7 +5673,7 @@ function railRow(label,items,isOn,onPick,klass,lockable,slotKey){
         (it.role?'<i class="pip" style="background:'+ROLE_HEX[it.role]+'"></i>':'')+
         '</span><span class="nm">'+(it.name||it.id)+'</span>'+(it.delta||'');
     }else{
-      b.innerHTML=(it.icon?'<img class="cico" src="'+it.icon+'" alt="" '+
+      b.innerHTML=(it.icon?'<img class="cico" src="'+it.icon+'" alt="" loading="lazy" '+
                   'onerror="this.remove();">':'')+
                 (it.role?'<span class="dot" style="background:'+ROLE_HEX[it.role]+'"></span>':'')+
                 (it.name||it.id)+tierTag(it)+(it.delta||'');
@@ -5704,7 +5747,7 @@ function buildSlots(){
          (roleFilter==='mine'&&isUnlocked(list[j].id))||
          list[j].role===roleFilter||list[j].id===act[key])
         shown.push({id:list[j].id,name:list[j].name,role:list[j].role,tier:list[j].tier,delta:deltaFor(key,list[j].id)});
-    var row=railRow('<img class="slotGlyph" src="assets/glyphs/slot-'+key+
+    var row=railRow('<img class="slotGlyph" loading="lazy" src="assets/glyphs/slot-'+key+
       '.webp?v='+LW_BUILD+'" alt="" onerror="this.remove();">'+
       label+' <em>'+shown.length+'</em>',shown,
       (function(k){return function(p){return active().cfg[k]===p.id;};})(key),
@@ -7267,10 +7310,23 @@ function matchWon(){
     for(var i=0;i<won.length;i++)steps.push(partStep(won[i].slot,won[i].part,true));
   }
   if(advanced)steps.push(nextUpStep());
+  /* ⛔ The ceremony used to hand back a dish still in its match over state:
+     the old tops sitting where they stopped, no ring to trace, and a hint that
+     said "Wind it up" while winding did nothing until Launch was pressed. Moving
+     up now opens the next opponent's wind screen, which is what the hint says.
+     A won replay of an old rung no longer claims to be the top of the ladder. */
+  var atTop=facing===rung&&rung>=LADDER.length-1;
   ceremony(steps,function(){
+    if(advanced){
+      startPlay();
+      $('hint').textContent='Next up is '+opp().name+'. Wind it up.';
+      $('hint').style.opacity=1;
+      buildSlots();
+      return;
+    }
     chrome(true);
-    $('hint').textContent=advanced?'Next up is '+opp().name+'. Wind it up.'
-                                  :'That is the top of the ladder. Try the Field.';
+    $('hint').textContent=atTop?'That is the top of the ladder. Try the Field.'
+                               :'Launch to go again, or open the workshop.';
     $('hint').style.opacity=1;
     buildSlots();
   },700);
@@ -8480,7 +8536,16 @@ requestAnimationFrame(frame);
 (function(){
   var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
   window.SWS_EMBED=framed;
+  /* The Play app (a Trusted Web Activity): Chrome opens it with document.referrer
+     android-app://<package>, and an installed Android standalone window counts too
+     (the fleet's rule, Shutterbug and Hues). Inside it the arcade exit is gone and
+     refuses, so the Play app can never walk a player to the portal's checkout. */
+  var inTWA=false;
+  try{ inTWA=document.referrer.indexOf('android-app://')===0 ||
+        !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches && /Android/i.test(navigator.userAgent)); }catch(e){ inTWA=false; }
+  window.SWS_IN_TWA=inTWA;
   window.SWS_EXIT=function(){
+    if(inTWA) return;
     if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
     location.href='https://lucidwinds.com/portal/';
   };
@@ -8489,12 +8554,13 @@ requestAnimationFrame(frame);
     window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
   }
   var ex=document.getElementById('mExit');
-  if(ex) ex.addEventListener('click',function(){ window.SWS_EXIT(); });
+  if(ex && inTWA) ex.style.display='none';
+  if(ex) ex.addEventListener('click',function(){ if(inTWA) return; window.SWS_EXIT(); });
   /* Offline shell. Never registered inside the portal frame: the root service
      worker owns caching there, and a second one racing it is how this fleet
      wiped itself once already. Bump the ?v= with sw.js SHELL_VERSION. */
   if(!framed && 'serviceWorker' in navigator){
-    try{ navigator.serviceWorker.register('sw.js?v=20261020a'); }catch(e){}
+    try{ navigator.serviceWorker.register('sw.js?v=20261122a'); }catch(e){}
   }
 })();
 </script>
