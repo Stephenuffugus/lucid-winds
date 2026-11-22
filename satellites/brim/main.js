@@ -7,13 +7,13 @@
  *
  * Rounds come in sessions of twelve from dealSession, which builds B2, B3 and B6 in; the page never picks a pair itself.
  */
-import { settings, tokens, audio, store, SETTINGS_DEFAULTS, parseConfig, rng } from '../math/core/core.js?v=20260916b';
-import { spriteCanvas } from './draw.js?v=20260916b';
-import { mountShelf } from './shelf.js?v=20260916b';
-import { dealSession, scoreChoice, SESSION_LENGTH } from './engine.js?v=20260916b';
-import { COPY, PALETTE, caption, brimCaption } from './content.js?v=20260916b';
-import { BRIM_SCHEMA } from './config.js?v=20260916b';
-import { mountVessel, setFraction, clearFill, fillTo, brightenHalf, lightEmpty, holdLevel, etch, fadeEtch, clearEtch } from './render.js?v=20260916b';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, parseConfig, rng } from '../math/core/core.js?v=20261122a';
+import { spriteCanvas } from './draw.js?v=20261122a';
+import { mountShelf } from './shelf.js?v=20261122a';
+import { dealSession, scoreChoice, SESSION_LENGTH } from './engine.js?v=20261122a';
+import { COPY, PALETTE, caption, brimCaption } from './content.js?v=20261122a';
+import { BRIM_SCHEMA } from './config.js?v=20261122a';
+import { mountVessel, setFraction, clearFill, fillTo, brightenHalf, lightEmpty, holdLevel, etch, fadeEtch, clearEtch } from './render.js?v=20261122a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, BRIM_SCHEMA);
@@ -361,4 +361,4 @@ function ringPeaks() {
 }
 
 /* the offline shell: one worker for the game, its address carrying the stamp */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916b').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20261122a').catch(() => {});

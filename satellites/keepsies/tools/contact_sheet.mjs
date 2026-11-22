@@ -26,7 +26,7 @@ if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 const CELL = parseInt(process.argv[2] || '128', 10);
 const COLS = 8;
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg' };   // Astra's art (an svg served as anything else is never drawn)
 const server = createServer((req, res) => {
   const clean = decodeURIComponent(req.url.split('?')[0]);
   const p = join(ROOT, normalize(clean).replace(/^(\.\.[/\\])+/, ''));
@@ -63,7 +63,7 @@ await page.setContent(page404, { waitUntil: 'load' });
 const result = await page.evaluate(async (cell, cols, tuning, marbles) => {
   const THREE = await import('/lib/three.module.min.js');
   const { RoomEnvironment } = await import('/lib/environments/RoomEnvironment.js');
-  const { makeMarbleMaterial } = await import('/src/render/marbleMesh.js?v=20260905a');
+  const { makeMarbleMaterial } = await import('/src/render/marbleMesh.js?v=20261113a');
 
   const canvas = document.getElementById('c');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });

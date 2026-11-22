@@ -23,9 +23,21 @@
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/tofu/og/card.jpg">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon_192.png">
-<!-- Same origin Sunbeam SDK (guarded; the game runs with it missing) -->
-<script src="/sunbeam-sdk.js?v=7"></script>
-<script>window.Sunbeam&&Sunbeam.init({gameId:"tofu"}).catch(function(){});</script>
+<script>
+/* THE PLAY APP (a Trusted Web Activity; Dewball's and Hues' rule, applied here 22 Nov 2026): Chrome opens it with
+   document.referrer android-app://<package>, and an installed Android standalone window counts too. Inside it the
+   Sunbeam SDK is never loaded (no Firebase, nothing sent: the privacy page says the Play app sends nothing) and the
+   feedback form is not mounted. On the web it loads as before. Every Sunbeam call already tests window.Sunbeam first. */
+(function(){
+  var inTWA=false;
+  try{ inTWA=document.referrer.indexOf("android-app://")===0||!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches&&/Android/i.test(navigator.userAgent)); }catch(e){ inTWA=false; }
+  window.SWS_IN_TWA=inTWA;
+  if(inTWA) return;
+  var s=document.createElement("script"); s.src="/sunbeam-sdk.js?v=7";
+  s.onload=function(){ if(window.Sunbeam&&Sunbeam.init) Sunbeam.init({gameId:"tofu"}).catch(function(){}); };
+  document.head.appendChild(s);
+})();
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231c1e24'/%3E%3Crect x='10' y='14' width='44' height='36' rx='9' fill='%23f6f1e7'/%3E%3Ccircle cx='26' cy='31' r='3' fill='%231c1e24'/%3E%3Ccircle cx='38' cy='31' r='3' fill='%231c1e24'/%3E%3C/svg%3E">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -1422,7 +1434,7 @@ $('labh+').onclick = () => { if (L.map.length >= 40) return; const W = L.map[0].
 $('labh-').onclick = () => { if (L.map.length <= 6) return; L.map.splice(1, 1); keep(); drawGrid(); };
 $('labdish').oninput = () => { L.dish = $('labdish').value; keep(); }; $('labhint').oninput = () => { L.hint = $('labhint').value; keep(); };
 $('labplay').onclick = play;
-$('labcopy').onclick = () => { L.dish = $('labdish').value.trim() || 'NEW DISH'; L.hint = $('labhint').value.trim(); const t = toText(); $('labtext').value = t; try { navigator.clipboard.writeText(t).then(() => say('Copied. Paste it to Fable.'), () => say('Select the text below and copy it.')); } catch (e) { say('Select the text below and copy it.'); } };
+$('labcopy').onclick = () => { L.dish = $('labdish').value.trim() || 'NEW DISH'; L.hint = $('labhint').value.trim(); const t = toText(); $('labtext').value = t; try { navigator.clipboard.writeText(t).then(() => say('Copied.'), () => say('Select the text below and copy it.')); } catch (e) { say('Select the text below and copy it.'); } };
 $('labread').onclick = () => { if (fromText($('labtext').value)) { keep(); drawGrid(); say('Read ' + L.map.length + ' rows.'); } else say('No level found in that text.'); };
 $('labquit').onclick = () => { location.search = ''; };
 $('labback').onclick = open;
@@ -1431,7 +1443,7 @@ $('labback').onclick = open;
 try { const d = JSON.parse(localStorage.getItem('tofu.lab') || 'null'); if (d && d.map && d.map.length >= 3) L = d; } catch (e) {}
 if (!L) L = blank();
 T.lab = { open, play, get level() { return L; }, toText, fromText, put: (x, y, t) => { brush = t; put(x, y); } };
-open(); say('Pick a tile, paint, then PLAY. COPY gives the text for Fable.');
+open(); say('Pick a tile, paint, then PLAY. COPY gives the level as text.');
 })();
 </script>
 </body>

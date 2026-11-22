@@ -1,8 +1,8 @@
 /* CREASE's sprites on the page (plans/crease/HANDOFF-CREASE.md section 7): each sprite from sprites.js drawn into its own
  * canvas through CORE's sprite.draw, at a whole number scale, pixelated, never smoothed.
  */
-import { sprite } from '../math/core/core.js?v=20260916a';
-import { SPRITES, PALETTE, PAPERS } from './sprites.js?v=20260916a';
+import { sprite } from '../math/core/core.js?v=20261122a';
+import { SPRITES, PALETTE, PAPERS } from './sprites.js?v=20261122a';
 
 /* the palette with a specimen's paper pair in place of indices 9 and a */
 export function paletteFor(paper) {

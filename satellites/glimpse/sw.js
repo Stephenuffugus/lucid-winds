@@ -10,25 +10,26 @@
    - ⛔ a module imported at two addresses must be precached at both: core.js imports pure.js and STAMP.js at CORE's stamp;
      GLIMPSE's own modules import only core.js and each other, at GLIMPSE's. */
 
-const SHELL_VERSION = 'glimpse-shell-20260916c';
+const SHELL_VERSION = 'glimpse-shell-20261122a';
 const NET_TIMEOUT_MS = 4000;
 
 const SHELL_ASSETS = [
   './',
   './index.html',
-  './main.js?v=20260916c',
-  './engine.js?v=20260916c',
-  './content.js?v=20260916c',
-  './config.js?v=20260916c',
-  './render.js?v=20260916c',
-  './sprites.js?v=20260916c',
-  './journal.js?v=20260916c',
-  './manifest.webmanifest?v=20260916c',
+  './privacy.html',
+  './main.js?v=20261122a',
+  './engine.js?v=20261122a',
+  './content.js?v=20261122a',
+  './config.js?v=20261122a',
+  './render.js?v=20261122a',
+  './sprites.js?v=20261122a',
+  './journal.js?v=20261122a',
+  './manifest.webmanifest?v=20261122a',
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',
-  '../math/core/core.css?v=20260916c',
-  '../math/core/core.js?v=20260916c',
+  '../math/core/core.css?v=20261122a',
+  '../math/core/core.js?v=20261122a',
   '../math/core/pure.js?v=20260915e',
   '../math/core/STAMP.js?v=20260915e'
 ];
@@ -75,15 +76,20 @@ self.addEventListener('fetch', event => {
 
   /* a page: the network first, no older than the host's copy, for NET_TIMEOUT_MS at most; then the cached shell */
   if (req.mode === 'navigate') {
+    /* ⛔ A NAVIGATION IS SAVED UNDER ITS OWN PAGE (22 Nov 2026, the fault the Play queue's first five hit on 13 Nov).
+       Every page load used to be saved as the game; with privacy.html beside it, one tap on the policy online would put
+       the policy in the game's place and an offline relaunch would draw it. The game's own pages keep their shell key;
+       any other page is keyed by its path and offline is answered from its own entry or the offline page, never the game's. */
+    const shell = /\/(index\.html)?$/.test(url.pathname) ? './index.html' : url.origin + url.pathname;
     event.respondWith(
       within(fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).catch(() => null), NET_TIMEOUT_MS)
         .then(res => {
           if (res && res.ok) {
             const copy = res.clone();
-            caches.open(SHELL_VERSION).then(c => c.put('./index.html', copy)).catch(() => {});
+            caches.open(SHELL_VERSION).then(c => c.put(shell, copy)).catch(() => {});
             return res;
           }
-          return caches.match('./index.html').then(hit => hit || res || offlinePage());
+          return caches.match(shell).then(hit => hit || res || offlinePage());
         })
     );
     return;

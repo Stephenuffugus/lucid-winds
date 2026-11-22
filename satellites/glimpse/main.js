@@ -8,12 +8,12 @@
  * numeral comes. FRAME shows its frame with the flash, and at the reveal its empty cells glow. The same reveal on every path,
  * right or wrong. Nothing on the screen shows time (GL3).
  */
-import { settings, tokens, audio, store, SETTINGS_DEFAULTS, parseConfig, rng, adaptTier, schedule } from '../math/core/core.js?v=20260916c';
-import { mountJournal } from './journal.js?v=20260916c';
-import { dealSession, scoreAnswer, flashMs, padsFor, padRows, arrange, SESSION_LENGTH, TENFRAME_STEP } from './engine.js?v=20260916c';
-import { COPY, PALETTE } from './content.js?v=20260916c';
-import { GLIMPSE_SCHEMA } from './config.js?v=20260916c';
-import { glowCanvas, fitMeadow, drawNight, drawFireflies, drawFrame, drawMask, padPattern, padSymbol, doorPicture } from './render.js?v=20260916c';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, parseConfig, rng, adaptTier, schedule } from '../math/core/core.js?v=20261122a';
+import { mountJournal } from './journal.js?v=20261122a';
+import { dealSession, scoreAnswer, flashMs, padsFor, padRows, arrange, SESSION_LENGTH, TENFRAME_STEP } from './engine.js?v=20261122a';
+import { COPY, PALETTE } from './content.js?v=20261122a';
+import { GLIMPSE_SCHEMA } from './config.js?v=20261122a';
+import { glowCanvas, fitMeadow, drawNight, drawFireflies, drawFrame, drawMask, padPattern, padSymbol, doorPicture } from './render.js?v=20261122a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, GLIMPSE_SCHEMA);
@@ -307,4 +307,4 @@ window.GLIMPSE = {
 };
 
 /* the offline shell: one worker for the game, its address carrying the stamp */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916c').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20261122a').catch(() => {});

@@ -6,8 +6,8 @@
  * featureless shape gives a child nothing to track). The piece stands over its notch, turned; where it does not cover the notch
  * the dark of the notch shows, which is how a child sees it is not seated. One wood for every piece (N4).
  */
-import { rotationZ, projectPoint } from './project.js?v=20260916e';
-import { PIECES } from './pieces.js?v=20260916e';
+import { rotationZ, projectPoint } from './project.js?v=20261122a';
+import { PIECES } from './pieces.js?v=20261122a';
 
 export const WOOD = '#c89a63', GRAIN = '#8c6239', BOARD = '#5a4330', HOLE = '#1b140e', EDGE = '#3a2a1c';
 const NS = 'http://www.w3.org/2000/svg';

@@ -6,7 +6,7 @@
  * in: grade 3 compares only the same numerator or the same denominator on {2, 3, 4, 6, 8} (3.NF.A.3.d), grade 4 any pair on
  * grade 4's list (4.NF.A.2), and a pair holding 7, 9 or 11 is grade 5 (5.NF.A.2), served only when a link asks.
  */
-import { GRADE_DENOMINATORS } from '../crease/bank.js?v=20260916b';
+import { GRADE_DENOMINATORS } from '../crease/bank.js?v=20261122a';
 
 export const CASE_TYPES = Object.freeze(['same-denominator', 'same-numerator', 'straddle-half', 'same-side-half', 'residual', 'gap-trap']);
 

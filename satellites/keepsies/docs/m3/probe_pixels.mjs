@@ -1,0 +1,40 @@
+/* m3: a look from the shell, since images are not opened on this run: real PNG screenshots at high quality and the colour at named points, against what each plate's own file holds there. Decoded by docs/m3/pngpx.py. */
+import { open, startMatch, sleep, done } from './probe.mjs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+const OUT = process.argv[2] || '/tmp/kp-px'; mkdirSync(OUT, { recursive: true });
+const page = await open(412, 915);
+const frames = async (k) => { const f0 = await page.evaluate(() => window.KEEPSIES_DEV.state().frames); await page.waitForFunction((t) => window.KEEPSIES_DEV.state().frames >= t, { timeout: 90000 }, f0 + (k || 2)); };
+const pts = [];
+const snap = async (name, list) => { await page.screenshot({ path: OUT + '/' + name + '.png' }); pts.push({ name, list }); };
+await page.evaluate(() => { const D = window.KEEPSIES_DEV; D.skipOnboarding(); D.grantSunbeams(20000); });
+await startMatch(page, { houseRules: { ringSizeFt: 5, statues: false } });
+await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(90)); await frames();
+const a = await page.evaluate(() => { const D = window.KEEPSIES_DEV, c = D.debugCam(), t = D.tawScreen(), r = (id) => { const q = document.getElementById(id).getBoundingClientRect(); return [q.left + q.width / 2, q.top + q.height / 2]; }; const side = document.querySelector('#scores .side').getBoundingClientRect(); return { t, mib: c.mibsOnScreen.slice().sort((p, q) => q.y - p.y)[0], chip: [side.left + side.width / 2, side.top + 16], ringEdge: (() => { const p = D.projectGround(0.2, Math.sqrt(0.762 * 0.762 - 0.04), 0); return [p.x, p.y]; })(), rules: r('houseRules') }; });
+await snap('aim', [
+  ['the shooter centre', [a.t.x, a.t.y]], ['dirt beside the shooter', [a.t.x + 60, a.t.y - 110]], ['a live mib', [a.mib.x, a.mib.y]], ['the chip middle (her plate 18,23,16)', a.chip], ['the circle ring (cream, faint)', [a.t.x + a.t.grabR, a.t.y]], ['aim line band', [a.t.x, a.t.y - a.t.grabR - 30]], ['house rules chip', a.rules]
+]);
+const lk = await page.evaluate(() => { const r = document.getElementById('topDown').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+await page.touchscreen.touchStart(lk.x, lk.y); await page.waitForFunction(() => window.KEEPSIES_DEV.debugCam().cam.el > 85, { timeout: 60000 }); await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(120)); await frames(2);
+const b = await page.evaluate(() => { const D = window.KEEPSIES_DEV, c = D.debugCam(), o = []; for (const a of [0.4, 1.3, 2.2, 3.5, 4.4, 5.5]) { const p = D.projectGround(Math.sin(a) * 0.762, Math.cos(a) * 0.762, 0), q = D.projectGround(Math.sin(a) * 0.70, Math.cos(a) * 0.70, 0); o.push([a, [p.x, p.y], [q.x, q.y]]); } const m = D.projectGround(0.15, 0.04, 0); return { o, cross: [m.x, m.y], rr: c.ringRect }; });
+await snap('look', b.o.flatMap(([a, p, q]) => [['chalk at ' + a, p], ['dirt inside at ' + a, q]]).concat([['the cross marker arm', b.cross]]));
+await page.touchscreen.touchEnd();
+await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 424242, forceFirst: 0, houseRules: { ringSizeFt: 5, statues: true } }));
+await page.waitForFunction(() => !!window.KEEPSIES_DEV.placing(), { timeout: 40000 }); await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(120)); await frames(2);
+const tr = await page.evaluate(() => { const r = (id) => document.getElementById(id).getBoundingClientRect(), t = r('statueTray'), g = r('st-arch'); return { tray: [t.left + t.width / 2, t.top + 60], gap: [(r('st-arch').right + r('st-loaf').left) / 2, g.top + 40], tile: [g.left + 8, g.top + g.height / 2 + 14], ic: [g.left + 28, g.top + 22] }; });
+await snap('tray', [['the tray plate (her 29,36,27)', tr.tray], ['between the tiles', tr.gap], ['the tile plate (her 39,44,34)', tr.tile], ['the tile icon', tr.ic]]);
+await page.evaluate(() => { const D = window.KEEPSIES_DEV; D.grantXp(1000); const p = D.progress(); D.grantXp(Math.max(0, p.needed - p.xp - 60)); D.setup(); D.stake('dirt_plain'); }); await frames(2);
+const cl = await page.evaluate(() => { const q = document.getElementById('ante').getBoundingClientRect(); return { mid: [q.left + q.width / 2, q.top + 8], edge: [q.left + 3, q.top + q.height / 2] }; });
+await snap('setup', [['the pot cloth (her 53,58,44)', cl.mid], ['the cloth edge', cl.edge]]);
+await page.evaluate(() => { const D = window.KEEPSIES_DEV; D.go({ seed: 424242, forceFirst: 0 }); D.forceEnd(0); }); await sleep(800); await page.evaluate(() => window.KEEPSIES_DEV.ceremonySkip()); await sleep(1500);
+const lv = await page.evaluate(() => { const q = document.getElementById('rLevel'); if (q.hidden) return null; const r = q.getBoundingClientRect(); return { mid: [r.left + r.width * 0.9, r.top + 30], ic: [r.left + 27, r.top + 30] }; });
+await snap('result', lv ? [['the level strip (her 38,45,30)', lv.mid], ['its mark', lv.ic]] : []);
+await page.evaluate(() => { const D = window.KEEPSIES_DEV; D.collection(); D.pouch('standard'); }); await sleep(1500);
+const po = await page.evaluate(() => { const r = (id) => document.getElementById(id).getBoundingClientRect(), p = r('poPlate'), k = p.width / 320, c = document.querySelector('#poMouth canvas').getBoundingClientRect(), pl = r('poTier'); return { pouch: [p.left + 40 * k, p.top + 200 * k], mouth: [c.left + c.width / 2, c.top + c.height / 2], shadow: [c.left + c.width / 2, c.bottom + 4], pill: [pl.left + 30, pl.top + 24] }; });
+await snap('pouch', [['the pouch cloth', po.pouch], ['the render centre', po.mouth], ['the shadow under it', po.shadow], ['the pill (her 22,28,22)', po.pill]]);
+await page.evaluate(() => document.getElementById('poKeep').click()); await sleep(300);
+await page.evaluate(() => window.KEEPSIES_DEV.collection()); await sleep(1500);
+const tl = await page.evaluate(() => { const b = document.querySelector('#grid .tile'); const r = b.getBoundingClientRect(), m = b.querySelector('.tmark').getBoundingClientRect(), c = b.querySelector('canvas').getBoundingClientRect(); return { frame: [r.left + 3, r.top + r.height / 2], mark: [m.left + m.width / 2, m.top + m.height / 2], render: [c.left + c.width / 2, c.top + c.height / 2] }; });
+await snap('tile', [['the tile frame edge', tl.frame], ['the tier mark', tl.mark], ['the render centre', tl.render]]);
+writeFileSync(OUT + '/points.json', JSON.stringify(pts));
+console.log('page errors', page.errors.length, page.errors.slice(0, 3).join(' | ').slice(0, 300));
+await done();

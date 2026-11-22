@@ -30,7 +30,7 @@ const puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SITE = join(ROOT, '..', '..');
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg' };   // Astra's art (an svg served as anything else is never drawn)
 const FLEET = ['/music-unlocks.js', '/music-player.js', '/music-catalog.js', '/music-ladder.json'];
 const server = createServer((req, res) => {
   const clean = decodeURIComponent(req.url.split('?')[0]);
@@ -62,7 +62,7 @@ await page.waitForFunction(() => window.KEEPSIES_DEV && window.KEEPSIES_DEV.stat
 
 /* ---- 1 to 3: a break, rendered offline ---- */
 const measured = await page.evaluate(async () => {
-  const A = await import('./src/audio/synth.js?v=20260905a');
+  const A = await import('./src/audio/synth.js?v=20261113a');
   const t = window.KEEPSIES_DEV.tuning();
   A.configure(t);
   const hits = [];
@@ -98,7 +98,7 @@ say(measured.loud.voices <= 20 * 5 && measured.loud.voices > 0,
 
 /* ---- 4: the rolling cap, and which loop it drops ---- */
 const roll = await page.evaluate(async () => {
-  const A = await import('./src/audio/synth.js?v=20260905a');
+  const A = await import('./src/audio/synth.js?v=20261113a');
   const t = window.KEEPSIES_DEV.tuning();
   A.configure(t);
   A.setEnabled(true);

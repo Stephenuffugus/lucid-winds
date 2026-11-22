@@ -237,7 +237,7 @@ console.log('scratch copy at ' + COPY + '\n');
 for (const dir of ['src', 'test', 'sim', 'lib', 'tools']) {
   if (existsSync(join(ROOT, dir))) cpSync(join(ROOT, dir), join(COPY, dir), { recursive: true });
 }
-for (const f of ['index.html', 'package.json', 'manifest.json']) {
+for (const f of ['index.html', 'package.json', 'manifest.webmanifest', 'sw.js', 'privacy.html']) {
   if (existsSync(join(ROOT, f))) cpSync(join(ROOT, f), join(COPY, f));
 }
 

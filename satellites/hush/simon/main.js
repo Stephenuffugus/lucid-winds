@@ -4,9 +4,9 @@
  * camera, no microphone, no motion sensor (H5). The order is dealSimon's, H1's share of "Hush says" with three before every
  * other.
  */
-import { settings, tokens, SETTINGS_DEFAULTS, rng } from '../../math/core/core.js?v=20260916d';
-import { dealSimon } from '../engine.js?v=20260916d';
-import { COPY, SIGNAL_WORD, PALETTE_TOKENS } from '../content.js?v=20260916d';
+import { settings, tokens, SETTINGS_DEFAULTS, rng } from '../../math/core/core.js?v=20261122a';
+import { dealSimon } from '../engine.js?v=20261122a';
+import { COPY, SIGNAL_WORD, PALETTE_TOKENS } from '../content.js?v=20261122a';
 
 const HOLD_MS = 3000;
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { runs: [], steps: 0, forked: false }, settings: Object.assign({ quick: false }, SETTINGS_DEFAULTS) }) };

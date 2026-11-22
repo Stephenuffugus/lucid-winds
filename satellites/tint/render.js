@@ -7,7 +7,7 @@
  * two streams meet in the vat, the colour resolves over 400 ms from streaks to one colour, then the cloth below takes it from its
  * bottom edge up.
  */
-import { mixLinear, WHITE } from './colour.js?v=20260916g';
+import { mixLinear, WHITE } from './colour.js?v=20261122a';
 
 export const RESOLVE_MS = 400, CLOTH_MS = 500, STREAM_MS = 300;
 const INK = '#2b2a26', VAT = '#6b5a48', VAT_RIM = '#8a7560', BENCH = '#cdbca3', JUG = '#9b8a76';

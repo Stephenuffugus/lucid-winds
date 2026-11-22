@@ -7,7 +7,7 @@
                  of seventeen not whole beyond (T3, 3.6)
    NONLINEAR_BANK, dealScales   DOES IT SCALE: a session of ten with exactly four that do (T2)
    Every ratio family is dealt continuous before it is ever dealt discretized (T9, 3.7). */
-import { reduceRatio, lightnessGap, DYES } from './colour.js?v=20260916g';
+import { reduceRatio, lightnessGap, DYES } from './colour.js?v=20261122a';
 
 export const ERROR_TAXONOMY = Object.freeze(['additive', 'buildUp', 'magicalDoubling', 'constantSum', 'incomplete']);
 

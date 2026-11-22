@@ -25,7 +25,7 @@ const SITE = join(ROOT, '..', '..');
 const OUT = join(ROOT, 'docs', 'shots');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg' };   // Astra's art (an svg served as anything else is never drawn)
 const FLEET = ['/music-unlocks.js', '/music-player.js', '/music-catalog.js', '/music-ladder.json'];
 const server = createServer((req, res) => {
   const clean = decodeURIComponent(req.url.split('?')[0]);
@@ -130,7 +130,7 @@ async function drag() {
 /** Play a whole match. Returns what the result card said. */
 async function playAMatch(usePullback, label) {
   await page.evaluate((pb) => window.KEEPSIES_DEV.setPullback(pb), usePullback);
-  await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0, houseRules: { ringSizeFt: 7, bombing: false } }));
+  await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0, houseRules: { ringSizeFt: 5, bombing: false } }));
   let turns = 0, shots = 0, cancels = 0, seenCeremony = null;
   while (turns++ < 90) {
     const alive = await waitPlayerTurn();
@@ -240,7 +240,7 @@ const firstSetup = await page.evaluate(() => ({
 }));
 say(firstSetup.beat === 'dusty' || firstSetup.beat === 'break',
   'the first setup is still inside the onboarding: beat ' + firstSetup.beat);
-say(firstSetup.hr.keepsies === false && firstSetup.hr.ringSizeFt === 7,
+say(firstSetup.hr.keepsies === false && firstSetup.hr.ringSizeFt === 5,
   'and the game has set the table itself: For Fair, ' + firstSetup.hr.ringSizeFt + ' foot, slips '
   + firstSetup.hr.slips);
 say(firstSetup.go === true,
@@ -271,7 +271,7 @@ await press('again');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'tin', { timeout: 20000 });
 const cloth = await page.evaluate(() => ({
   count: document.getElementById('heirlooms').querySelectorAll('button').length,
-  drew: [...document.querySelectorAll('#heirlooms canvas')].every(c => c.width === 168),
+  drew: [...document.querySelectorAll('#heirlooms canvas')].every(c => c.width === 200),
   takeDisabled: document.getElementById('tinTake').disabled,
   label: document.getElementById('tinTake').textContent
 }));
@@ -440,6 +440,10 @@ const poor = await page.evaluate(() => {
   return b ? b.disabled : null;
 });
 say(poor === true, 'and a pouch you cannot afford is disabled rather than failing on the tap');
+/* step 6 (4 Nov): the buy is written first, then the open pouch shows what came out; Keep it closes it */
+const reveal = await page.evaluate(() => ({ open: !document.getElementById('pouchOpen').hidden, name: document.getElementById('poName').textContent }));
+say(reveal.open === true && reveal.name.length > 0, 'the open pouch shows what came out, after the buy was written: ' + reveal.name);
+await press('poKeep');
 
 
 await press('collBack');

@@ -18,7 +18,7 @@
  * 6. The embed protocol, the fleet music include and the sunbeam cap helper are
  *    present, and nothing calls history.back().
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
 
@@ -84,9 +84,29 @@ const html = readFileSync(htmlPath, 'utf8');
    warning from the thing it warns about would ban its own documentation. */
 const htmlCode = stripComments(html);
 for (const [re, msg] of [
-  [/serviceWorker\s*\.\s*register/, 'index.html registers a service worker'],
   [/history\s*\.\s*back\s*\(/, 'index.html calls history.back()']
 ]) if (re.test(htmlCode)) note(htmlPath, 0, msg);
+
+/* THE OFFLINE SHELL (22 Nov 2026). index.html may register exactly one worker, ./sw.js, and that worker must carry
+   the cures of the two outages the studio had from workers: every fetch settles (a timeout races the network), and
+   only keepsies- caches are deleted (caches.keys() is origin wide). The 2.9 MB of figures are never precached. */
+{
+  const regs = htmlCode.match(/serviceWorker\s*\.\s*register\(\s*(['"])([^'"]+)\1/g) || [];
+  if (regs.length > 1) note(htmlPath, 0, 'index.html registers more than one service worker');
+  if (regs.length && !/register\(\s*['"]sw\.js\?v=/.test(regs[0])) note(htmlPath, 0, 'the only worker index.html may register is sw.js');
+  if (regs.length) {
+    const swPath = join(ROOT, 'sw.js');
+    const sw = existsSync(swPath) ? stripComments(readFileSync(swPath, 'utf8')) : '';
+    if (!sw) note(swPath, 0, 'index.html registers sw.js and there is no sw.js');
+    else {
+      if (!/Promise\.race/.test(sw) || !/NET_TIMEOUT_MS/.test(sw)) note(swPath, 0, 'sw.js has no timeout: a hung fetch would never settle (the black screen)');
+      if (!/indexOf\('keepsies-[a-z-]*'\)\s*===\s*0/.test(sw)) note(swPath, 0, 'sw.js must delete only caches whose name begins keepsies-');
+      const list = (sw.match(/SHELL_ASSETS\s*=\s*\[([\s\S]*?)\]/) || [])[1] || '';
+      if (!list) note(swPath, 0, 'sw.js has no SHELL_ASSETS list');
+      if (/assets\/figures/.test(list)) note(swPath, 0, 'sw.js precaches the figures (2.9 MB); they are fetched by a match, never precached');
+    }
+  }
+}
 
 for (const [needle, msg] of [
   ['SWS_EXIT', 'the embed protocol block is missing SWS_EXIT'],
@@ -140,5 +160,5 @@ if (bad.length) {
   console.log('LINT FAILED');
   process.exit(1);
 }
-console.log('core is pure, no service worker, no stray dice, and the copy carries no dash');
+console.log('core is pure, one guarded service worker, no stray dice, and the copy carries no dash');
 console.log('LINT OK');

@@ -6,8 +6,8 @@
  * hold 60 fps on a Celeron). A field is a unit square drawn at a scale S from an offset (ox, oy), so SPREAD's two fields sit
  * side by side in one meadow.
  */
-import { sprite } from '../math/core/core.js?v=20260916c';
-import { SPRITES, PALETTE, INKS } from './sprites.js?v=20260916c';
+import { sprite } from '../math/core/core.js?v=20261122a';
+import { SPRITES, PALETTE, INKS } from './sprites.js?v=20261122a';
 
 /* the palette with a journal page's ink pair in place of indices 9 and a */
 export function paletteFor(ink) {

@@ -15,12 +15,12 @@
  *
  * SAME VALUE: a decimal and its partner with zeros added or moved; the child says the same value or not; the true answer is lit.
  */
-import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, parseConfig } from '../math/core/core.js?v=20260916h';
-import { generateComparisonSet, classifyRun, predict, dealZoom, zoomPath, scoreZoom, subdivide, dealSame, scoreSame } from './engine.js?v=20260916h';
-import { parse } from './decimal.js?v=20260916h';
-import { COPY, PALETTE_TOKENS } from './content.js?v=20260916h';
-import { GAUGE_SCHEMA } from './config.js?v=20260916h';
-import { mountCase } from './case.js?v=20260916h';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, parseConfig } from '../math/core/core.js?v=20261122a';
+import { generateComparisonSet, classifyRun, predict, dealZoom, zoomPath, scoreZoom, subdivide, dealSame, scoreSame } from './engine.js?v=20261122a';
+import { parse } from './decimal.js?v=20261122a';
+import { COPY, PALETTE_TOKENS } from './content.js?v=20261122a';
+import { GAUGE_SCHEMA } from './config.js?v=20261122a';
+import { mountCase } from './case.js?v=20261122a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { code: null }, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, GAUGE_SCHEMA);
@@ -324,7 +324,7 @@ nextBtn.addEventListener('click', next);
 el('start').addEventListener('click', () => begin('compare'));
 el('start-zoom').addEventListener('click', () => begin('zoom'));
 el('start-same').addEventListener('click', () => begin('same'));
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916h').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20261122a').catch(() => {});
 /* a link that names a mode shows its one door */
 if (NAMED_MODE) for (const [id, m] of [['start', 'compare'], ['start-zoom', 'zoom'], ['start-same', 'same']]) if (m !== CONFIG.mode) el(id).hidden = true;
 

@@ -38,7 +38,8 @@ const DPR = parseFloat(process.argv[4] || '2');
 
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript',
-  '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp'
+  '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp',
+  '.svg': 'image/svg+xml'   // Astra's art: an svg served as anything else is never drawn
 };
 /* The fleet's music ladder is served from the SITE root, not from the game's
    folder, so a server that only knows this folder 404s it and the gate reports a
@@ -237,7 +238,8 @@ const b1 = await stat(await page.screenshot());
 await new Promise(r => setTimeout(r, 600));
 const b2 = await stat(await page.screenshot());
 const d = diff(b1, b2);
-say(d.movedFrac > 0.02, '(d) two frames 600 ms apart differ: ' + (d.movedFrac * 100).toFixed(1)
+/* m3 step 4: the camera holds while a shot plays, so only the marbles move: a tenth of a percent of the cells, not the two percent the follow camera gave */
+say(d.movedFrac > 0.001, '(d) two frames 600 ms apart differ: ' + (d.movedFrac * 100).toFixed(1)
   + '% of cells moved, mean difference ' + d.meanDiff.toFixed(2) + ' of 255');
 
 const st = await page.evaluate(() => { window.KEEPSIES_DEV.settle(1400); return window.KEEPSIES_DEV.state(); });

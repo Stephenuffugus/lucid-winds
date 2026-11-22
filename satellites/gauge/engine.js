@@ -8,8 +8,8 @@
                 above) or U; nothing before twelve answers (3.2)
    subdivide    the eleven ticks of one level, exactly ten divisions (GA4)
    routeFrom    where a code sends a child next (the handoff's section 1, v1's modes) */
-import { parse, compare, add } from './decimal.js?v=20260916h';
-import { adaptClassify } from '../math/core/pure.js?v=20260916h';
+import { parse, compare, add } from './decimal.js?v=20261122a';
+import { adaptClassify } from '../math/core/pure.js?v=20261122a';
 
 const side = c => (c > 0 ? 'left' : c < 0 ? 'right' : 'same');
 const bigCmp = (x, y) => (x > y ? 1 : x < y ? -1 : 0);

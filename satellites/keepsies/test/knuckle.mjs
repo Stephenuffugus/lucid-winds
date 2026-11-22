@@ -31,7 +31,7 @@ const puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SITE = join(ROOT, '..', '..');
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg' };   // Astra's art (an svg served as anything else is never drawn)
 const FLEET = ['/music-unlocks.js', '/music-player.js', '/music-catalog.js', '/music-ladder.json'];
 const server = createServer((req, res) => {
   const clean = decodeURIComponent(req.url.split('?')[0]);
@@ -87,8 +87,8 @@ const hit = await page.evaluate((t) => {
 }, taw);
 say(hit.id === 'stage', 'what a thumb lands on at the shooter\'s centre is the game canvas, not a HUD panel: '
   + (hit.id || hit.tag));
-say(taw.grabR * 2 >= 48, 'the shooter\'s grab area measures ' + (taw.grabR * 2).toFixed(0)
-  + ' rendered px across at 375 wide (drawn ' + (taw.r * 2).toFixed(0) + '), the floor is 48');
+say(Math.abs(taw.grabR * 2 - 154) < 0.5, 'the circle measures ' + (taw.grabR * 2).toFixed(0)
+  + ' rendered px across at 375 wide (drawn ' + (taw.r * 2).toFixed(0) + '): 154 across, m3 step 3');
 
 /* ---- a real pointer gesture, sampled the way a thumb is ---- */
 async function gesture(from, dx, dy, ms, steps, hookDeg) {
@@ -101,10 +101,19 @@ async function gesture(from, dx, dy, ms, steps, hookDeg) {
     const ry = dx * f * Math.sin(a) + dy * f * Math.cos(a);
     pts.push({ x: from.x + rx, y: from.y + ry, t: ms * f });
   }
-  return page.evaluate((pts, t0) => {
-    const s = pts.map(p => ({ x: p.x, y: p.y, t: t0 + p.t }));
-    return window.KEEPSIES_DEV.flick(s);
-  }, pts, 1000);
+  /* m3 step 6: real pointer events through the module, each carrying its own timeStamp, never _feed: a hold, the path, the lift */
+  return page.evaluate((pts) => {
+    const canvas = document.getElementById('stage'), r = canvas.getBoundingClientRect(), base = performance.now() - 500;
+    const fire = (type, p, t) => { const e = new PointerEvent(type, { pointerId: 41, pointerType: 'touch', clientX: r.left + p.x, clientY: r.top + p.y, bubbles: true, cancelable: true, isPrimary: true }); Object.defineProperty(e, 'timeStamp', { value: t }); canvas.dispatchEvent(e); };
+    const hold = pts[0], D = window.KEEPSIES_DEV, prev = D.aimNow();
+    fire('pointerdown', hold, base);
+    for (let i = 1; i <= 10; i++) fire('pointermove', hold, base + i * 16);
+    const t0 = base + 180;
+    for (const p of pts) fire('pointermove', p, t0 + p.t);
+    fire('pointerup', pts[pts.length - 1], t0 + pts[pts.length - 1].t);
+    const a = D.aimNow();
+    return a === prev ? null : a;
+  }, pts);
 }
 
 const cases = [
@@ -112,7 +121,7 @@ const cases = [
   { id: 'the same path at a quarter of the speed', d: [0, -300], ms: 220, hook: 0 },
   { id: 'a flick from under the centre', d: [0, -300], ms: 55, hook: 0, rel: { x: 0, y: 0.85 } },
   { id: 'a flick from above the centre', d: [0, -300], ms: 55, hook: 0, rel: { x: 0, y: -0.85 } },
-  { id: 'a hooked path', d: [0, -300], ms: 55, hook: 55 },
+  { id: 'a hooked path', d: [0, -300], ms: 55, hook: 20 },   // m3 step 8: off the line reads on the screen and a turn past 45 degrees is the dial, so the old 55 is no shot at all
   { id: 'a slow tap', d: [0, -6], ms: 200, hook: 0 }
 ];
 const got = {};
@@ -123,7 +132,7 @@ for (const c of cases) {
   // measured against it is nonsense.
   const here = await page.evaluate(() => window.KEEPSIES_DEV.state().match.taw);
   if (!here) { say(false, c.id + ': the shooter was not on screen'); continue; }
-  const at = c.rel ? { x: here.x + c.rel.x * here.r, y: here.y + c.rel.y * here.r } : here;
+  const at = c.rel ? { x: here.x + c.rel.x * here.spinR, y: here.y + c.rel.y * here.spinR } : here;   // m3 step 3: contact reads against the spin ring
   const aim = await gesture(at, c.d[0], c.d[1], c.ms, 18, c.hook);
   got[c.id] = aim;
   console.log('  ' + c.id.padEnd(42) + (aim

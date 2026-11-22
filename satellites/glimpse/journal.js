@@ -5,9 +5,9 @@
  * nothing. Eight sketches in three inks, sketch by the page's place mod eight and ink by its place mod three, so no two of the
  * twenty four are alike. Cosmetic only: no count is shown and nothing is unlocked.
  */
-import { collectOnce, sprite } from '../math/core/core.js?v=20260916c';
-import { SPRITES, PAGES } from './sprites.js?v=20260916c';
-import { paletteFor } from './render.js?v=20260916c';
+import { collectOnce, sprite } from '../math/core/core.js?v=20261122a';
+import { SPRITES, PAGES } from './sprites.js?v=20261122a';
+import { paletteFor } from './render.js?v=20261122a';
 
 export const JOURNAL_SIZE = 24;
 const COLS = 6, ROWS = 4, UNIT = 12, GAP = 4;

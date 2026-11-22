@@ -5,8 +5,8 @@
  * Every species, tier and pose is drawn once at boot into its own canvas (the handoff: a decode stall mid approach reads as a
  * signal and corrupts a reaction time), then copied at a whole number scale on whole pixels.
  */
-import { sprite } from '../math/core/core.js?v=20260916d';
-import { SPRITES, PALETTE, COATS, SPECIES, TIER_SIZES, POSES } from './sprites.js?v=20260916d';
+import { sprite } from '../math/core/core.js?v=20261122a';
+import { SPRITES, PALETTE, COATS, SPECIES, TIER_SIZES, POSES } from './sprites.js?v=20261122a';
 
 /* how much of the clearing's height the creature fills at each tier: far to close */
 const REACH = [0.14, 0.2, 0.28, 0.38, 0.52, 0.7];

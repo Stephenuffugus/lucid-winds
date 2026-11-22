@@ -34,7 +34,7 @@ const SITE = join(ROOT, '..', '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'tuning.json'), 'utf8'));
 const C = T.render.spyglass;
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg' };   // Astra's art (an svg served as anything else is never drawn)
 const FLEET = ['/music-unlocks.js', '/music-player.js', '/music-catalog.js', '/music-ladder.json'];
 const server = createServer((req, res) => {
   const clean = decodeURIComponent(req.url.split('?')[0]);
@@ -104,6 +104,8 @@ const coarse = (C.nudgeCoarseDeg == null ? 2 : C.nudgeCoarseDeg) * Math.PI / 180
 // the line only draws while the scope is held or the thumb is down: hold the scope to read it, then release
 await page.evaluate(() => window.KEEPSIES_DEV.scopeHold(true)); await sleep(900);
 const line0 = (await ui()).lineInfo;
+const mibX = async () => { const m = await page.evaluate(() => window.KEEPSIES_DEV.mibs()); return m.reduce((a, q) => a + q.sx, 0) / Math.max(1, m.length); };
+const world0 = await mibX();
 await page.evaluate(() => window.KEEPSIES_DEV.scopeHold(false)); await sleep(200);
 const az0 = (await cam()).userAz;
 for (let i = 0; i < 3; i++) { await tap('nudgeR'); await sleep(120); }
@@ -112,12 +114,32 @@ const az1 = (await cam()).userAz;
 say(Math.abs(Math.abs(az1 - az0) - 3 * coarse) < 1e-3, 'three taps turned the aim by ' + ((az1 - az0) * 180 / Math.PI).toFixed(2) + ' degrees (three coarse steps are ' + (3 * coarse * 180 / Math.PI).toFixed(2) + ')');
 await page.evaluate(() => window.KEEPSIES_DEV.scopeHold(true)); await sleep(900);
 const line1 = (await ui()).lineInfo;
-say(!!line0 && !!line1 && line1.endX > line0.endX + 2, 'the aim line\'s far end moved right on screen, from x ' + (line0 && line0.endX.toFixed(1)) + ' to ' + (line1 && line1.endX.toFixed(1)));
+/* m3 step 2: the camera turns about the shooter, so the line holds still up the screen and the WORLD turns under it: aiming right moves the mibs left */
+const world1 = await mibX();
+say(!!line0 && !!line1 && Math.abs(line1.endX - line0.endX) < 4 && world1 < world0 - 2, 'aiming right: the aim line holds (x ' + (line0 && line0.endX.toFixed(1)) + ' to ' + (line1 && line1.endX.toFixed(1)) + ') and the mibs move left under it (x ' + world0.toFixed(1) + ' to ' + world1.toFixed(1) + ')');
+
+/* m3 step 7: a step moves the shooter under 1 px, and no nudge rect meets the resting thumb's band (45 to 55% of the height) */
+{
+  const tb = await page.evaluate(() => { const D = window.KEEPSIES_DEV, s = D.tawScreen(); return { x: s.x, y: s.y }; });
+  await tap('nudgeR'); await sleep(900);
+  const ta = await page.evaluate(() => { const D = window.KEEPSIES_DEV, s = D.tawScreen(); return { x: s.x, y: s.y }; });
+  say(Math.hypot(ta.x - tb.x, ta.y - tb.y) < 1, 'a fine aim step moves the shooter ' + Math.hypot(ta.x - tb.x, ta.y - tb.y).toFixed(2) + ' px (under 1; shipped 16)');
+  const band = await page.evaluate(() => { const H = innerHeight, q = (id) => { const r = document.getElementById(id).getBoundingClientRect(); return { t: r.top, b: r.bottom }; }; return { H, l: q('nudgeL'), r: q('nudgeR') }; });
+  const inBand = (q) => q.b > band.H * 0.45 && q.t < band.H * 0.55;
+  say(!inBand(band.l) && !inBand(band.r), 'the aim buttons are out of the resting thumb\'s band (' + band.l.t.toFixed(0) + ' to ' + band.l.b.toFixed(0) + ' of ' + band.H + ')');
+}
 
 /* 3. the Zoom holds the scope open with no thumb down, and the step is fine */
 const ui1 = await ui();
 const spy0 = (await cam()).spy;
 say(ui1.scopeOn && ui1.spy && !!spy0, 'with Zoom on the scope is open with no thumb on the shooter, looking at range ' + (spy0 && spy0.range) + ' m');
+/* m3 step 8: the aim frame has the cross at the top of the screen; the scope opens in the dirt under it, never over a live mib, and clear of the circle */
+{
+  const c0 = await cam(), rect = c0.spyRect, covered = rect ? (c0.mibsOnScreen || []).filter(m => m.x > rect.left && m.x < rect.left + rect.size && m.y > rect.top && m.y < rect.top + rect.size).length : -1;
+  const ts = await page.evaluate(() => window.KEEPSIES_DEV.tawScreen());
+  say(covered === 0, 'the scope (' + (rect ? rect.left + ',' + rect.top + ' ' + rect.size : 'none') + ') covers ' + covered + ' live mibs of ' + (c0.mibsOnScreen || []).length);
+  say(!!rect && rect.top + rect.size <= ts.y - ts.grabR, 'and its foot ' + (rect && rect.top + rect.size) + ' stands above the circle at ' + (ts.y - ts.grabR).toFixed(0));
+}
 const fine = (C.nudgeFineDeg == null ? 0.5 : C.nudgeFineDeg) * Math.PI / 180;
 const az2 = (await cam()).userAz;
 await tap('nudgeL');
@@ -159,7 +181,7 @@ for (let i = 0; i <= 18; i++) { const f = i / 18; pts.push({ x: here.x + 110 * f
 const aim = await page.evaluate((s) => window.KEEPSIES_DEV.flick(s), pts);
 const said = await page.evaluate(() => window.KEEPSIES_DEV.said());
 say(!!aim && Math.abs(aim.fineDeg) >= 5, 'a flick angled off the line reads as ' + (aim ? aim.fineDeg.toFixed(1) : '?') + ' degrees off');
-say(/degrees (left|right) of the line/.test(said), 'and the game names it: "' + said + '"');
+say(/off the line/.test(said) || /wild one/.test(said), 'and the game names it: "' + said + '"');
 
 say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close(); server.close();

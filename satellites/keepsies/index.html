@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Snap real marbles for keeps in the playground game and a marble battle arena, and risk the most beautiful thing you own.">
 <title>Keepsies</title>
-<link rel="manifest" href="manifest.json?v=20261113a">
+<link rel="manifest" href="manifest.webmanifest?v=20261113a">
 <link rel="icon" href="icon-192.png?v=20261113a">
 <link rel="apple-touch-icon" href="icon-192.png?v=20261113a">
 <style>
@@ -793,7 +793,14 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 (function(){
   var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
   window.SWS_EMBED=framed;
+  /* THE PLAY APP (a Trusted Web Activity; Dewball's and Hues' rule, applied here 22 Nov 2026): Chrome opens it with
+     document.referrer android-app://<package>, and an installed Android standalone window counts too. Inside it the
+     exit is hidden and SWS_EXIT refuses, so the Play app can never reach the portal and its Stripe checkout. */
+  var inTWA=false;
+  try{ inTWA=document.referrer.indexOf("android-app://")===0||!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches&&/Android/i.test(navigator.userAgent)); }catch(e){ inTWA=false; }
+  window.SWS_IN_TWA=inTWA;
   window.SWS_EXIT=function(){
+    if(window.SWS_IN_TWA) return;   /* ⛔ never leave the Play app */
     if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
     location.href='https://lucidwinds.com/portal/';
   };
@@ -802,11 +809,13 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
   }
   var ex=document.getElementById('exitTitle');
+  if(ex&&inTWA) ex.style.display='none';   /* the Play app has no arcade to go back to */
   if(ex) ex.addEventListener('click',function(){ window.SWS_EXIT(); });
-  /* No service worker is registered here, by any path. The studio has been taken
-     down twice by one: a hung fetch never settles respondWith and paints a black
-     screen, and caches.keys() is origin wide so two workers delete each other's
-     caches. An offline shell for Keepsies is a separate, reviewed step. */
+  /* THE OFFLINE SHELL (22 Nov 2026, the Play gates; until then no worker was registered here, by any path, because
+     the studio had been taken down twice by one). sw.js carries both scars' cures, and tools/lint.mjs holds them: every
+     fetch settles within a timeout, only keepsies- caches are ever deleted, the figures are never precached. Not
+     inside the portal's frame: a framed game is the portal's page, not an app. */
+  if(!framed&&'serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=20261113a').catch(function(){}); }catch(e){} }
 })();
 
 /* studio standard 30 a day sunbeam cap helper (SUNBEAM_EARN_POLICY.md).

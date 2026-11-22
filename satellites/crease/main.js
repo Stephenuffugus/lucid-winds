@@ -13,13 +13,13 @@
  * The tier ladder is CORE's adaptTier on this page's own results; the tier only sets how close counts as close, and nothing
  * on the screen shows it.
  */
-import { settings, tokens, audio, store, SETTINGS_DEFAULTS, parseConfig, rng, numberline, adaptTier } from '../math/core/core.js?v=20260916a';
-import { spriteCanvas } from './draw.js?v=20260916a';
-import { mountShelf } from './shelf.js?v=20260916a';
-import { freshRun, generateTask, scoreAttempt, TIER_CONFIG, judgeHalf } from './engine.js?v=20260916a';
-import { COPY, PALETTE } from './content.js?v=20260916a';
-import { CREASE_SCHEMA } from './config.js?v=20260916a';
-import { placePins, clearReveal, buildReveal, setReveal, foldTo, clearFolds, markMiddle } from './render.js?v=20260916a';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, parseConfig, rng, numberline, adaptTier } from '../math/core/core.js?v=20261122a';
+import { spriteCanvas } from './draw.js?v=20261122a';
+import { mountShelf } from './shelf.js?v=20261122a';
+import { freshRun, generateTask, scoreAttempt, TIER_CONFIG, judgeHalf } from './engine.js?v=20261122a';
+import { COPY, PALETTE } from './content.js?v=20261122a';
+import { CREASE_SCHEMA } from './config.js?v=20261122a';
+import { placePins, clearReveal, buildReveal, setReveal, foldTo, clearFolds, markMiddle } from './render.js?v=20261122a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 const CONFIG = parseConfig(location.search, CREASE_SCHEMA);
@@ -326,4 +326,4 @@ window.CREASE = {
 };
 
 /* the offline shell: one worker for the game, its address carrying the stamp */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916a').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20261122a').catch(() => {});

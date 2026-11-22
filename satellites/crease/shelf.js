@@ -5,9 +5,9 @@
  * nothing. Eight shapes on three papers, shape by the specimen's place mod eight and paper by its place mod three, so no
  * two of the twenty four are alike. Cosmetic only: no count is shown and nothing is unlocked.
  */
-import { collectOnce, sprite } from '../math/core/core.js?v=20260916a';
-import { SPRITES, SPECIMENS } from './sprites.js?v=20260916a';
-import { paletteFor } from './draw.js?v=20260916a';
+import { collectOnce, sprite } from '../math/core/core.js?v=20261122a';
+import { SPRITES, SPECIMENS } from './sprites.js?v=20261122a';
+import { paletteFor } from './draw.js?v=20261122a';
 
 export const SHELF_SIZE = 24;
 const COLS = 6, ROWS = 4, UNIT = 12, GAP = 4;

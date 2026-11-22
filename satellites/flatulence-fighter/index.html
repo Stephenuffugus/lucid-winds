@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@700&family=Open+Sans:wght@400;600&display=swap">
 <meta name="theme-color" content="#e7e0cb">
-<link rel="manifest" href="manifest.json?v=20261105a">
+<link rel="manifest" href="manifest.webmanifest?v=20261105a">
 <link rel="apple-touch-icon" href="icon-192.png?v=20261105a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -876,7 +876,22 @@
     <button class="btn ghost" id="menuBtn">Back to menu</button>
   </div>
 </div>
-<script src="/sunbeam-sdk.js?v=7"></script>
+<script>
+/* THE PLAY APP (a Trusted Web Activity; Dewball's and Hues' rule, applied here 22 Nov 2026): Chrome opens it with
+   document.referrer android-app://<package>, and an installed Android standalone window counts too. Inside it the
+   Sunbeam SDK is never loaded (no Firebase, nothing sent: the privacy page says the Play app sends nothing), the
+   feedback form is not mounted, the arcade exit is hidden and SWS_EXIT refuses, so the Play app can never reach the
+   portal and its Stripe checkout (Play's payment rules). On the web it all works as before. */
+(function(){
+  var inTWA=false;
+  try{ inTWA=document.referrer.indexOf("android-app://")===0||!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches&&/Android/i.test(navigator.userAgent)); }catch(e){ inTWA=false; }
+  window.SWS_IN_TWA=inTWA;
+  if(inTWA){ document.documentElement.classList.add("sws-twa"); return; }
+  var s=document.createElement("script"); s.src="/sunbeam-sdk.js?v=7";
+  s.onload=function(){ if(window.Sunbeam&&Sunbeam.init) Sunbeam.init({gameId:"flatulence-fighter"}).catch(function(){}); };
+  document.head.appendChild(s);
+})();
+</script>
 <script>
 "use strict";
 (function(){
@@ -2317,10 +2332,12 @@
       s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
     if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
   window.SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
-  window.SWS_EXIT=function(){ const emb=window.SWS_EMBED||window.self!==window.top;
+  window.SWS_EXIT=function(){ if(window.SWS_IN_TWA) return;   /* ⛔ never leave the Play app */
+    const emb=window.SWS_EMBED||window.self!==window.top;
     if(emb&&parent!==window){ try{ parent.postMessage({sws:"close"},"*"); }catch(e){} return; }
     if(document.referrer.indexOf("/portal")>=0&&history.length>1){ history.back(); return; }
     location.href="/portal/"; };
+  if(window.SWS_IN_TWA) $("arcadeBtn").style.display="none";   /* the Play app has no arcade to go back to */
   $("arcadeBtn").addEventListener("click",()=>window.SWS_EXIT());
   if(window.SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
 
@@ -2400,7 +2417,8 @@
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
-     portal at all — see arcade-exit.js */addEventListener('load',function(){var s=document.createElement('script');s.src='/arcade-exit.js?v=2';document.head.appendChild(s);});</script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'flatulence-fighter',surface:'satellite'});};document.head.appendChild(s);});</script>
+     portal at all — see arcade-exit.js */addEventListener('load',function(){if(window.SWS_IN_TWA)return;/* never in the Play app */var s=document.createElement('script');s.src='/arcade-exit.js?v=2';document.head.appendChild(s);});</script>
+<script>/* fleet feedback fab (2026-07-27) ; never in the Play app (the form sends to our server) */addEventListener('load',function(){if(window.SWS_IN_TWA)return;var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'flatulence-fighter',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* the offline shell (22 Nov 2026, the Play gates): sw.js; its ?v= moves with SHELL_VERSION */if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=20261122a').catch(function(){}); }catch(e){} }</script>
 </body>
 </html>

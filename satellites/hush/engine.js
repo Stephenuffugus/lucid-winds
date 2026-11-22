@@ -6,8 +6,8 @@
    stepsDelta, approach, tierOf, settled   the approach in both forks (3.4, 3.5; H4, H9)
    adaptAxes   the three staircases on their three histories (3.3)
    dealSimon   SIMON's thirty commands (3.7) */
-import { adaptStaircase } from '../math/core/pure.js?v=20260916d';
-import { SIMON_COMMANDS } from './content.js?v=20260916d';
+import { adaptStaircase } from '../math/core/pure.js?v=20261122a';
+import { SIMON_COMMANDS } from './content.js?v=20261122a';
 
 export { SIMON_COMMANDS };
 

@@ -6,8 +6,8 @@
  * eight and the metal by its place mod three, so no two of the twenty four are alike. Cosmetic only: no count is shown, nothing
  * is unlocked, and nothing in the case says what a child got right or which rule a child holds (GA7).
  */
-import { collectOnce, sprite } from '../math/core/core.js?v=20260916h';
-import { SPRITES, PALETTE, METALS, INSTRUMENTS } from './sprites.js?v=20260916h';
+import { collectOnce, sprite } from '../math/core/core.js?v=20261122a';
+import { SPRITES, PALETTE, METALS, INSTRUMENTS } from './sprites.js?v=20261122a';
 
 export const CASE_SIZE = 24;
 const COLS = 6, ROWS = 4, UNIT = 12, GAP = 4;

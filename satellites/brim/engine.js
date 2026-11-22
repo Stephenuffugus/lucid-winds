@@ -6,8 +6,8 @@
  *   equivalentsOf(f)      every equal fraction by a split that keeps the denominator at 12 or less (3.6)
  *   dealSession(r, opts)  twelve rounds with B2, B3, B6 and B9 built in, never left to chance (3.3, 3.4)
  */
-import { PAIR_BANK } from './pairs.js?v=20260916b';
-import { GRADE_DENOMINATORS } from '../crease/bank.js?v=20260916b';
+import { PAIR_BANK } from './pairs.js?v=20261122a';
+import { GRADE_DENOMINATORS } from '../crease/bank.js?v=20261122a';
 
 export const SESSION_LENGTH = 12;
 const MAX_DENOMINATOR = 12;

@@ -27,9 +27,22 @@
 <meta name="twitter:description" content="Stick falling pieces to the sun, close the square rings, slam to spin the gyre. Free at Sky Wolf Studio.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/ring-stacker/og/card.jpg">
 
-<!-- Same-origin Sunbeam SDK (guarded; harmless 404 if absent) -->
-<script src="/sunbeam-sdk.js?v=7"></script>
-<script>window.Sunbeam&&Sunbeam.init({gameId:"ringstacker"}).catch(function(){});</script>
+<script>
+/* THE PLAY APP (a Trusted Web Activity; Dewball's and Hues' rule, applied here 22 Nov 2026): Chrome opens it with
+   document.referrer android-app://<package>, and an installed Android standalone window counts too. Inside it the
+   Sunbeam SDK is never loaded (no Firebase, nothing sent: the privacy page says the Play app sends nothing), the
+   feedback form is not mounted, the arcade exit is hidden and SWS_EXIT refuses, so the Play app can never reach the
+   portal and its Stripe checkout (Play's payment rules). On the web it all works as before. */
+(function(){
+  var inTWA=false;
+  try{ inTWA=document.referrer.indexOf("android-app://")===0||!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches&&/Android/i.test(navigator.userAgent)); }catch(e){ inTWA=false; }
+  window.SWS_IN_TWA=inTWA;
+  if(inTWA){ document.documentElement.classList.add("sws-twa"); return; }
+  var s=document.createElement("script"); s.src="/sunbeam-sdk.js?v=7";
+  s.onload=function(){ if(window.Sunbeam&&Sunbeam.init) Sunbeam.init({gameId:"ringstacker"}).catch(function(){}); };
+  document.head.appendChild(s);
+})();
+</script>
 <style>
 /* Sunbreaker type (Astra's pack v1): Barlow Condensed Black for display, Space Grotesk for live UI. Both OFL, subset to
    Latin woff2 by tools/sunforge-tests/astra_in.py, served from here so the game stays offline. */
@@ -1577,6 +1590,7 @@ if(/[?&]rsdev=1/.test(location.search)){
 (function(){
   var framed=false; try{ framed = window.parent!==window; }catch(e){ framed=true; }
   window.SWS_EXIT=function(){
+    if(window.SWS_IN_TWA) return;   /* ⛔ never leave the Play app */
     if(framed){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; }
     if(document.referrer.indexOf('/portal')>=0&&history.length>1){ history.back(); }
     else{ location.replace('https://lucidwinds.com/portal/'); }
@@ -1586,6 +1600,7 @@ if(/[?&]rsdev=1/.test(location.search)){
     window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} });
   }
   var b=document.getElementById('sws-back');
+  if(b&&window.SWS_IN_TWA) b.style.display='none';   /* the Play app has no arcade to go back to */
   if(b) b.addEventListener('click',function(){ window.SWS_EXIT(); });
 })();
 
@@ -1738,7 +1753,7 @@ if(/[?&]rstest=1/.test(location.search)){
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
-     portal at all — see arcade-exit.js */addEventListener('load',function(){var s=document.createElement('script');s.src='/arcade-exit.js?v=2';document.head.appendChild(s);});</script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'ring-stacker',surface:'satellite'});};document.head.appendChild(s);});</script>
+     portal at all — see arcade-exit.js */addEventListener('load',function(){if(window.SWS_IN_TWA)return;/* never in the Play app */var s=document.createElement('script');s.src='/arcade-exit.js?v=2';document.head.appendChild(s);});</script>
+<script>/* fleet feedback fab (2026-07-27) ; never in the Play app (the form sends to our server) */addEventListener('load',function(){if(window.SWS_IN_TWA)return;var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'ring-stacker',surface:'satellite'});};document.head.appendChild(s);});</script>
 </body>
 </html>

@@ -4,8 +4,8 @@
  * ⛔ C2 and C8: a crease is made in one place, buildReveal, which runs only after the clip is down. FREEHAND's strip holds
  * no crease, tick or label before that, and tools/lint.mjs refuses a crease made anywhere else.
  */
-import { fromNormalized } from '../math/core/core.js?v=20260916a';
-import { spriteCanvas } from './draw.js?v=20260916a';
+import { fromNormalized } from '../math/core/core.js?v=20261122a';
+import { spriteCanvas } from './draw.js?v=20261122a';
 
 const make = (tag, cls, id) => { const e = document.createElement(tag); if (cls) e.className = cls; if (id) e.id = id; return e; };
 

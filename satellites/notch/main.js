@@ -11,12 +11,12 @@
  * FIND (3.10): the piece above a carving of regions; the child taps the region that is the piece. The chosen region stays marked
  * and the piece's own region is outlined, the same on both paths, with one thunk; then go on.
  */
-import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, parseConfig } from '../math/core/core.js?v=20260916e';
-import { dealSession, dealFind, seatCheck, keyStep, scoreTurn, tierFor, stageAfter, revealPlan, revealAt, SESSION_LENGTH, KEY_STEP } from './engine.js?v=20260916e';
-import { COPY, PALETTE_TOKENS } from './content.js?v=20260916e';
-import { NOTCH_SCHEMA } from './config.js?v=20260916e';
-import { mountBench, doorPicture, piecePicture } from './render.js?v=20260916e';
-import { mountVillage } from './village.js?v=20260916e';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, parseConfig } from '../math/core/core.js?v=20261122a';
+import { dealSession, dealFind, seatCheck, keyStep, scoreTurn, tierFor, stageAfter, revealPlan, revealAt, SESSION_LENGTH, KEY_STEP } from './engine.js?v=20261122a';
+import { COPY, PALETTE_TOKENS } from './content.js?v=20261122a';
+import { NOTCH_SCHEMA } from './config.js?v=20261122a';
+import { mountBench, doorPicture, piecePicture } from './render.js?v=20261122a';
+import { mountVillage } from './village.js?v=20261122a';
 
 const KEEP_SESSIONS = 10, BENCH = 420;
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { sessions: [] }, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
@@ -322,4 +322,4 @@ window.NOTCH = {
 };
 
 /* the offline shell: one worker for the game, its address carrying the stamp */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916e').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20261122a').catch(() => {});

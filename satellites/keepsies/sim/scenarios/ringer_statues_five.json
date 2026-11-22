@@ -1,0 +1,79 @@
+{
+  "name": "ringer_statues_five",
+  "kind": "statues",
+  "_": "m3 step 9: the statues at five foot: the clearances, the grid and the reach scale by R / 1.525, the shapes do not, so the Loaf still blocks and the Arch still passes, and the ring keeps at least 36 legal spots for every shape (the unscaled rule left 4).",
+  "ringRadius": 0.762,
+  "statues": 4,
+  "ai": "rookie",
+  "seeds": {
+    "from": 1,
+    "to": 2
+  },
+  "asserts": [
+    {
+      "id": "a match with four statues completes",
+      "kind": "fraction",
+      "metric": "completed",
+      "atLeast": 1
+    },
+    {
+      "id": "no marble ever passes through a Loaf",
+      "kind": "fraction",
+      "metric": "loafHeld",
+      "atLeast": 1
+    },
+    {
+      "id": "a 5 m/s shot at a Loaf stops on the near side",
+      "kind": "fraction",
+      "metric": "loafStopped",
+      "atLeast": 1
+    },
+    {
+      "id": "a marble shot through an Arch passes under it",
+      "kind": "fraction",
+      "metric": "underArch",
+      "atLeast": 1
+    },
+    {
+      "id": "the same statue record replays to the same match",
+      "kind": "replayEqual"
+    },
+    {
+      "id": "the AI moves its own statue out of its best shot",
+      "kind": "fraction",
+      "metric": "aiMoved",
+      "atLeast": 1
+    },
+    {
+      "id": "and the move is at most two feet",
+      "kind": "fraction",
+      "metric": "moveWithin",
+      "atLeast": 1
+    },
+    {
+      "id": "and the moved statue touches no marble",
+      "kind": "fraction",
+      "metric": "moveClear",
+      "atLeast": 1
+    },
+    {
+      "id": "and the move spends the turn",
+      "kind": "fraction",
+      "metric": "movePassed",
+      "atLeast": 1
+    },
+    {
+      "id": "a statue is never moved onto a marble",
+      "kind": "fraction",
+      "metric": "refusedOnMarble",
+      "atLeast": 1
+    },
+    {
+      "id": "every shape has at least 36 legal spots",
+      "kind": "fraction",
+      "metric": "enoughSpots",
+      "atLeast": 1
+    }
+  ],
+  "ringFt": 5
+}

@@ -5,8 +5,8 @@
  * Eight buildings in three roof inks, building by the place mod eight and ink by the place mod three, so no two of the twenty four
  * are alike. A reload in the middle of a session earns nothing, because the session is kept in memory until it ends.
  */
-import { collectOnce, sprite } from '../math/core/core.js?v=20260916e';
-import { SPRITES, PALETTE, ROOFS, BUILDINGS } from './sprites.js?v=20260916e';
+import { collectOnce, sprite } from '../math/core/core.js?v=20261122a';
+import { SPRITES, PALETTE, ROOFS, BUILDINGS } from './sprites.js?v=20261122a';
 
 export const VILLAGE_SIZE = 24;
 const COLS = 6, ROWS = 4, UNIT = 12, GAP = 4;

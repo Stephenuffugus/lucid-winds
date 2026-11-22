@@ -15,12 +15,12 @@
  *
  * One sound a round, guarded. With less motion every pour and demonstration lands at once.
  */
-import { settings, tokens, audio, SETTINGS_DEFAULTS, rng, parseConfig } from '../math/core/core.js?v=20260916g';
-import { dealCompare, dealFill, dealScales, scoreCompare, scoreFill, scoreScales } from './engine.js?v=20260916g';
-import { DYES, mixLinear } from './colour.js?v=20260916g';
-import { COPY, SITUATIONS, PALETTE_TOKENS } from './content.js?v=20260916g';
-import { TINT_SCHEMA } from './config.js?v=20260916g';
-import { fit, drawRecipe, drawPour, drawPoured, clothCentre, drawCloth, drawDemo, demoModel, STREAM_MS, RESOLVE_MS, CLOTH_MS } from './render.js?v=20260916g';
+import { settings, tokens, audio, SETTINGS_DEFAULTS, rng, parseConfig } from '../math/core/core.js?v=20261122a';
+import { dealCompare, dealFill, dealScales, scoreCompare, scoreFill, scoreScales } from './engine.js?v=20261122a';
+import { DYES, mixLinear } from './colour.js?v=20261122a';
+import { COPY, SITUATIONS, PALETTE_TOKENS } from './content.js?v=20261122a';
+import { TINT_SCHEMA } from './config.js?v=20261122a';
+import { fit, drawRecipe, drawPour, drawPoured, clothCentre, drawCloth, drawDemo, demoModel, STREAM_MS, RESOLVE_MS, CLOTH_MS } from './render.js?v=20261122a';
 
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: {}, settings: Object.assign({}, SETTINGS_DEFAULTS) }) };
 /* a teacher's link (config.js): the seed, the door a link names, the stage */
@@ -385,4 +385,4 @@ window.TINT = {
 };
 
 /* the offline shell: one worker for the game, its address carrying the stamp */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916g').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20261122a').catch(() => {});

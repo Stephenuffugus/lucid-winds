@@ -12,8 +12,8 @@
    tierFor, stageAfter   the tolerance tier from right answers, and stage 2 after a clean stage 1 session (3.11)
    revealPlan, revealAt  the slow reveal as time and angle: 60 degrees a second on every path, a mirror's full turn then its
                   flip (3.6) */
-import { PIECES, PIECE_IDS } from './pieces.js?v=20260916e';
-import { adaptTier } from '../math/core/pure.js?v=20260916e';
+import { PIECES, PIECE_IDS } from './pieces.js?v=20261122a';
+import { adaptTier } from '../math/core/pure.js?v=20261122a';
 
 export const DISPARITIES = Object.freeze([0, 30, 60, 90, 120, 150, 180]);
 export const KEY_STEP = 15;

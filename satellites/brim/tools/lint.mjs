@@ -134,7 +134,7 @@ for (const name of ['engine.js', 'pairs.js']) {
   const words = copy.filter(t => /[A-Za-z]{2}/.test(t));
   const dashed = words.filter(t => /[-‐-―−]|&mdash;|&ndash;/.test(t));
   const banged = words.filter(t => t.indexOf('!') >= 0);
-  const brand = words.filter(t => /Sky Walk|Sky Wolf Studios|Skywolf/i.test(t));
+  const brand = words.filter(t => /Sky Walk|Sky Wolf Studios|Skywolf/i.test(t.replace(/[A-Za-z0-9._+]+@[A-Za-z0-9.]+/g, "")));   /* an email address (the privacy page, 22 Nov 2026) is not the studio's name */
   say(dashed.length === 0, 'no dash in anything a child or a teacher reads' + (dashed.length ? ': ' + dashed.map(d => JSON.stringify(d)).join(', ') : ' (' + words.length + ' strings)'));
   say(banged.length === 0, 'and no exclamation point' + (banged.length ? ': ' + banged.map(d => JSON.stringify(d)).join(', ') : ''));
   say(brand.length === 0, 'and the studio is Sky Wolf Studio, singular' + (brand.length ? ': ' + brand.map(d => JSON.stringify(d)).join(', ') : ''));

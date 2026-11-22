@@ -6,9 +6,9 @@
  * go deer, hare, fox in turn, the spot is drawn from the creature's place, so the same place always stands in the same spot.
  * Cosmetic only: no count is shown and nothing is unlocked.
  */
-import { collectOnce, rng } from '../math/core/core.js?v=20260916d';
-import { SPECIES } from './sprites.js?v=20260916d';
-import { drawLiving } from './render.js?v=20260916d';
+import { collectOnce, rng } from '../math/core/core.js?v=20261122a';
+import { SPECIES } from './sprites.js?v=20261122a';
+import { drawLiving } from './render.js?v=20261122a';
 
 export const CLEARING_SIZE = 24;
 const IDLE_MS = 1400;

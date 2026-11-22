@@ -1,8 +1,8 @@
 /* BRIM's sprites on the page (plans/brim/HANDOFF-BRIM.md section 7; CREASE's draw.js): each sprite from sprites.js drawn
  * into its own canvas through CORE's sprite.draw, at a whole number scale, pixelated, never smoothed.
  */
-import { sprite } from '../math/core/core.js?v=20260916b';
-import { SPRITES, PALETTE, GLASSES } from './sprites.js?v=20260916b';
+import { sprite } from '../math/core/core.js?v=20261122a';
+import { SPRITES, PALETTE, GLASSES } from './sprites.js?v=20261122a';
 
 /* the palette with a bottle's glass pair in place of indices 9 and a */
 export function paletteFor(glass) {

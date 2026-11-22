@@ -27,7 +27,7 @@ const W = parseInt(process.argv[2] || '375', 10);
 const H = parseInt(process.argv[3] || '667', 10);
 const TAG = W === 375 ? '' : '-' + W;
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg' };   // Astra's art (an svg served as anything else is never drawn)
 const FLEET = ['/music-unlocks.js', '/music-player.js', '/music-catalog.js', '/music-ladder.json'];
 const server = createServer((req, res) => {
   const clean = decodeURIComponent(req.url.split('?')[0]);
@@ -38,7 +38,8 @@ const server = createServer((req, res) => {
   res.end(readFileSync(p));
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-const BASE = 'http://127.0.0.1:' + server.address().port + '/index.html?keepsiestest=1';
+const BASE = 'http://127.0.0.1:' + server.address().port + '/index.html?keepsiestest=1'
+  + (process.env.KP_QUALITY ? '&quality=' + process.env.KP_QUALITY : '');   // this box detects low; a Pixel 9 draws high
 
 const browser = await puppeteer.launch({
   headless: 'new', protocolTimeout: 180000,
@@ -64,7 +65,7 @@ await page.evaluate(() => {
   d.beatSkip();                     // "I have played marbles before", which lands ON the tin
   d.tin();
 });
-await wait(900);
+await wait(1700);   // the three roll in inside the tin (1.25 s) and lie on the cloth
 await shot('k2-tin');
 await page.evaluate(() => { const b = document.getElementById('heir-lutz'); if (b) b.click(); });
 await wait(400);
@@ -295,16 +296,89 @@ await page.evaluate(() => window.KEEPSIES_DEV.collection());
 await wait(900);
 await shot('k2-offers');
 
-/* the worst angle a player can reach, and then the one they cannot */
+/* the worst angle a player can reach, and then the camera ASKED to go 25 degrees under the dirt: the
+   clamp holds it at the floor (4 Nov: the forced under view was read as the game, so the set no longer
+   shoots the tester's override) */
 await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0 }));
 await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(60));
 await wait(300);
 await page.evaluate(() => window.KEEPSIES_DEV.camera(20, -40, 1.2));
 await wait(400);
 await shot('k1-lowest');
-await page.evaluate(() => window.KEEPSIES_DEV.camera(20, -25, 1.2, { allowUnder: true }));
+await page.evaluate(() => window.KEEPSIES_DEV.camera(20, -25, 1.2));
 await wait(400);
 await shot('k1-under');
+
+/* step 6: the pouches as objects (terms printed before the buy), then a reveal; shot last so no earlier
+   screen sees the extra sunbeams or level */
+await page.evaluate(() => { const d = window.KEEPSIES_DEV; d.grantXp(400); d.grantSunbeams(2000); d.collection(); });
+await wait(900);
+await page.evaluate(() => document.getElementById('pouches').scrollIntoView({ block: 'center' }));
+await wait(300);
+await shot('k2-pouches');
+await page.evaluate(() => { const b = document.getElementById('pouch-standard'); if (b) b.click(); });
+await wait(600);
+await shot('k2-pouch-open');
+
+/* m2 step 9: STATUES, the placement phase, driven by a real mouse drag from the tray onto the dirt */
+await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 4242, forceFirst: 0, houseRules: { statues: true } }));
+await wait(1500);
+{
+  const tile = await page.evaluate(() => { const r = document.getElementById('st-arch').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  const spot = await page.evaluate(() => window.KEEPSIES_DEV.projectGround(0.4572, 0.4572));
+  await page.mouse.move(tile.x, tile.y); await page.mouse.down();
+  for (let k = 1; k <= 12; k++) { await page.mouse.move(tile.x + (spot.x - tile.x) * k / 12, tile.y + (spot.y - tile.y) * k / 12); await wait(30); }
+  await wait(300);
+  await shot('k3-statues-place');
+  const bad = await page.evaluate(() => window.KEEPSIES_DEV.projectGround(0.1524, 0));
+  for (let k = 1; k <= 6; k++) { await page.mouse.move(spot.x + (bad.x - spot.x) * k / 6, spot.y + (bad.y - spot.y) * k / 6); await wait(30); }
+  await wait(300);
+  await shot('k3-statues-not-here');
+  await page.mouse.move(spot.x, spot.y); await wait(60); await page.mouse.up(); await wait(200);
+  console.log('  statue pending: ' + JSON.stringify(await page.evaluate(() => window.KEEPSIES_DEV.placing())));
+  /* confirm it, let Dusty answer, place a second (a Loaf on the player's side), let Dusty answer, then the lag */
+  await page.evaluate(() => document.getElementById('stConfirm').click());
+  await wait(1400);
+  const two = await page.evaluate(() => {
+    const sp = window.KEEPSIES_DEV.spotsFor('loaf').filter(p => p.z > 0.2).sort((a, b) => Math.abs(a.x + 0.45) - Math.abs(b.x + 0.45))[0];
+    const r = document.getElementById('st-loaf').getBoundingClientRect();
+    return { tile: { x: r.left + r.width / 2, y: r.top + r.height / 2 }, at: sp ? window.KEEPSIES_DEV.projectGround(sp.x, sp.z) : null };
+  });
+  if (two.at) {
+    await page.mouse.move(two.tile.x, two.tile.y); await page.mouse.down();
+    for (let k = 1; k <= 10; k++) { await page.mouse.move(two.tile.x + (two.at.x - two.tile.x) * k / 10, two.tile.y + (two.at.y - two.tile.y) * k / 10); await wait(30); }
+    await page.mouse.up(); await wait(200);
+    await page.evaluate(() => document.getElementById('stConfirm').click());
+  }
+  await wait(2200);
+  console.log('  statues: ' + JSON.stringify(await page.evaluate(() => window.KEEPSIES_DEV.statues())));
+  /* m2 step 10: a move in progress, by a real drag on the player's own statue */
+  await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(40));
+  await page.evaluate(() => { const b = document.getElementById('moveStatue'); if (b && !b.hidden) b.click(); });
+  await wait(900);
+  const mv = await page.evaluate(() => {
+    const s = window.KEEPSIES_DEV.statues().filter(q => q.owner === 0)[0];
+    if (!s) return null;
+    return { from: window.KEEPSIES_DEV.projectGround(s.x, s.z, 0.03), to: window.KEEPSIES_DEV.projectGround(s.x + 0.3048, s.z - 0.1524, 0.03) };
+  });
+  if (mv) {
+    await page.mouse.move(mv.from.x, mv.from.y); await page.mouse.down();
+    for (let k = 1; k <= 10; k++) { await page.mouse.move(mv.from.x + (mv.to.x - mv.from.x) * k / 10, mv.from.y + (mv.to.y - mv.from.y) * k / 10); await wait(30); }
+    await wait(300);
+    await shot('k3-statues-move');
+    await page.mouse.up(); await wait(200);
+    console.log('  move pending: ' + JSON.stringify(await page.evaluate(() => window.KEEPSIES_DEV.moving())));
+  } else console.log('  no statue of the player to move');
+}
+
+/* step 7: the share cards, the composed PNGs themselves (no profile ids on either) */
+{
+  const { writeFileSync } = await import('node:fs');
+  const mc = await page.evaluate(() => window.KEEPSIES_DEV.shareCard('lutz'));
+  if (mc) { writeFileSync(join(OUT, 'k2-share-marble.png'), Buffer.from(mc.split(',')[1], 'base64')); console.log('  k2-share-marble.png'); }
+  const mt = await page.evaluate(() => window.KEEPSIES_DEV.matchCard());
+  if (mt) { writeFileSync(join(OUT, 'k2-share-match.png'), Buffer.from(mt.split(',')[1], 'base64')); console.log('  k2-share-match.png'); }
+}
 
 await browser.close();
 server.close();

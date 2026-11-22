@@ -46,7 +46,8 @@ const FILES = [
   ...walk(join(ROOT, 'sim'), []).filter(f => f.endsWith('.mjs') || f.endsWith('.js')),
   ...walk(join(ROOT, 'tools'), []).filter(f => f.endsWith('.mjs') || f.endsWith('.js')),
   join(ROOT, 'index.html'),
-  join(ROOT, 'manifest.json')
+  join(ROOT, 'manifest.webmanifest'),
+  join(ROOT, 'sw.js')   /* 22 Nov 2026: the offline shell's precache list and cache name carry the stamp too */
 ];
 
 /* Every reference to a file this game serves. Bare specifiers (three) are the
@@ -70,7 +71,7 @@ const version = JSON.parse(readFileSync(join(ROOT, 'src/version.json'), 'utf8'))
 const BUILD = BUMP || version.build;
 
 /* ⛔ AND EVERY LITERAL `?v=` TOKEN, WHATEVER IT IS ATTACHED TO. A test that builds
-   its import as `join(ROOT, 'x.js') + '?v=20260905a'`, a manifest's `"src":`, a
+   its import as `join(ROOT, 'x.js') + '?v=20261113a'`, a manifest's `"src":`, a
    `start_url`: none of those are a `from` or an `import(`, and the first bump
    left six files a build behind. Node then held TWO copies of `save.js`, one per
    query, and the progression gate wiped one and read the other. */
@@ -141,6 +142,6 @@ if (bad.length) {
   for (const b of bad) console.log('  ' + b);
   process.exit(1);
 }
-console.log('every relative import in src, index.html and manifest.json carries ?v=' + BUILD
+console.log('every relative import in src, index.html and manifest.webmanifest carries ?v=' + BUILD
   + ', and nothing under lib/ carries a query');
 console.log('STAMP OK');

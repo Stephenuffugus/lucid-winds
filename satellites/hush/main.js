@@ -11,13 +11,13 @@
  * switchable in settings. The three staircases read the last twenty runs kept on this device (3.3), and the steps a run ends on
  * carry to the next (3.5).
  */
-import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, schedule, parseConfig } from '../math/core/core.js?v=20260916d';
-import { dealRun, scoreTrial, stepsDelta, approach, tierOf, settled, adaptAxes, GRACE_MS } from './engine.js?v=20260916d';
-import { COPY, PALETTE_TOKENS } from './content.js?v=20260916d';
-import { HUSH_SCHEMA } from './config.js?v=20260916d';
-import { SPECIES } from './sprites.js?v=20260916d';
-import { buildCreatures, creaturesBuilt, fitClearing, drawClearing, drawCreature, stonePicture, doorPicture, spritePicture } from './render.js?v=20260916d';
-import { mountLiving } from './clearing.js?v=20260916d';
+import { settings, tokens, audio, store, SETTINGS_DEFAULTS, rng, schedule, parseConfig } from '../math/core/core.js?v=20261122a';
+import { dealRun, scoreTrial, stepsDelta, approach, tierOf, settled, adaptAxes, GRACE_MS } from './engine.js?v=20261122a';
+import { COPY, PALETTE_TOKENS } from './content.js?v=20261122a';
+import { HUSH_SCHEMA } from './config.js?v=20261122a';
+import { SPECIES } from './sprites.js?v=20261122a';
+import { buildCreatures, creaturesBuilt, fitClearing, drawClearing, drawCreature, stonePicture, doorPicture, spritePicture } from './render.js?v=20261122a';
+import { mountLiving } from './clearing.js?v=20261122a';
 
 const KEEP_RUNS = 20;
 const SCHEMA = { v: 1, fresh: () => ({ v: 1, collect: [], adapt: { runs: [], steps: 0, forked: false, settles: 0 }, settings: Object.assign({ quick: false }, SETTINGS_DEFAULTS) }) };
@@ -270,4 +270,4 @@ window.HUSH = {
   poseOnce: durationMs => schedule.flash({ durationMs, onShow: () => paint('up', false), onHide: () => paint('graze', true), onMasked: () => {} })
 };
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20260916d').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20261122a').catch(() => {});

@@ -26,9 +26,22 @@
 <meta name="twitter:description" content="Trap alien critters in bubbles and pop them across five collectible worlds.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/bubblenaut/og/card-v2.png">
 
-<!-- Same-origin Sunbeam SDK (guarded; harmless 404 outside lucidwinds.com) -->
-<script src="/sunbeam-sdk.js?v=7"></script>
-<script>window.Sunbeam&&Sunbeam.init({gameId:"bubblenaut"}).catch(function(){});</script>
+<script>
+/* THE PLAY APP (a Trusted Web Activity; Dewball's and Hues' rule, applied here 22 Nov 2026): Chrome opens it with
+   document.referrer android-app://<package>, and an installed Android standalone window counts too. Inside it the
+   Sunbeam SDK is never loaded (no Firebase, nothing sent: the privacy page says the Play app sends nothing), the
+   feedback form is not mounted, the arcade exit is hidden and SWS_EXIT refuses, so the Play app can never reach the
+   portal and its Stripe checkout (Play's payment rules). On the web it all works as before. */
+(function(){
+  var inTWA=false;
+  try{ inTWA=document.referrer.indexOf("android-app://")===0||!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches&&/Android/i.test(navigator.userAgent)); }catch(e){ inTWA=false; }
+  window.SWS_IN_TWA=inTWA;
+  if(inTWA){ document.documentElement.classList.add("sws-twa"); return; }
+  var s=document.createElement("script"); s.src="/sunbeam-sdk.js?v=7";
+  s.onload=function(){ if(window.Sunbeam&&Sunbeam.init) Sunbeam.init({gameId:"bubblenaut"}).catch(function(){}); };
+  document.head.appendChild(s);
+})();
+</script>
 <style>
 :root{
   --bg:#070b16; --panel:#0e1526; --line:#22304d; --mint:#6fe8a8; --deepmint:#2f9c66;
@@ -246,7 +259,7 @@ h2.sc-h{font-size:30px; color:var(--cyan); font-weight:800; margin-bottom:4px}
 var SWS_FRAMED=false; try{ SWS_FRAMED = window.parent!==window; }catch(e){ SWS_FRAMED=true; }
 var SWS_EMBED=SWS_FRAMED||/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;
-window.SWS_EXIT=function(){ if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
+window.SWS_EXIT=function(){ if(window.SWS_IN_TWA) return; /* ⛔ never leave the Play app */ if(SWS_FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } if(document.referrer.indexOf('/portal')>=0&&history.length>1){history.back();}else{location.replace('https://lucidwinds.com/portal/');} };
 if(SWS_FRAMED){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){}
   window.addEventListener('load',function(){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }); }
 /* studio-standard 30/day/game sunbeam cap helper.
@@ -1571,6 +1584,7 @@ tap('how-back',function(){
   else show('s-title'); });
 tap('b-set',function(){ show('s-set'); });
 tap('set-back',function(){ show('s-title'); });
+if(window.SWS_IN_TWA){ var bx=document.getElementById('b-exit'); if(bx) bx.style.display='none'; }   /* the Play app has no arcade to go back to */
 tap('b-exit',function(){ if(window.SWS_EXIT) SWS_EXIT(); });
 tap('over-retry',function(){ if(!G) return; G.phase='play';
   for(var i=0;i<players.length;i++){ players[i].lives=3; players[i].dead=false; }
@@ -1629,6 +1643,7 @@ try{ window.__bn={
 
 })();
 </script>
-<script>/* fleet feedback fab */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'bubblenaut',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* fleet feedback fab ; never in the Play app (the form sends to our server) */addEventListener('load',function(){if(window.SWS_IN_TWA)return;var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'bubblenaut',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* the offline shell (22 Nov 2026, the Play gates): sw.js; its ?v= moves with SHELL_VERSION. Not inside the portal's frame */(function(){ var framed=true; try{ framed=window.self!==window.top; }catch(e){} if(!framed&&'serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=20261122a').catch(function(){}); }catch(e){} } })();</script>
 </body>
 </html>
