@@ -76,6 +76,10 @@ window._gameFns.juniper = function Juniper(a){
       +'inset 0 0 0 1px rgba(180,140,70,0.25),'
       +'inset 0 0 40px rgba(0,0,0,0.5),'
       +'0 6px 22px rgba(0,0,0,0.6);';
+  // Locked screen (/play/ shell): the shell zooms #fg-ag, so a vw width would
+  // shrink the table twice; the table fills the zoomed box instead.
+  var JU_LOCK=!!(window.LW_PLAY&&window.LW_PLAY.id==='juniper'&&document.getElementById('shell-mount'));
+  if(JU_LOCK)pan.style.cssText+='max-width:none;width:100%;flex:1 1 auto;min-height:0;padding:6px 10px 10px;';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
   // mc(a) empty — controls render inside the pan.
@@ -431,7 +435,7 @@ window._gameFns.juniper = function Juniper(a){
     var h='';
     // ── CONTROLS BAR ────────────────────────────────────────────
     var juStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
-    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<div data-lk="ctrl" style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
     h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
     h+='<img src="assets/decks/floral/suit-diamond.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
     h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
@@ -440,12 +444,12 @@ window._gameFns.juniper = function Juniper(a){
     h+='<button class="gb" onclick="_JUN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:8px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
     // ── SCORE STRIP — twin player rows w/ wins ──────────────────
-    h+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
+    h+='<div data-lk="score" style="display:flex;gap:6px;margin-bottom:8px;">';
     h+=_scoreStrip('YOU',playerScore,playerWins,'#7ab356');
     h+=_scoreStrip('JUNIPER',aiScore,aiWins,'#dc8a8a');
     h+='</div>';
     // ── AI HAND (face-down fan) ─────────────────────────────────
-    h+='<div style="text-align:center;padding:4px 6px 8px;">';
+    h+='<div data-lk="north" style="text-align:center;padding:4px 6px 8px;">';
     var thinkBadge = aiThinking ? ' <span style="margin-left:8px;font-family:Georgia,serif;font-style:italic;font-size:0.62rem;color:#ffdc70;animation:juThink 1.2s ease-in-out infinite;">thinking…</span>' : '';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:5px;">JUNIPER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;">×'+aCount()+'</span>'+thinkBadge+'</div>';
     h+='<div style="display:inline-flex;justify-content:center;">';
@@ -453,7 +457,7 @@ window._gameFns.juniper = function Juniper(a){
     h+='</div></div>';
     // ── STOCK + DISCARD ─────────────────────────────────────────
     var canPickup = phase==='draw';
-    h+='<div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:6px 8px 10px;">';
+    h+='<div data-lk="mid" style="display:flex;align-items:center;justify-content:center;gap:18px;padding:6px 8px 10px;">';
     // Stock
     h+='<div style="text-align:center;">';
     // the stock was a flat gradient with a 🂠 glyph on it; it is the deck, so it
@@ -496,7 +500,7 @@ window._gameFns.juniper = function Juniper(a){
                 : '#e63946';
     var canKnock = phase==='knockChoice' && dwIsNum && dw<=10;
     var isGin = canKnock && dw===0;
-    h+='<div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:4px 8px 8px;flex-wrap:wrap;">';
+    h+='<div data-lk="act" style="display:flex;justify-content:center;align-items:center;gap:10px;padding:4px 8px 8px;flex-wrap:wrap;">';
     h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,70,0.3);border-radius:999px;font-family:Georgia,serif;">';
     h+='<span style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.7);letter-spacing:0.12em;text-transform:uppercase;">Deadwood</span>';
     h+='<span style="font-size:1.4rem;font-weight:700;color:'+dwColor+';line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.5);">'+(dwIsNum?dw:'·')+'</span>';
@@ -513,7 +517,8 @@ window._gameFns.juniper = function Juniper(a){
     h+='</div>';
     // ── PLAYER HAND with auto-meld tints ────────────────────────
     var info = playerHand.length<=11 ? _handMeldMap(playerHand) : null;
-    h+='<div style="display:flex;justify-content:center;padding:6px 2px;flex-wrap:wrap;gap:3px;">';
+    // locked: the hand row is always two card rows tall (10 or 11 cards), so a draw never moves it
+    h+='<div data-lk="south" style="display:flex;justify-content:center;padding:6px 2px;flex-wrap:wrap;gap:3px;'+(JU_LOCK?'height:156px;box-sizing:border-box;align-content:flex-start;':'')+'">';
     for(var k=0;k<pCount();k++){
       var c=playerHand[k];
       var meldIdxNum = info ? info.meldOf[k] : undefined;
@@ -549,8 +554,12 @@ window._gameFns.juniper = function Juniper(a){
         : w.kind==='undercut'
         ? 'radial-gradient(ellipse at 50% 40%,rgba(230,57,70,0.3) 0%,rgba(10,5,20,0.95) 70%)'
         : 'radial-gradient(ellipse at 50% 40%,rgba(60,40,100,0.5) 0%,rgba(10,5,20,0.95) 70%)';
-      h+='<div style="position:fixed;inset:0;background:'+bgGrad+';z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:juWinIn 0.5s ease-out;">';
-      h+='<div style="font-size:'+(w.kind==='gin'?'4.5rem':'2.6rem')+';line-height:1;margin-bottom:10px;animation:juWinPop 0.9s cubic-bezier(.2,1.4,.3,1);filter:drop-shadow(0 0 24px '+titleColor+'aa);">'+(w.kind==='gin'?'🎉':w.kind==='undercut'?'⚔️':'🪶')+'</div>';
+      // 22 Nov: render() rebuilds the panel at every scoring line (750ms), which
+      // restarted the sheet's fade from transparent each time: it pulsed and never
+      // read as a sheet. The entrance plays on the first line only.
+      var wIn=winLineIdx===0;
+      h+='<div style="position:fixed;inset:0;background:'+bgGrad+';z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;'+(wIn?'animation:juWinIn 0.5s ease-out;':'')+'">';
+      h+='<div style="font-size:'+(w.kind==='gin'?'4.5rem':'2.6rem')+';line-height:1;margin-bottom:10px;'+(wIn?'animation:juWinPop 0.9s cubic-bezier(.2,1.4,.3,1);':'')+'filter:drop-shadow(0 0 24px '+titleColor+'aa);">'+(w.kind==='gin'?'🎉':w.kind==='undercut'?'⚔️':'🪶')+'</div>';
       h+='<div style="font-family:Georgia,serif;font-size:2.2rem;font-weight:700;color:'+titleColor+';letter-spacing:0.06em;text-shadow:0 0 26px '+titleColor+'aa;text-align:center;margin-bottom:14px;">'+bigText+'</div>';
       // Staged scoring lines — revealed one at a time as winLineIdx advances.
       h+='<div style="display:flex;flex-direction:column;gap:8px;max-width:340px;width:90%;">';

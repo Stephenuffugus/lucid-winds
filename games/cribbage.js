@@ -45,6 +45,9 @@ window._gameFns.cribbage = function CRIB(a){
       +'inset 0 0 32px rgba(0,0,0,0.4),'
       +'0 6px 24px rgba(0,0,0,0.55),0 20px 50px -24px #000,'
       +'0 1px 0 rgba(255,220,140,0.08);';
+  // Locked screen (/play/ shell): the table fills the zoomed box, so its
+  // width no longer follows what is in it (it narrowed by 100px mid hand).
+  if(window.LW_PLAY&&window.LW_PLAY.id==='cribbage'&&document.getElementById('shell-mount'))pan.style.cssText+='width:100%;max-width:460px;flex:1 1 auto;min-height:0;';
   a.appendChild(pan);
   // Style-aware pip — Garden swaps ♠♥♦♣ for 🍄🌸🐝🐦
   function _pip(idx){return (window._cdSuit)?window._cdSuit(idx):SUITS[idx];}
@@ -493,7 +496,7 @@ window._gameFns.cribbage = function CRIB(a){
     var h='';
     // ── CONTROLS BAR — top right, unobtrusive ──
     var cbStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
-    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<div data-lk="ctrl" style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
     h+='<button class="gb" onclick="_CBToggleStyle()" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:48px;padding:8px 14px;font-size:0.7rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
     h+='<img src="assets/decks/floral/suit-spade.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
     h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
@@ -502,7 +505,7 @@ window._gameFns.cribbage = function CRIB(a){
     h+='<button class="gb" onclick="_CBN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:48px;padding:8px 14px;font-size:0.7rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
     // ── PEG BOARD — wood frame with two felt tracks ──
-    h+='<div style="position:relative;background:'
+    h+='<div data-lk="score" style="position:relative;background:'
       +'repeating-linear-gradient(92deg,rgba(0,0,0,0.12) 0 1px,transparent 1px 7px),'
       +'repeating-linear-gradient(88deg,rgba(255,220,140,0.05) 0 2px,transparent 2px 11px),'
       +'linear-gradient(135deg,#7a4f25 0%,#5a3818 50%,#3e2410 100%);'
@@ -523,7 +526,7 @@ window._gameFns.cribbage = function CRIB(a){
     else if(G.phase==='peg')st='The play';
     else if(G.phase==='show')st='Scoring';
     else st='Game Over';
-    h+='<div style="display:flex;gap:12px;justify-content:center;align-items:center;padding:4px 4px 10px;flex-wrap:wrap;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;">';
+    h+='<div data-lk="status" style="display:flex;gap:12px;justify-content:center;align-items:center;padding:4px 4px 10px;flex-wrap:wrap;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;">';
     h+='<span style="color:#ffdc70;">'+st+'</span>';
     h+='<span style="color:rgba(232,220,200,0.5);">Round <strong style="color:#e8dcc8;">'+G.roundNum+'</strong></span>';
     // Dealer chip — the classic brass "D" token
@@ -539,7 +542,7 @@ window._gameFns.cribbage = function CRIB(a){
     +'</span>';
     h+='</div>';
     // ── AI HAND ──
-    h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(220,138,138,0.25);border-radius:8px;padding:6px 8px;margin-bottom:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
+    h+='<div data-lk="north" style="background:rgba(8,35,22,0.45);border:1px solid rgba(220,138,138,0.25);border-radius:8px;padding:6px 8px;margin-bottom:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(220,138,138,0.85);letter-spacing:0.14em;text-transform:uppercase;">Computer Hand</div>';
     if(G.aiThinking){
@@ -556,6 +559,12 @@ window._gameFns.cribbage = function CRIB(a){
       }
     }
     h+='</div></div>';
+    // ── THE MIDDLE (22 Nov 2026, locked screen): the deck, the starter, the
+    // pegging pile and the show's narration come and go between the two hands,
+    // which moved YOUR hand up and down the screen. Locked, they share one slot
+    // of fixed height, so the hands never move. ──
+    var CB_LOCK=document.documentElement.classList.contains('shell-locked');
+    h+='<div data-lk="mid" style="'+(CB_LOCK?'height:212px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;':'')+'">';
     // ── STARTER CARD + PEGGING COUNT ──
     // While the hand goes out, the deck sits where the starter will be cut
     // from. It is the same pile: deal from it, then cut it.
@@ -566,7 +575,9 @@ window._gameFns.cribbage = function CRIB(a){
         +_cdDeckHtml(52-dealtP-dealtA,48,66,{shuffling:cbShuffling,
           label:cbShuffling?'shuffling\u2026':'dealing\u2026'})+'</div>';
     }
-    if(G.starter){
+    // locked, the show's narration lays the starter out with the hand it scores, so
+    // the separate starter would only push the narration out of its slot
+    if(G.starter&&!(CB_LOCK&&G.phase==='show'&&G.narration)){
       h+='<div style="display:flex;gap:8px;justify-content:center;align-items:center;padding:4px 0 6px;">';
       h+='<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">';
       h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.65);letter-spacing:0.18em;text-transform:uppercase;">Starter</div>';
@@ -610,8 +621,9 @@ window._gameFns.cribbage = function CRIB(a){
     if(G.phase==='show'&&G.narration){
       h+=_narrationHtml();
     }
+    h+='</div>';   // the middle
     // ── YOUR HAND ──
-    h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(122,179,86,0.3);border-radius:8px;padding:6px 8px;margin-top:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
+    h+='<div data-lk="south" style="background:rgba(8,35,22,0.45);border:1px solid rgba(122,179,86,0.3);border-radius:8px;padding:6px 8px;margin-top:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(122,179,86,0.95);letter-spacing:0.14em;text-transform:uppercase;">Your Hand</div>';
     if(G.phase==='discard')h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.7);">'+(2-G.pSelected.length)+' more for the crib</div>';
@@ -625,7 +637,7 @@ window._gameFns.cribbage = function CRIB(a){
     });
     h+='</div></div>';
     // ── ACTION BUTTONS ──
-    h+='<div style="display:flex;gap:6px;justify-content:center;padding:8px 0 2px;flex-wrap:nowrap;">';
+    h+='<div data-lk="act" style="display:flex;gap:6px;justify-content:center;padding:8px 0 2px;flex-wrap:nowrap;">';
     if(G.phase==='discard'&&G.pSelected.length===2){
       h+='<button class="gb" onclick="_CBD()" style="min-height:48px;padding:10px 22px;font-size:0.8rem;background:rgba(122,179,86,0.2);border-color:rgba(122,179,86,0.6);color:#e8dcc8;">✓ Send to Crib</button>';
     }

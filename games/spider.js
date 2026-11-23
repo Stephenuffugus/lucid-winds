@@ -181,7 +181,13 @@ function GSP(a){
     // 10-column Spider — tightest horizontal budget of any solitaire.
     // Hoisted above the top row because the deck is sized off the tableau card:
     // it should read as the same deck those cards are coming out of.
-    var fit=window._cdFit?window._cdFit(10,{maxW:72,gap:2,pad:6}):{w:'clamp(40px,10.5vw,70px)',h:'clamp(56px,14.7vw,98px)',font:'clamp(.55rem,1.5vw,.72rem)',gap:'2px',raw:{w:70,h:98}};
+    // Locked screen (22 Nov 2026): the card is sized once per screen so a deep
+    // column (five backs under ten faces at Stephen's 26% reveal) fits the
+    // box, and a landscape phone puts the deck beside the table, not above it.
+    var LK=!!(window._cdLocked&&window._cdLocked());
+    var LAND=LK&&window.innerWidth>window.innerHeight&&window.innerHeight<=520;
+    var lkKey=LK?(gd.clientWidth+'x'+(_ag?_ag.clientHeight:0)+(LAND?'L':'P')):'';
+    var fit=window._cdFit?window._cdFit(10,LK?{maxW:72,gap:2,pad:LAND?86:6,container:gd,maxH:lkH[lkKey]||0}:{maxW:72,gap:2,pad:6}):{w:'clamp(40px,10.5vw,70px)',h:'clamp(56px,14.7vw,98px)',font:'clamp(.55rem,1.5vw,.72rem)',gap:'2px',raw:{w:70,h:98}};
     var spW=fit.w,spH=fit.h,spF=fit.font;
     var topRow=document.createElement('div');
     // min(100vw,700px) + right padding — the old clamp(...,100vw,...) with a
@@ -240,7 +246,9 @@ function GSP(a){
         // compresses with depth but starts at Klondike's 28% reveal so
         // ranks and suits are legible on all but the deepest piles.
         var depth=shown;
-        var depthMult=depth>14?0.5:depth>11?0.65:depth>8?0.8:1.0;
+        // Locked (22 Nov 2026), the overlap is the lock's job: a column keeps the full
+        // reveal while there is room and tightens only as far as it must (_cdLockSqueeze).
+        var depthMult = LK ? 1.0 : (depth>14?0.5:depth>11?0.65:depth>8?0.8:1.0);
         // Stephen 2026-06-28: deep piles (15+) compressed to a ~14% reveal,
         // "smooshing" the rank+suit corner so it was both illegible AND too
         // thin a strip to tap — which is why a full K-to-2 run couldn't be
@@ -269,9 +277,28 @@ function GSP(a){
       }
       tabRow.appendChild(colDiv);
     }
-    gd.appendChild(tabRow);
+    if(LAND){
+      // the deck and the runs count stand at the left of the table
+      gd.removeChild(topRow);
+      topRow.style.cssText='display:flex;flex-direction:column;gap:6px;align-items:center;flex:0 0 76px;width:76px;padding:4px 0;box-sizing:border-box';
+      sp.style.flex='0 0 0px';
+      tabRow.style.width='auto';tabRow.style.flex='1 1 auto';tabRow.style.margin='0';
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;gap:6px;align-items:flex-start;width:100%';
+      row.appendChild(topRow);row.appendChild(tabRow);gd.appendChild(row);
+    }else gd.appendChild(tabRow);
+    if(LK&&!lkH[lkKey]){
+      // sized for five backs under ten faces; a deeper column tightens (below)
+      var lh=window._cdLockH(tabRow,fit.raw.h,0,5,10,0.26);
+      lkH[lkKey]=lh||fit.raw.h;
+      if(lh&&lh<fit.raw.h){rn();return;}
+    }
+    // Stephen 2026-06-28: the rank corner stays readable and tappable, so
+    // the squeeze stops at his 26% reveal before it goes any tighter
+    if(window._cdLockSqueeze)window._cdLockSqueeze(tabRow.children,0.26);
     if(_ag)_ag.scrollTop=_scrollY;
   }
+  var lkH={};
   window._SPN=function(){init()};
   window._SPS=function(v){suits=parseInt(v)||1;_setDiff(suits<=1?'easy':suits<=2?'medium':'hard');init()};
   init();

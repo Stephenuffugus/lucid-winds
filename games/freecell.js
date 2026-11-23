@@ -271,7 +271,13 @@ function GFC(a){
     var topRow=document.createElement('div');
     // Top row has 8 wide slots (4 free + spacer + 4 fnd). Tableau has 8
     // columns. Both fit on the same 8-col budget.
-    var fit=window._cdFit?window._cdFit(8,{maxW:90,gap:3,pad:10}):{w:'clamp(48px,13vw,84px)',h:'clamp(67px,18.2vw,117px)',font:'clamp(.6rem,1.75vw,.85rem)',gap:'3px',raw:{h:117,peek:20}};
+    // Locked screen (22 Nov 2026): the card is sized once per screen so a deep
+    // column fits the box; a landscape phone puts the free cells in a square at
+    // the left and the foundations in a square at the right of the columns.
+    var LK=!!(window._cdLocked&&window._cdLocked());
+    var LAND=LK&&window.innerWidth>window.innerHeight&&window.innerHeight<=520;
+    var lkKey=LK?(gd.clientWidth+'x'+(_ag?_ag.clientHeight:0)+(LAND?'L':'P')):'';
+    var fit=window._cdFit?window._cdFit(LAND?12:8,LK?{maxW:90,gap:3,pad:LAND?34:10,container:gd,maxH:lkH[lkKey]||0}:{maxW:90,gap:3,pad:10}):{w:'clamp(48px,13vw,84px)',h:'clamp(67px,18.2vw,117px)',font:'clamp(.6rem,1.75vw,.85rem)',gap:'3px',raw:{h:117,peek:20}};
     var fcW=fit.w,fcH=fit.h,fcF=fit.font;
     topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start';
     // Free cells — legal target only if source is a single card and the cell is empty
@@ -346,7 +352,9 @@ function GFC(a){
         // Peek math: match Klondike/Spider/Golf at 28% reveal so suits on
         // stacked cards stay readable. Compression kicks in past 8 cards.
         var depth=shown;
-        var depthMult=depth>14?0.5:depth>11?0.65:depth>8?0.8:1.0;
+        // Locked (22 Nov 2026), the overlap is the lock's job: a column keeps the full
+        // reveal while there is room and tightens only as far as it must (_cdLockSqueeze).
+        var depthMult = LK ? 1.0 : (depth>14?0.5:depth>11?0.65:depth>8?0.8:1.0);
         var peekOverlap=Math.round(fit.raw.h * (1 - 0.28*depthMult));
         for(var i=0;i<depth;i++){
           var cd=_cdEl(tab[c][i]);
@@ -365,9 +373,32 @@ function GFC(a){
       }
       tabRow.appendChild(colDiv);
     }
-    gd.appendChild(tabRow);
+    if(LAND){
+      // the same elements and handlers, re-seated: free cells left, foundations right
+      var kids=[].slice.call(topRow.children);   // 4 free, the deck spacer, 4 foundations
+      gd.removeChild(topRow);
+      var sq='display:grid;grid-template-columns:repeat(2,'+fcW+');gap:'+fit.gap+';flex:0 0 auto;padding-top:4px;align-content:start;position:relative';
+      var lc=document.createElement('div');lc.style.cssText=sq;
+      var rc=document.createElement('div');rc.style.cssText=sq;
+      for(var ki=0;ki<4;ki++)lc.appendChild(kids[ki]);
+      for(ki=5;ki<9;ki++)rc.appendChild(kids[ki]);
+      if(dealing){ kids[4].style.cssText='position:absolute;left:0;right:0;top:100%;height:0'; lc.appendChild(kids[4]); }
+      tabRow.style.width='auto';tabRow.style.flex='0 0 auto';tabRow.style.margin='0';
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;gap:10px;justify-content:center;align-items:flex-start;width:100%';
+      row.appendChild(lc);row.appendChild(tabRow);row.appendChild(rc);
+      gd.appendChild(row);
+    }else gd.appendChild(tabRow);
+    if(LK&&!lkH[lkKey]){
+      // sized for a fifteen-card column; a deeper one tightens its overlap (below)
+      var lh=window._cdLockH(tabRow,fit.raw.h,LAND?0:1,0,15);
+      lkH[lkKey]=lh||fit.raw.h;
+      if(lh&&lh<fit.raw.h){rn();return;}
+    }
+    if(window._cdLockSqueeze)window._cdLockSqueeze(tabRow.children,0.2);
     if(_ag)_ag.scrollTop=_scrollY;
   }
+  var lkH={};
   window._FCN=function(){init()};
   // Leaving mid-deal must stop the scheduler; otherwise its timers keep
   // rendering into a gd that belongs to whatever the player opened next.

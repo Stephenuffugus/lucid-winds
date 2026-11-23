@@ -147,11 +147,50 @@
     '.ts-results .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}',
     '.ts-confetti{position:fixed;left:50%;top:50%;width:min(100vw,450px);aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;z-index:61}'
   ].join('\n');
+  // ── LOCKED SCREEN (22 Nov 2026; Stephen: "Everything should just be locked on
+  // screen ... I shouldn't have to move anything"). Only under the shell's fill
+  // lock (html.shell-locked-fill). Her plates, inks, seals and faces are the
+  // same images; what changes is how many cards stand in a row: three rows of
+  // upright cards in portrait (four across for twelve, five for fifteen), two
+  // rows in a landscape phone with the modes and piles in a column at the
+  // left, and the glyphs scale with the card (lockFit) instead of the card
+  // growing past the screen. ──
+  var LK = 'html.shell-locked-fill #fg-ag.ts-root ';
+  CSS += '\n' + [
+    'html.shell-locked-fill #fg-ag.ts-root{padding:4px 6px max(6px,env(safe-area-inset-bottom,0px))}',
+    'html.shell-locked-fill #fg-ag.ts-root>.gm{display:none!important}',
+    LK + '.ts-table{flex:1 1 0!important;min-height:0;width:100%;max-width:640px;box-sizing:border-box;display:flex;flex-direction:column;padding:6px 8px 6px;margin:0 auto}',
+    LK + '.ts-modes{flex:0 0 auto;margin:0 auto 4px}',
+    LK + '.ts-piles{flex:0 0 auto;margin:0 4px}',
+    LK + '.ts-pile img{width:30px;height:40px}',
+    LK + '.ts-matwrap{flex:1 1 0;min-height:0;margin:2px 0}',
+    LK + '.ts-board{height:100%;box-sizing:border-box;grid-template-columns:repeat(var(--ts-cols,4),minmax(0,1fr))!important;grid-auto-rows:minmax(0,1fr);gap:8px;padding:4px 2px}',
+    LK + '.ts-card{min-height:0!important;padding:calc(var(--ts-gl,40px) * 0.8) 4px calc(var(--ts-gl,40px) * 0.3);gap:2px;border-radius:12px}',
+    LK + '.ts-symbols{gap:1px;padding:2px}',
+    LK + '.ts-symbols img{width:var(--ts-gl,40px);height:var(--ts-gl,40px)}',
+    LK + '.ts-seal,' + LK + '.ts-check{width:min(26px,calc(var(--ts-gl,40px) * 0.72));height:min(26px,calc(var(--ts-gl,40px) * 0.72));left:8px;top:7px}',
+    LK + '.ts-check{left:auto;right:8px}',
+    LK + '.ts-label{font-size:11px;padding:2px 4px;line-height:1.25}',
+    LK + '.ts-line{flex:0 0 34px;height:34px;min-height:0;margin:2px 8px 0;font-size:13px;line-height:17px;overflow:hidden;display:flex;align-items:center;justify-content:center}',   // two fixed lines: the whole sentence, and nothing moves when it changes
+    LK + '.gcr .ts-pill{min-width:0}',
+    // the Settings sheet on a short phone: the same seven rows, tighter, so Done is on screen without scrolling
+    '@media (max-height:720px){html.shell-locked-fill .ts-sheet-in{padding:10px 12px}html.shell-locked-fill .ts-sheet h2{margin:0 0 6px;font-size:1.1rem}html.shell-locked-fill .ts-row{min-height:50px;padding:1px 4px 1px 12px;margin-bottom:4px}html.shell-locked-fill .ts-note{font-size:12px;line-height:1.35;margin:4px 4px 0}}',
+    '@media (orientation:landscape) and (max-height:520px){html.shell-locked-fill .ts-sheet-in{max-width:760px;display:grid;grid-template-columns:1fr 1fr;column-gap:10px;align-content:start}html.shell-locked-fill .ts-sheet-in>h2,html.shell-locked-fill .ts-sheet-in>.ts-note,html.shell-locked-fill .ts-sheet-in>#ts-close{grid-column:1/-1}}',
+    '@media (orientation:landscape) and (max-height:520px){',
+    LK + '.ts-table{display:grid;grid-template-columns:132px minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;column-gap:10px;max-width:none}',
+    LK + '.ts-modes{grid-column:1;grid-row:1;flex-direction:column;gap:6px;margin:0}',
+    LK + '.ts-modes .ts-pill{min-width:0;width:132px;padding:8px 6px;font-size:12px}',
+    LK + '.ts-piles{grid-column:1;grid-row:2;flex-direction:column;align-items:flex-start;gap:4px;margin:8px 0 0}',
+    LK + '.ts-matwrap{grid-column:2;grid-row:1/span 3}',
+    LK + '.ts-line{grid-column:2;grid-row:4}',
+    '}'
+  ].join('\n');
 
   // ── the mount (window._gameFns.set, the shell hands us a container) ──
   window._gameFns = window._gameFns || {};
   window._gameFns.set = function GSET(container) {
     ms(container); mm(container);
+    container.classList.add('ts-root');
     loadSettings();
     if (!document.getElementById('ts-style')) { var st = document.createElement('style'); st.id = 'ts-style'; st.textContent = CSS; document.head.appendChild(st); }
 
@@ -222,11 +261,30 @@
       b.innerHTML = h; b.onclick = function(){ selectCard(idx); };
       return b;
     }
+    // the locked screen's card size, from the box the board has (see the CSS note above)
+    function lockFit(){
+      if (!document.documentElement.classList.contains('shell-locked-fill')) return;
+      var land = window.innerWidth > window.innerHeight && window.innerHeight <= 520;
+      var n = Math.max(board.length, 3), rows = land ? 2 : 3;
+      while (Math.ceil(n / rows) > (land ? 8 : 6)) rows++;
+      var cols = Math.ceil(n / rows), gap = 8;
+      grid.style.setProperty('--ts-cols', cols);
+      var gh = grid.clientHeight - 8, gw = grid.clientWidth - 4;
+      if (gh <= 0 || gw <= 0) return;
+      var ch = (gh - (rows - 1) * gap) / rows, cw = (gw - (cols - 1) * gap) / cols;
+      // three glyphs and the seal's room above them must stand inside the card
+      var gl = Math.floor(Math.min(SET.larger ? 48 : 40, (ch - 10) / 4.35, cw - 16));
+      grid.style.setProperty('--ts-gl', Math.max(14, gl) + 'px');
+    }
+    window.addEventListener('lw-lock-resize', lockFit);
+    window.addEventListener('resize', lockFit);
+    if (window._lwRegisterGameCleanup) window._lwRegisterGameCleanup(function(){ window.removeEventListener('lw-lock-resize', lockFit); window.removeEventListener('resize', lockFit); });
     function renderBoard(){
       grid.innerHTML = '';
       for (var i = 0; i < board.length; i++) grid.appendChild(makeCard(board[i], i));
       table.querySelector('#ts-remain').textContent = deck.length;
       table.querySelector('#ts-found').textContent = found;
+      lockFit();
       if (!findPheno(board) && deck.length === 0) { if (won) return; if (mode === 'daily') { finishDaily(); return; } finishClassic(); }
       else if (!findPheno(board) && deck.length > 0) { window._setHint(); }
     }

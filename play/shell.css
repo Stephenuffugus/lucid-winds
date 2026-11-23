@@ -389,3 +389,77 @@ html, body { overflow-x: visible; }
 }
 @keyframes shellSpin { to { transform: rotate(360deg); } }
 .perf-lite .shell-loading .shell-spin { animation-duration: 1.4s; }
+
+/* ── LOCKED SCREEN (18 Nov 2026, Stephen: "Everything should just be locked on
+   screen. It shouldn't be changing sizes. I shouldn't have to move anything.")
+   html.shell-locked is set by shell.js for the card games in LOCK_BOX: one
+   dynamic viewport tall, no page scroll, no footer or install button, the root
+   font pinned (shared.css sizes rem by viewport WIDTH), and #fg-ag zoomed by
+   shell.js to its game's design box. ── */
+html.shell-locked { height: 100%; overflow: hidden; overscroll-behavior: none; font-size: 18px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html.shell-locked body { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; overscroll-behavior: none; touch-action: manipulation; }
+html.shell-locked .shell-hdr { position: relative; flex: 0 0 auto; padding-top: max(10px, env(safe-area-inset-top, 0px)); padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+@media (max-height: 500px) { html.shell-locked .shell-hdr { padding-top: max(4px, env(safe-area-inset-top, 0px)); padding-bottom: 4px; } }
+html.shell-locked .shell-footer, html.shell-locked #shell-install-btn { display: none !important; }
+html.shell-locked .shell-dir { z-index: 2147483000; }
+html.shell-locked .shell-mount { flex: 1 1 0; min-height: 0; overflow: hidden; align-items: center; }
+html.shell-locked #fg-ag { flex: 0 0 auto; min-height: 0; overflow: hidden; box-sizing: border-box; padding: 4px max(6px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); }
+html.shell-locked #fg-ag #_gm { flex: 0 0 auto; height: 24px; line-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── LOCKED SCREEN, SOLITAIRE (22 Nov 2026). html.shell-locked-fill is set by
+   shell.js for the solitaire tables (fill:true in LOCK_BOX): the box is the
+   exact space under the header and is NOT zoomed; the game sizes its cards to
+   it once per screen size and tightens its columns as they grow
+   (games/_cards.js _cdLockH / _cdLockSqueeze). The controls are one compact
+   strip at the foot in portrait and a column on the right in a landscape
+   phone, so the table gets the height. A control a game hides keeps its
+   place, so nothing moves when it comes back. ── */
+html.shell-locked-fill #fg-ag { display: flex; flex-direction: column; }
+html.shell-locked-fill #fg-ag > * { flex: 0 0 auto; min-height: 0; }
+/* the table itself fills the slot, so its box never changes size as a column grows */
+html.shell-locked-fill #fg-ag > :not(.gu-bar):not(.gm):not(.gcr) { flex: 1 1 0; }
+html.shell-locked-fill #fg-ag .gu-bar { padding: 2px 8px 0; height: 20px; line-height: 18px; font-size: 12px; white-space: nowrap; overflow: hidden; }
+html.shell-locked-fill #fg-ag #_gm, html.shell-locked-fill #fg-ag .gm { height: 22px; line-height: 22px; min-height: 0; margin: 0; padding: 0 8px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.shell-locked-fill #fg-ag .gcr { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; justify-content: center; align-items: stretch; width: 100%; max-width: 460px !important; margin: 4px auto 0 !important; padding: 0 !important; box-sizing: border-box; }
+html.shell-locked-fill #fg-ag .gcr > .gb, html.shell-locked-fill #fg-ag .gcr > .gsl, html.shell-locked-fill #fg-ag .gcr > select, html.shell-locked-fill #fg-ag .gcr > button { flex: 1 1 80px !important; min-width: 0 !important; min-height: 48px !important; height: 48px; margin: 0 !important; padding: 0 4px !important; font-size: 12px !important; letter-spacing: 0 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.shell-locked-fill #fg-ag .gcr > [style*="display: none"], html.shell-locked-fill #fg-ag .gcr > [style*="display:none"] { display: block !important; visibility: hidden; }
+/* Klondike's five controls: Draw, Undo, Auto over New Game and Style, in fixed slots */
+@media (orientation: portrait), (min-height: 521px) {
+  html.shell-locked-fill #fg-ag[data-game="klondike"] .gcr { display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  html.shell-locked-fill #fg-ag[data-game="klondike"] .gcr > * { grid-column: span 2; }
+  html.shell-locked-fill #fg-ag[data-game="klondike"] .gcr > #KLnew, html.shell-locked-fill #fg-ag[data-game="klondike"] .gcr > #KLstyle { grid-column: span 3; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  html.shell-locked-fill #fg-ag { display: grid !important; grid-template-columns: minmax(0, 1fr) 132px; grid-auto-rows: auto; grid-template-rows: auto auto minmax(0, 1fr); column-gap: 10px; align-content: start; }
+  html.shell-locked-fill #fg-ag > * { grid-column: 1; }
+  /* the table always takes the filling row, even when a game hides its score lines */
+  html.shell-locked-fill #fg-ag > :not(.gu-bar):not(.gm):not(.gcr) { grid-row: 3; }
+  html.shell-locked-fill #fg-ag > .gcr { grid-column: 2 !important; grid-row: 1 / span 3 !important; flex-direction: column !important; flex-wrap: nowrap !important; justify-content: flex-start; align-self: start; width: 132px; margin: 0 !important; gap: 6px !important; }
+  html.shell-locked-fill #fg-ag .gcr > .gb, html.shell-locked-fill #fg-ag .gcr > .gsl, html.shell-locked-fill #fg-ag .gcr > select, html.shell-locked-fill #fg-ag .gcr > button { flex: 0 0 48px !important; width: 100%; }
+}
+
+/* ── LOCKED SCREEN, LANDSCAPE PHONE, the zoomed card tables (22 Nov 2026).
+   shell.js sets html.shell-land when a game in LOCK_BOX has a land box and the
+   phone lies on its side. A game tags its table's sections with data-lk
+   (north, mid, south = the table; ctrl, score, status, act = the rail), and
+   the table stands at the left with the rail at the right, instead of the
+   portrait column shrunk to a third of its size. ── */
+html.shell-locked.shell-land #fg-ag :has(> [data-lk="south"]) {
+  display: grid !important; grid-template-columns: minmax(0, 1fr) var(--lk-rail, 350px);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "north ctrl" "mid score" "mid status" "south act";
+  column-gap: 14px; row-gap: 4px; align-content: stretch; width: 100% !important; max-width: none !important;
+  flex: 1 1 0 !important; min-height: 0 !important; height: auto !important; box-sizing: border-box; margin: 0 !important;
+}
+html.shell-locked.shell-land #fg-ag :has(> [data-lk="south"]) > [data-lk] { margin: 0 !important; min-width: 0; }
+html.shell-locked.shell-land #fg-ag [data-lk="north"] { grid-area: north; }
+html.shell-locked.shell-land #fg-ag [data-lk="mid"] { grid-area: mid; align-self: center; }
+html.shell-locked.shell-land #fg-ag [data-lk="south"] { grid-area: south; }
+html.shell-locked.shell-land #fg-ag [data-lk="ctrl"] { grid-area: ctrl; }
+html.shell-locked.shell-land #fg-ag [data-lk="score"] { grid-area: score; align-self: start; }
+html.shell-locked.shell-land #fg-ag [data-lk="status"] { grid-area: status; align-self: start; }
+html.shell-locked.shell-land #fg-ag [data-lk="act"] { grid-area: act; align-self: end; }
+/* Hearts' thirteen cards stand in one row in landscape: the table has the width, not the height */
+html.shell-locked.shell-land #BHpan [data-lk="south"] > div:nth-child(2) { grid-template-columns: repeat(13, minmax(0, 1fr)) !important; max-width: none !important; }
+/* a zoomed table's buttons stay 48px tall ON SCREEN (--lk48 = 48px / zoom, set by shell.js) */
+html.shell-locked:not(.shell-locked-fill) #fg-ag button { min-height: var(--lk48, 48px) !important; }

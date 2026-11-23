@@ -90,8 +90,10 @@ function GTP(a){
   // in index.html, not by _cdFit (which only sizes the 10-wide tableau). Mirror
   // that clamp so deck, stock and waste card are all one size. If .gc changes,
   // change this with it.
+  function tpLand(){return !!(window._cdLocked&&window._cdLocked())&&window.innerWidth>window.innerHeight&&window.innerHeight<=520;}
   function botCardSize(){
     var w=Math.max(56,Math.min(110,Math.round((window.innerWidth||360)*0.135)));
+    if(tpLand())w=64;   // locked landscape: the stock stands beside the peaks
     return {w:w,h:Math.round(w*1.4)};
   }
 
@@ -199,7 +201,13 @@ function GTP(a){
     // Row 0: 3 peak tops (indices 0,6,12) with gaps
     var rows=TIERS;
     // 10-column base row drives sizing.
-    var fit=window._cdFit?window._cdFit(10,{maxW:64,gap:2,pad:16}):{w:'clamp(42px,9.5vw,62px)',h:'clamp(59px,13.3vw,87px)',font:'clamp(.6rem,1.7vw,.8rem)',gap:'2px',raw:{w:62,h:87}};
+    // Locked screen (22 Nov 2026): the card is sized once per screen so the four
+    // rows of peaks and the stock fit the box; a landscape phone puts the stock
+    // and waste beside the peaks instead of under them.
+    var LK=!!(window._cdLocked&&window._cdLocked());
+    var LAND=tpLand();
+    var lkKey=LK?(gd.clientWidth+'x'+(_ag?_ag.clientHeight:0)+(LAND?'L':'P')):'';
+    var fit=window._cdFit?window._cdFit(10,LK?{maxW:64,gap:2,pad:LAND?100:16,container:gd,maxH:lkH[lkKey]||0}:{maxW:64,gap:2,pad:16}):{w:'clamp(42px,9.5vw,62px)',h:'clamp(59px,13.3vw,87px)',font:'clamp(.6rem,1.7vw,.8rem)',gap:'2px',raw:{w:62,h:87}};
     var tpW=fit.w,tpH=fit.h,tpF=fit.font;
     var rowOverlap = Math.round(fit.raw.h * 0.23); // overlap between rows
     // Inter-peak gap scales with card width — wider at top, narrower at base.
@@ -276,9 +284,26 @@ function GTP(a){
     var info=document.createElement('div');info.style.cssText='color:var(--gold);font-family:DM Mono,monospace;font-size:clamp(.55rem,1.8vw,.75rem)';
     var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;
     info.textContent='Streak: '+streak;botRow.appendChild(info);
-    gd.appendChild(botRow);
+    if(LAND){
+      gd.removeChild(peakDiv);
+      botRow.style.cssText='display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:flex-start;flex:0 0 84px;padding:4px 0';
+      sp.style.flex='0 0 0px';
+      if(wEl&&wEl.classList.contains('gc')){wEl.style.width=bs.w+'px';wEl.style.height=bs.h+'px';}
+      if(stEl.classList.contains('gc')){stEl.style.width=bs.w+'px';stEl.style.height=bs.h+'px';}   // the emptied stock keeps the stock's size
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;gap:10px;justify-content:center;align-items:flex-start;width:100%';
+      peakDiv.style.flex='1 1 auto';
+      row.appendChild(botRow);row.appendChild(peakDiv);gd.appendChild(row);
+    }else gd.appendChild(botRow);
+    if(LK&&!lkH[lkKey]){
+      // the peaks are four rows, each 77% of a card below the one above
+      var lh=window._cdLockH(peakDiv,fit.raw.h,0,0,4,0.77);
+      lkH[lkKey]=lh||fit.raw.h;
+      if(lh&&lh<fit.raw.h){rn();return;}
+    }
     if(_ag)_ag.scrollTop=_scrollY;
   }
+  var lkH={};
   window._TPN=function(){init()};
   init();
 }

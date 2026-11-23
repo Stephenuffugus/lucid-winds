@@ -193,7 +193,13 @@ function GPY(a){
       else if(sel.type==='waste'&&waste.length>0)srcCard=waste[waste.length-1];
     }
     // 7-wide base row drives sizing. The row-overlap shows ~60% of each card top.
-    var fit=window._cdFit?window._cdFit(7,{maxW:84,gap:3,pad:10}):{w:'clamp(48px,13vw,84px)',h:'clamp(67px,18.2vw,117px)',font:'clamp(.65rem,1.8vw,.9rem)',gap:'3px',raw:{h:117}};
+    // Locked screen (22 Nov 2026, shell.js fill lock, like TriPeaks): the card
+    // is sized once per screen so the seven rows and the stock fit the box; a
+    // landscape phone puts the stock and waste beside the pyramid.
+    var LK=!!(window._cdLocked&&window._cdLocked());
+    var LAND=LK&&window.innerWidth>window.innerHeight&&window.innerHeight<=520;
+    var lkKey=LK?(gd.clientWidth+'x'+(_ag?_ag.clientHeight:0)+(LAND?'L':'P')):'';
+    var fit=window._cdFit?window._cdFit(7,LK?{maxW:84,gap:3,pad:LAND?100:10,container:gd,maxH:lkH[lkKey]||0}:{maxW:84,gap:3,pad:10}):{w:'clamp(48px,13vw,84px)',h:'clamp(67px,18.2vw,117px)',font:'clamp(.65rem,1.8vw,.9rem)',gap:'3px',raw:{h:117}};
     var pyW=fit.w,pyH=fit.h,pyF=fit.font;
     var rowOverlap = Math.round(fit.raw.h * 0.42); // negative margin between rows
     // Pyramid
@@ -253,6 +259,7 @@ function GPY(a){
       var _vw=window.innerWidth||360;
       var stkW=Math.round(Math.max(56,Math.min(110,_vw*0.135)));
       var stkH=Math.round(Math.max(78,Math.min(154,_vw*0.19)));
+      if(LAND){stkW=64;stkH=90;}   // the stock's own size beside the pyramid (below)
       // ⛔ THE CAPTION STAYS IN FLOW. Pinning this slot to the stock card's
       // height to stop the controls settling ~26px at the end of the deal was
       // tried and reverted: the caption then hangs out of the slot and on a
@@ -277,9 +284,26 @@ function GPY(a){
     }
     else{wEl=document.createElement('div');wEl.className='gc gc-empty';}
     botRow.appendChild(wEl);
-    gd.appendChild(botRow);
+    if(LAND){
+      // stock and waste stand in a column at the left of the pyramid, at one size
+      botRow.style.cssText='display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:flex-start;flex:0 0 84px;padding:4px 0';
+      if(stEl.classList.contains('gc')){stEl.style.width='64px';stEl.style.height='90px';}
+      wEl.style.width='64px';wEl.style.height='90px';
+      gd.removeChild(pyrDiv);
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;gap:10px;justify-content:center;align-items:flex-start;width:100%';
+      pyrDiv.style.flex='1 1 auto';
+      row.appendChild(botRow);row.appendChild(pyrDiv);gd.appendChild(row);
+    }else gd.appendChild(botRow);
+    if(LK&&!lkH[lkKey]){
+      // seven rows, each 58% of a card below the one above
+      var lh=window._cdLockH(pyrDiv,fit.raw.h,0,0,7,0.58);
+      lkH[lkKey]=lh||fit.raw.h;
+      if(lh&&lh<fit.raw.h){rn();return;}
+    }
     if(_ag)_ag.scrollTop=_scrollY;
   }
+  var lkH={};
   window._PYN=function(){init()};
   init();
 }

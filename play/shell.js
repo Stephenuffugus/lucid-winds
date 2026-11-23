@@ -523,6 +523,118 @@
     document.title = (LW_PLAY.name || 'Play') + ' · Sky Wolf Studio';
   }
 
+  // ── LOCKED SCREEN (Stephen 18 Nov 2026, about Euchre, for every card game:
+  // "Everything should just be locked on screen. It shouldn't be changing
+  // sizes. I shouldn't have to move anything.") For the games listed here the
+  // page is one dynamic viewport tall and cannot scroll (html.shell-locked,
+  // shell.css), and the game mount is zoomed ONCE per screen size by the
+  // smaller of width/W and height/H, where W x H is the game's own design box:
+  // the tallest it gets in any phase at a phone width (measured, see
+  // scripts/cards_lock_check.mjs). Its layout box is then exactly the space
+  // left under the header, whatever the phase. Euchre (bowergarden) has its
+  // own fixed-row table and is not listed. Games may set LW_PLAY.lock too. ──
+  var LOCK_BOX = {
+    // h includes the room the 48px-on-screen buttons take at a 360 phone's zoom
+    // (shell.css --lk48): Hearts and Cribbage grew 50 for it on 22 Nov
+    // land: the design box of the game's own landscape arrangement
+    // (html.shell-land, the data-lk grid in shell.css), 22 Nov 2026
+    gardenspades:   { w: 390, h: 780, land: { w: 820, h: 470 } },
+    bleedinghearts: { w: 390, h: 885, land: { w: 820, h: 480 } },
+    juniper:        { w: 390, h: 720, land: { w: 800, h: 440 } },
+    cribbage:       { w: 390, h: 800, land: { w: 820, h: 440 } },
+    // Pyramid is laid out like TriPeaks (22 Nov 2026), so it locks the same way
+    pyramid:        { fill: true },
+    // 22 Nov 2026: the solitaire tables lock too, but they are NOT zoomed. A
+    // tableau column grows during play, so a fixed design box would either be
+    // sized for the worst column (tiny cards) or overflow. fill:true locks the
+    // page and hands the game the exact space under the header; the game sizes
+    // its cards once per screen size and tightens a column's overlap as it
+    // grows (games/_cards.js, _cdLockH and _cdLockSqueeze).
+    klondike:       { fill: true },
+    spider:         { fill: true },
+    freecell:       { fill: true },
+    tripeaks:       { fill: true },
+    golf:           { fill: true },
+    set:            { fill: true }
+  };
+  // Every small inline font size in a locked game is raised to at least 11px
+  // on screen (--lkmin = 11px / zoom); the room comes from the wide letter
+  // spacing (decoration), not from the words. 18 Nov lead review of Euchre.
+  function lockMinFont() {
+    if (document.getElementById('shell-lock-font')) return;
+    var r = '', z = ['0.42','0.45','0.48','0.5','0.52','0.55','0.58','0.6','0.62','0.65','0.66','0.68','0.7','0.72','0.75','0.78','0.8','0.85'];
+    for (var i = 0; i < z.length; i++)
+      r += 'html.shell-locked #fg-ag [style*="font-size:' + z[i] + 'rem"]{font-size:max(' + z[i] + 'rem,var(--lkmin,0px))!important;letter-spacing:0.03em!important}';
+    var st = document.createElement('style'); st.id = 'shell-lock-font'; st.textContent = r;
+    document.head.appendChild(st);
+  }
+  function shellLock(mountEl) {
+    var box = LOCK_BOX[LW_PLAY.id] || LW_PLAY.lock;
+    if (!box || !mountEl) return;
+    var root = document.documentElement;
+    root.classList.add('shell-locked');
+    lockMinFont();
+    var host = mountEl.parentElement;
+    var lastW = 0, lastH = 0, rnT = 0;
+    if (box.fill) root.classList.add('shell-locked-fill');
+    function fit() {
+      if (!mountEl.isConnected) return;
+      var fw = host.clientWidth, fh = host.clientHeight;
+      if (!fw || !fh) return;
+      if (box.fill) {
+        // no zoom: the game box is exactly the space under the header
+        mountEl.style.width = fw + 'px';
+        mountEl.style.height = fh + 'px';
+        mountEl.style.setProperty('--lkmin', '11px');
+        if (fw !== lastW || fh !== lastH) {
+          var first = !lastW; lastW = fw; lastH = fh;
+          // a solitaire sizes its cards from this box, so a new size (turning
+          // the phone, the header settling) re-lays the table once
+          if (!first) { clearTimeout(rnT); rnT = setTimeout(function () {
+            try { if (typeof global._cdActiveRn === 'function') global._cdActiveRn(); } catch (e) {}
+            try { global.dispatchEvent(new Event('lw-lock-resize')); } catch (e) {}
+          }, 120); }
+        }
+        return;
+      }
+      // a landscape phone gets the game's own sideways arrangement
+      // (html.shell-land, styled by each game) and its own design box
+      var land = !!box.land && fw / fh > 1.3 && fh <= 520;
+      if (land !== root.classList.contains('shell-land')) {
+        root.classList.toggle('shell-land', land);
+        try { global.dispatchEvent(new Event('lw-lock-resize')); } catch (e) {}
+      }
+      var b = land ? box.land : box;
+      var z = Math.min(fw / b.w, fh / b.h, 1.5);
+      z = Math.floor(z * 1000) / 1000;
+      mountEl.style.zoom = String(z);
+      // width and height of a zoomed element are scaled by its zoom, so this
+      // lays the game out in exactly the space under the header
+      mountEl.style.width = (fw / z) + 'px';
+      mountEl.style.height = (fh / z) + 'px';
+      // no text a player reads under 11px on screen (see lockMinFont), and no
+      // button under 48px tall on screen (shell.css), whatever the zoom
+      mountEl.style.setProperty('--lkmin', (11 / z).toFixed(2) + 'px');
+      mountEl.style.setProperty('--lk48', Math.max(48, Math.ceil(48 / z)) + 'px');
+    }
+    fit();
+    global.addEventListener('resize', fit);
+    global.addEventListener('orientationchange', fit);
+    if (global.visualViewport) global.visualViewport.addEventListener('resize', fit);
+    var ro = global.ResizeObserver ? new ResizeObserver(fit) : null;
+    if (ro) ro.observe(host);
+    global._lwRegisterGameCleanup(function(){
+      if (ro) ro.disconnect();
+      global.removeEventListener('resize', fit);
+      global.removeEventListener('orientationchange', fit);
+      root.classList.remove('shell-locked');
+      root.classList.remove('shell-locked-fill');
+      root.classList.remove('shell-land');
+      clearTimeout(rnT);
+      mountEl.style.zoom = mountEl.style.width = mountEl.style.height = '';
+    });
+  }
+
   // ── Mount the game once everything is ready ──
   function tryMount() {
     // Check the module is registered BEFORE touching the DOM, so the
@@ -544,7 +656,20 @@
     }
     try {
       mountEl.innerHTML = '';
+      // the lock classes go on BEFORE the game's first render, so a game that
+      // sizes itself to the locked box (the solitaires, Three Sisters,
+      // Cribbage's middle) does so from its first frame
+      var lb = LOCK_BOX[LW_PLAY.id] || LW_PLAY.lock;
+      if (lb) {
+        document.documentElement.classList.add('shell-locked');
+        if (lb.fill) {
+          document.documentElement.classList.add('shell-locked-fill');
+          var hostEl = mountEl.parentElement;
+          if (hostEl && hostEl.clientWidth) { mountEl.style.width = hostEl.clientWidth + 'px'; mountEl.style.height = hostEl.clientHeight + 'px'; }
+        }
+      }
       fn(mountEl);
+      shellLock(mountEl);
       maybeShowDirections();   // first visit: full-screen directions cover the game until dismissed
       return true;
     } catch (err) {

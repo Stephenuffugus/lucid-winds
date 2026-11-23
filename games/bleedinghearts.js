@@ -104,6 +104,10 @@ window._gameFns.bleedinghearts = function BH(a){
       +'inset 0 0 0 1px rgba(180,140,70,0.25),'
       +'inset 0 0 40px rgba(0,0,0,0.5),'
       +'0 6px 22px rgba(0,0,0,0.6);';
+  // Locked screen (/play/ shell): the shell zooms #fg-ag, so a vw width would
+  // shrink the table twice; the table fills the zoomed box instead.
+  if(window.LW_PLAY&&window.LW_PLAY.id==='bleedinghearts'&&document.getElementById('shell-mount'))
+    pan.style.cssText+='max-width:none;width:100%;flex:1 1 auto;min-height:0;box-sizing:border-box;padding:6px 10px 10px;';
   a.appendChild(pan);
   // mc(a) still runs so downstream code finds the controls container, but
   // we leave it empty — NEW + Style now live inside the pan so the bottom
@@ -396,9 +400,10 @@ window._gameFns.bleedinghearts = function BH(a){
 
   function render(){
     var h='';
+    var BH_LOCK=!!(window.LW_PLAY&&window.LW_PLAY.id==='bleedinghearts'&&document.getElementById('shell-mount'));
     // ── CONTROLS BAR — floats above the score strip, small + unobtrusive ──
     var styleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
-    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<div data-lk="ctrl" style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
     h+='<button class="gb" onclick="_BHToggleStyle()" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
     h+='<img src="assets/decks/floral/suit-heart.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
     h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
@@ -410,7 +415,7 @@ window._gameFns.bleedinghearts = function BH(a){
     // Lowest running score is 'winning' (Hearts is a lose-to-highest game).
     // Players at 90+ get a red warning pulse — they're about to lose.
     var minScore = Math.min.apply(null, scores);
-    h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;background:linear-gradient(180deg,rgba(0,0,0,0.45),rgba(0,0,0,0.6));border:1.5px solid rgba(180,140,70,0.3);border-radius:10px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 2px 8px rgba(0,0,0,0.5);">';
+    h+='<div data-lk="score" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;background:linear-gradient(180deg,rgba(0,0,0,0.45),rgba(0,0,0,0.6));border:1.5px solid rgba(180,140,70,0.3);border-radius:10px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 2px 8px rgba(0,0,0,0.5);">';
     for(var p=0;p<4;p++){
       var you=p===S;
       var isCur=(p===currentPlayer&&(phase==='play'||phase==='passing'));
@@ -435,7 +440,7 @@ window._gameFns.bleedinghearts = function BH(a){
     }
     h+='</div>';
     // Persistent hearts-broken badge — styled, not just a coloured bar
-    h+='<div style="text-align:center;padding:3px 0 8px;">';
+    h+='<div data-lk="status" style="text-align:center;padding:3px 0 8px;">';
     if(heartsBroken){
       var brokenAnim = heartsJustBroke ? 'animation:bhBreakFlash 0.9s ease-out;' : '';
       h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:linear-gradient(180deg,rgba(180,42,42,0.3),rgba(100,20,20,0.4));border:1px solid #dc8a8a;border-radius:999px;font-family:Georgia,serif;font-size:0.68rem;color:#f5d0d0;letter-spacing:0.05em;box-shadow:0 0 10px rgba(220,138,138,0.25);'+brokenAnim+'">';
@@ -446,15 +451,56 @@ window._gameFns.bleedinghearts = function BH(a){
     }
     h+='</div>';
     // North — face-down cards with horizontal overlap for compactness
-    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.12em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+seatCount(N)+'</span>'+_voidTags(N)+'</div><div style="display:inline-flex;justify-content:center;">';
+    h+='<div data-lk="north" class="'+_seatCls(N)+'" style="text-align:center;padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+PLAYER_COLORS[N]+';letter-spacing:0.12em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">NORTH <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+seatCount(N)+'</span>'+_voidTags(N)+'</div><div style="display:inline-flex;justify-content:center;">';
     // Tight overlap — 13 backs fanning horizontally shouldn't eat the whole row.
     for(var n=0;n<seatCount(N);n++)h+='<span class="'+(isNewlyDealt(N,n)?'cd-deal-in':'')+'" style="display:inline-block;margin-left:'+(n===0?'0':'-22px')+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
+    // Pass UI — dedicated screen with giant directional arrow + 3 ghost
+    // slots, built here so that on the locked screen it can lie over the
+    // middle row (empty while passing) instead of pushing the hand down.
+    var passH='';
+    if(phase==='passing'){
+      var dirs=['LEFT','RIGHT','ACROSS'];
+      var arrows={LEFT:'◀',RIGHT:'▶',ACROSS:'▲'};
+      var dirLabel=dirs[passDir];
+      var arrow=arrows[dirLabel];
+      var targetName = dirLabel==='LEFT'?NAMES[W] : dirLabel==='RIGHT'?NAMES[E] : NAMES[N];
+      var targetColor = dirLabel==='LEFT'?PLAYER_COLORS[W] : dirLabel==='RIGHT'?PLAYER_COLORS[E] : PLAYER_COLORS[N];
+      passH+='<div style="text-align:center;padding:12px 10px;background:radial-gradient(ellipse at 50% 50%,rgba(255,220,112,0.08) 0%,rgba(0,0,0,0.5) 70%);border:1.5px solid rgba(180,140,70,0.35);border-radius:12px;margin:6px 0;box-shadow:inset 0 0 18px rgba(0,0,0,0.4);">';
+      passH+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.22em;color:rgba(232,220,200,0.6);text-transform:uppercase;margin-bottom:4px;">Pass 3 cards</div>';
+      passH+='<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;">';
+      passH+='<span style="font-size:2rem;line-height:1;color:#ffdc70;text-shadow:0 0 12px rgba(255,220,112,0.5);animation:bhArrowNudge 1.6s ease-in-out infinite;">'+arrow+'</span>';
+      passH+='<div style="font-family:Georgia,serif;">';
+      passH+='<div style="font-size:1.2rem;font-weight:700;color:#f5ebd0;letter-spacing:0.06em;">'+dirLabel+'</div>';
+      passH+='<div style="font-size:0.65rem;font-style:italic;color:'+targetColor+';margin-top:1px;">to '+targetName+'</div>';
+      passH+='</div>';
+      passH+='<span style="font-size:2rem;line-height:1;color:#ffdc70;text-shadow:0 0 12px rgba(255,220,112,0.5);animation:bhArrowNudge 1.6s ease-in-out infinite;">'+arrow+'</span>';
+      passH+='</div>';
+      // Ghost slots — fill as cards are selected
+      passH+='<div style="display:flex;justify-content:center;gap:8px;margin-bottom:10px;">';
+      for(var ps=0;ps<3;ps++){
+        var card=passSelection[ps];
+        if(card){
+          var cCol=card.suit==='hearts'||card.suit==='diamonds'?'#b42a2a':'#1a1a1a';
+          passH+='<div style="width:36px;height:52px;border-radius:5px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid #ffdc70;color:'+cCol+';font-family:Georgia,serif;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(255,220,112,0.4);font-size:0.7rem;">';
+          passH+=card.rank+'<span style="font-size:0.9rem;">'+_pip(card.suit)+'</span></div>';
+        }else{
+          passH+='<div style="width:36px;height:52px;border-radius:5px;border:2px dashed rgba(232,220,200,0.35);background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.35);">·</div>';
+        }
+      }
+      passH+='</div>';
+      var ready=passSelection.length===3;
+      passH+='<button class="gb" onclick="_BHPASS()" '+(ready?'':'disabled')+' style="min-height:44px;padding:10px 22px;font-family:Georgia,serif;font-size:0.85rem;'+(ready?'background:linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.3));border:2px solid #ffdc70;color:#f5ebd0;box-shadow:0 0 14px rgba(255,220,112,0.35);':'border:1.5px dashed rgba(255,220,112,.5);color:rgba(245,235,208,.7);background:rgba(0,0,0,.25);')+'">';
+      passH+=ready ? 'Pass '+dirLabel.toLowerCase() : 'Tap '+(3-passSelection.length)+' more';
+      passH+='</button>';
+      passH+='</div>';
+    }
     // West | Trick | East — vertical-overlap for side hands
-    h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
+    h+='<div data-lk="mid" style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;'+(BH_LOCK?'height:236px;box-sizing:border-box;position:relative;':'')+'">';
+    if(BH_LOCK&&passH)h+='<div style="position:absolute;inset:0;z-index:3;background:#1e0d16;border-radius:12px;display:flex;flex-direction:column;justify-content:center;">'+passH+'</div>';
     h+='<div class="'+_seatCls(W)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[W]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(W)+'</span>'+_voidTags(W)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     // Aggressive overlap — 13 card backs show as a slim stack, not a tower.
-    for(var w=0;w<seatCount(W);w++)h+='<span class="'+(isNewlyDealt(W,w)?'cd-deal-in':'')+'" style="display:block;margin-top:'+(w===0?'0':'-34px')+';">'+_cardHtml(null,true)+'</span>';
+    for(var w=0;w<seatCount(W);w++)h+='<span class="'+(isNewlyDealt(W,w)?'cd-deal-in':'')+'" style="display:block;margin-top:'+(w===0?'0':(BH_LOCK?'-37px':'-34px'))+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     // Trick
     h+='<div style="position:relative;min-height:160px;background:rgba(20,10,16,0.55);box-shadow:inset 0 0 44px rgba(0,0,0,.65);border-radius:8px;">';
@@ -479,50 +525,15 @@ window._gameFns.bleedinghearts = function BH(a){
     }
     h+='</div>';
     h+='<div class="'+_seatCls(E)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[E]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(E)+'</span>'+_voidTags(E)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
-    for(var e=0;e<seatCount(E);e++)h+='<span class="'+(isNewlyDealt(E,e)?'cd-deal-in':'')+'" style="display:block;margin-top:'+(e===0?'0':'-34px')+';">'+_cardHtml(null,true)+'</span>';
+    for(var e=0;e<seatCount(E);e++)h+='<span class="'+(isNewlyDealt(E,e)?'cd-deal-in':'')+'" style="display:block;margin-top:'+(e===0?'0':(BH_LOCK?'-37px':'-34px'))+';">'+_cardHtml(null,true)+'</span>';
     h+='</div></div>';
     h+='</div>';
     // Pass UI — dedicated screen with giant directional arrow + 3 ghost
     // slots. When 3 are selected, the slots fill and the PASS button
     // becomes active. Matches the Trickster / Hearts+ convention.
-    if(phase==='passing'){
-      var dirs=['LEFT','RIGHT','ACROSS'];
-      var arrows={LEFT:'◀',RIGHT:'▶',ACROSS:'▲'};
-      var dirLabel=dirs[passDir];
-      var arrow=arrows[dirLabel];
-      var targetName = dirLabel==='LEFT'?NAMES[W] : dirLabel==='RIGHT'?NAMES[E] : NAMES[N];
-      var targetColor = dirLabel==='LEFT'?PLAYER_COLORS[W] : dirLabel==='RIGHT'?PLAYER_COLORS[E] : PLAYER_COLORS[N];
-      h+='<div style="text-align:center;padding:12px 10px;background:radial-gradient(ellipse at 50% 50%,rgba(255,220,112,0.08) 0%,rgba(0,0,0,0.5) 70%);border:1.5px solid rgba(180,140,70,0.35);border-radius:12px;margin:6px 0;box-shadow:inset 0 0 18px rgba(0,0,0,0.4);">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.22em;color:rgba(232,220,200,0.6);text-transform:uppercase;margin-bottom:4px;">Pass 3 cards</div>';
-      h+='<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;">';
-      h+='<span style="font-size:2rem;line-height:1;color:#ffdc70;text-shadow:0 0 12px rgba(255,220,112,0.5);animation:bhArrowNudge 1.6s ease-in-out infinite;">'+arrow+'</span>';
-      h+='<div style="font-family:Georgia,serif;">';
-      h+='<div style="font-size:1.2rem;font-weight:700;color:#f5ebd0;letter-spacing:0.06em;">'+dirLabel+'</div>';
-      h+='<div style="font-size:0.65rem;font-style:italic;color:'+targetColor+';margin-top:1px;">to '+targetName+'</div>';
-      h+='</div>';
-      h+='<span style="font-size:2rem;line-height:1;color:#ffdc70;text-shadow:0 0 12px rgba(255,220,112,0.5);animation:bhArrowNudge 1.6s ease-in-out infinite;">'+arrow+'</span>';
-      h+='</div>';
-      // Ghost slots — fill as cards are selected
-      h+='<div style="display:flex;justify-content:center;gap:8px;margin-bottom:10px;">';
-      for(var ps=0;ps<3;ps++){
-        var card=passSelection[ps];
-        if(card){
-          var cCol=card.suit==='hearts'||card.suit==='diamonds'?'#b42a2a':'#1a1a1a';
-          h+='<div style="width:36px;height:52px;border-radius:5px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid #ffdc70;color:'+cCol+';font-family:Georgia,serif;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(255,220,112,0.4);font-size:0.7rem;">';
-          h+=card.rank+'<span style="font-size:0.9rem;">'+_pip(card.suit)+'</span></div>';
-        }else{
-          h+='<div style="width:36px;height:52px;border-radius:5px;border:2px dashed rgba(232,220,200,0.35);background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.35);">·</div>';
-        }
-      }
-      h+='</div>';
-      var ready=passSelection.length===3;
-      h+='<button class="gb" onclick="_BHPASS()" '+(ready?'':'disabled')+' style="min-height:44px;padding:10px 22px;font-family:Georgia,serif;font-size:0.85rem;'+(ready?'background:linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.3));border:2px solid #ffdc70;color:#f5ebd0;box-shadow:0 0 14px rgba(255,220,112,0.35);':'border:1.5px dashed rgba(255,220,112,.5);color:rgba(245,235,208,.7);background:rgba(0,0,0,.25);')+'">';
-      h+=ready ? 'Pass '+dirLabel.toLowerCase() : 'Tap '+(3-passSelection.length)+' more';
-      h+='</button>';
-      h+='</div>';
-    }
+    if(!BH_LOCK)h+=passH;
     // Player hand
-    h+='<div class="'+_seatCls(S)+'" style="padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.62rem;color:'+PLAYER_COLORS[S]+';text-align:center;letter-spacing:0.14em;margin-bottom:6px;text-transform:uppercase;font-weight:700;">Your Hand</div>';
+    h+='<div data-lk="south" class="'+_seatCls(S)+'" style="padding:6px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.62rem;color:'+PLAYER_COLORS[S]+';text-align:center;letter-spacing:0.14em;margin-bottom:6px;text-transform:uppercase;font-weight:700;">Your Hand</div>';
     h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;justify-items:center;max-width:min(94vw,420px);margin:0 auto;">';
     var leadS=trick.length>0?trick[0].card.suit:'';
     var playable=[];
@@ -554,8 +565,9 @@ window._gameFns.bleedinghearts = function BH(a){
     h+='</div></div>';
     // History button — small 🕐 pinned at the bottom-right of the pan so the
     // player can review the previous trick. Disabled until there is one.
-    if(lastTrick){
-      h+='<div style="text-align:right;padding:0 4px 4px;"><button class="gb" onclick="_BHhist()" style="min-height:44px;padding:8px 12px;font-size:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.25);color:rgba(232,220,200,0.75);font-family:Georgia,serif;font-style:italic;">🕐 Last trick</button></div>';
+    if(lastTrick||BH_LOCK){
+      // locked: the row is always there (hidden before the first trick) so nothing jumps
+      h+='<div style="text-align:right;padding:0 4px 4px;'+(lastTrick?'':'visibility:hidden;')+'"><button class="gb" onclick="_BHhist()" style="min-height:44px;padding:8px 12px;font-size:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.25);color:rgba(232,220,200,0.75);font-family:Georgia,serif;font-style:italic;">🕐 Last trick</button></div>';
     }
     // Last-trick overlay — a translucent scrim with all four cards laid out.
     if(showingHistory && lastTrick){

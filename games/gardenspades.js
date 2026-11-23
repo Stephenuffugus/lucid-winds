@@ -90,6 +90,10 @@ window._gameFns.gardenspades = function GardenSpades(a){
       +'inset 0 0 40px rgba(0,0,0,0.45),'
       +'0 0 24px 14px rgba(13,16,12,0.9),'
       +'0 6px 22px rgba(0,0,0,0.55);';
+  // Locked screen (/play/ shell): the shell zooms #fg-ag, so a vw width would
+  // shrink the table twice; the table fills the zoomed box instead.
+  if(window.LW_PLAY&&window.LW_PLAY.id==='gardenspades'&&document.getElementById('shell-mount'))
+    pan.style.cssText+='max-width:none;width:100%;flex:1 1 auto;min-height:0;padding:6px 10px 10px;';
   a.appendChild(pan);
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
   // Per-team identity colors — spades is partnership so team-color, not seat.
@@ -419,9 +423,10 @@ window._gameFns.gardenspades = function GardenSpades(a){
 
   function render(){
     var h='';
+    var GS_LOCK=!!(window.LW_PLAY&&window.LW_PLAY.id==='gardenspades'&&document.getElementById('shell-mount'));
     // ── CONTROLS BAR — top right, matching the other card games ──
     var gsStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
-    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<div data-lk="ctrl" style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
     h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;font-size:0.7rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
     h+='<img src="assets/decks/floral/suit-spade.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
     h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
@@ -433,12 +438,12 @@ window._gameFns.gardenspades = function GardenSpades(a){
     h+='<button class="gb" onclick="_GSN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:8px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
     // ── SCORE STRIP — twin team strips with bid/taken big numerals + bag pips ──
-    h+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
+    h+='<div data-lk="score" style="display:flex;gap:6px;margin-bottom:8px;">';
     h+=_teamStrip('YOUR TEAM',0);
     h+=_teamStrip('OPPONENTS',1);
     h+='</div>';
     // ── SPADES-BROKEN PERSISTENT BADGE ──
-    h+='<div style="text-align:center;padding:3px 0 8px;">';
+    h+='<div data-lk="status" style="text-align:center;padding:3px 0 8px;">';
     if(spadesBroken){
       var brokenAnim = spadesJustBroke ? 'animation:gsBrokenFlash 0.9s ease-out;' : '';
       h+='<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:linear-gradient(180deg,rgba(0,0,0,0.5),rgba(0,0,0,0.7));border:1px solid #ffdc70;border-radius:999px;font-family:Georgia,serif;font-size:0.68rem;color:#f5ebd0;letter-spacing:0.05em;box-shadow:0 0 10px rgba(255,220,112,0.3);'+brokenAnim+'">';
@@ -449,7 +454,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
     }
     h+='</div>';
     // ── PARTNER (NORTH) ─────────────────────────────────────────
-    h+='<div class="'+_seatCls(N)+'" style="text-align:center;padding:6px;">'
+    h+='<div data-lk="north" class="'+_seatCls(N)+'" style="text-align:center;padding:6px;">'
       +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+_teamColor(N)+';letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
         +'PARTNER <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:4px;">×'+seatCount(N)+'</span>'
         +_bidPill(N)
@@ -457,8 +462,43 @@ window._gameFns.gardenspades = function GardenSpades(a){
       +'<div style="display:inline-flex;justify-content:center;">';
     for(var n=0;n<seatCount(N);n++)h+='<div class="'+(isNewlyDealt(N,n)?'cd-deal-in':'')+'" style="'+_cdBackCss(30,42,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
+    // ── BID UI ──────────────────────────────────────────────────
+    // Locked screen (/play/ shell): the bid panel lies over the middle row,
+    // which is empty while bidding, so the hand never moves down.
+    var bidH='';
+    if(phase==='bidding'&&currentPlayer===S){
+      var partnerBid = bids[N];
+      var partnerStr = partnerBid<0 ? 'still thinking' : partnerBid===0 ? 'NIL' : (''+partnerBid);
+      // Auto-suggest based on the same heuristic the AI uses.
+      var suggested = aiBid(S);
+      bidH+='<div style="text-align:center;padding:10px 8px;background:radial-gradient(ellipse at 50% 50%,rgba(255,220,112,0.06) 0%,rgba(0,0,0,0.5) 70%);border:1.5px solid rgba(180,140,70,0.35);border-radius:12px;margin:6px 0;box-shadow:inset 0 0 18px rgba(0,0,0,0.4);">';
+      bidH+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.22em;color:rgba(232,220,200,0.6);text-transform:uppercase;margin-bottom:4px;">Your bid</div>';
+      bidH+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:'+_teamColor(N)+';margin-bottom:8px;">Partner bid <strong style="color:#f5ebd0;font-style:normal;">'+partnerStr+'</strong></div>';
+      // 2-row grid: 0-6 and 7-13. 0 cell is the NIL button (distinct).
+      bidH+='<div style="display:flex;flex-direction:column;gap:5px;align-items:center;">';
+      // Top row: NIL + 1-6
+      bidH+='<div style="display:flex;gap:4px;justify-content:center;">';
+      bidH+='<button class="gb" onclick="_GSBN()" style="min-width:50px;min-height:46px;padding:6px 8px;background:linear-gradient(180deg,rgba(180,42,42,0.35),rgba(120,20,20,0.5));border:1.5px solid #e63946;border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.72rem;color:#ffdc70;letter-spacing:0.04em;display:flex;flex-direction:column;align-items:center;line-height:1;">';
+      bidH+='NIL<span style="font-size:0.42rem;font-weight:400;color:rgba(245,235,208,0.65);margin-top:2px;">+100/-100</span></button>';
+      for(var bi=1;bi<=6;bi++){
+        var isS = (bi===suggested);
+        bidH+='<button class="gb" onclick="_GSB('+bi+')" style="min-width:38px;min-height:46px;padding:6px 4px;background:'+(isS?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isS?'2':'1.5')+'px solid '+(isS?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isS?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bi+'</button>';
+      }
+      bidH+='</div>';
+      // Bottom row: 7-13
+      bidH+='<div style="display:flex;gap:4px;justify-content:center;">';
+      for(var bj=7;bj<=13;bj++){
+        var isSj = (bj===suggested);
+        bidH+='<button class="gb" onclick="_GSB('+bj+')" style="min-width:38px;min-height:46px;padding:6px 4px;background:'+(isSj?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isSj?'2':'1.5')+'px solid '+(isSj?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isSj?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bj+'</button>';
+      }
+      bidH+='</div>';
+      bidH+='<div style="margin-top:6px;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.1em;color:rgba(232,220,200,0.4);">'+(suggested>0?'Suggested: '+suggested:'')+'</div>';
+      bidH+='</div>';
+      bidH+='</div>';
+    }
     // ── MIDDLE ROW: WEST | TRICK | EAST ─────────────────────────
-    h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;">';
+    h+='<div data-lk="mid" style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:160px;'+(GS_LOCK?'height:184px;box-sizing:border-box;position:relative;':'')+'">';
+    if(GS_LOCK&&bidH)h+='<div class="gs-lock-bid" style="position:absolute;inset:0;z-index:3;background:#0d1f15;border-radius:12px;display:flex;flex-direction:column;justify-content:center;">'+bidH+'</div>';
     h+='<div class="'+_seatCls(W)+'" style="padding:4px;">'
       +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+_teamColor(W)+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">'
         +'WEST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(W)+'</span>'+_bidPill(W)
@@ -493,37 +533,8 @@ window._gameFns.gardenspades = function GardenSpades(a){
     for(var e=0;e<seatCount(E);e++)h+='<div class="'+(isNewlyDealt(E,e)?'cd-deal-in':'')+'" style="'+_cdBackCss(30,42,5)+'margin-top:'+(e===0?'0':'-34px')+';"></div>';
     h+='</div></div>';
     h+='</div>';
-    // ── BID UI ──────────────────────────────────────────────────
-    if(phase==='bidding'&&currentPlayer===S){
-      var partnerBid = bids[N];
-      var partnerStr = partnerBid<0 ? 'still thinking' : partnerBid===0 ? 'NIL' : (''+partnerBid);
-      // Auto-suggest based on the same heuristic the AI uses.
-      var suggested = aiBid(S);
-      h+='<div style="text-align:center;padding:10px 8px;background:radial-gradient(ellipse at 50% 50%,rgba(255,220,112,0.06) 0%,rgba(0,0,0,0.5) 70%);border:1.5px solid rgba(180,140,70,0.35);border-radius:12px;margin:6px 0;box-shadow:inset 0 0 18px rgba(0,0,0,0.4);">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.22em;color:rgba(232,220,200,0.6);text-transform:uppercase;margin-bottom:4px;">Your bid</div>';
-      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:'+_teamColor(N)+';margin-bottom:8px;">Partner bid <strong style="color:#f5ebd0;font-style:normal;">'+partnerStr+'</strong></div>';
-      // 2-row grid: 0-6 and 7-13. 0 cell is the NIL button (distinct).
-      h+='<div style="display:flex;flex-direction:column;gap:5px;align-items:center;">';
-      // Top row: NIL + 1-6
-      h+='<div style="display:flex;gap:4px;justify-content:center;">';
-      h+='<button class="gb" onclick="_GSBN()" style="min-width:50px;min-height:46px;padding:6px 8px;background:linear-gradient(180deg,rgba(180,42,42,0.35),rgba(120,20,20,0.5));border:1.5px solid #e63946;border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.72rem;color:#ffdc70;letter-spacing:0.04em;display:flex;flex-direction:column;align-items:center;line-height:1;">';
-      h+='NIL<span style="font-size:0.42rem;font-weight:400;color:rgba(245,235,208,0.65);margin-top:2px;">+100/-100</span></button>';
-      for(var bi=1;bi<=6;bi++){
-        var isS = (bi===suggested);
-        h+='<button class="gb" onclick="_GSB('+bi+')" style="min-width:38px;min-height:46px;padding:6px 4px;background:'+(isS?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isS?'2':'1.5')+'px solid '+(isS?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isS?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bi+'</button>';
-      }
-      h+='</div>';
-      // Bottom row: 7-13
-      h+='<div style="display:flex;gap:4px;justify-content:center;">';
-      for(var bj=7;bj<=13;bj++){
-        var isSj = (bj===suggested);
-        h+='<button class="gb" onclick="_GSB('+bj+')" style="min-width:38px;min-height:46px;padding:6px 4px;background:'+(isSj?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isSj?'2':'1.5')+'px solid '+(isSj?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isSj?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bj+'</button>';
-      }
-      h+='</div>';
-      h+='<div style="margin-top:6px;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.1em;color:rgba(232,220,200,0.4);">'+(suggested>0?'Suggested: '+suggested:'')+'</div>';
-      h+='</div>';
-      h+='</div>';
-    }
+    // ── BID UI (built above, inside the middle row when locked) ──
+    if(!GS_LOCK)h+=bidH;
     // NIL CONFIRM modal
     if(phase==='nilConfirm'){
       h+='<div onclick="_GSBNcancel()" style="position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;cursor:pointer;backdrop-filter:blur(4px);">';
@@ -535,11 +546,11 @@ window._gameFns.gardenspades = function GardenSpades(a){
       h+='</div></div>';
     }
     // ── YOUR HAND (SOUTH) ───────────────────────────────────────
-    h+='<div class="'+_seatCls(S)+'" style="padding:4px;">'
+    h+='<div data-lk="south" class="'+_seatCls(S)+'" style="padding:4px;">'
       +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:'+_teamColor(S)+';text-align:center;letter-spacing:0.14em;margin-bottom:6px;text-transform:uppercase;font-weight:700;">'
         +'Your Hand'+_bidPill(S)
       +'</div>';
-    h+='<div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">';
+    h+='<div style="display:flex;gap:3px;justify-content:center;'+(GS_LOCK?'flex-wrap:nowrap;gap:0;height:96px;align-items:center;':'flex-wrap:wrap;')+'">';
     var leadS=trick.length>0?trick[0].card.suit:'';
     var playable=[];
     if(phase==='play'&&currentPlayer===S)playable=getPlayable(hands[S],leadS);
@@ -552,7 +563,11 @@ window._gameFns.gardenspades = function GardenSpades(a){
       var sty='display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:clamp(48px,12vw,64px);height:clamp(68px,17vw,90px);border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';box-shadow:inset 0 0 0 1px rgba(255,255,255,0.55),0 2px 5px rgba(0,0,0,0.35);color:'+col+';font-weight:700;position:relative;margin:2px 1px;';
       if(canP)sty+='cursor:pointer;';
       if(!canP&&phase==='play')sty+='opacity:0.5;';
-      h+='<div style="'+sty+'" onclick="_GSCC(\''+cc.rank+'\',\''+cc.suit+'\')"><div style="font-size:0.8rem;position:absolute;top:3px;left:5px;">'+cc.rank+'</div><div style="font-size:1.35rem;">'+_pip(cc.suit)+'</div></div>';
+      // locked: 13 cards in ONE row, each overlapping the last; the rank and a
+      // small suit stay readable in the uncovered left strip of every card
+      var lk=GS_LOCK&&myCards.length>6;
+      if(lk)sty=sty.replace('width:clamp(48px,12vw,64px);height:clamp(68px,17vw,90px)','width:56px;height:84px;flex:0 0 auto;align-items:flex-end;padding-right:6px;box-sizing:border-box')+'margin-left:'+(i===0?'0':'-'+Math.max(0,Math.round(56-(330-56)/Math.max(1,myCards.length-1)))+'px')+';';
+      h+='<div style="'+sty+'" onclick="_GSCC(\''+cc.rank+'\',\''+cc.suit+'\')"><div style="font-size:0.8rem;position:absolute;top:3px;left:5px;'+(lk?'font-size:0.95rem;line-height:1;text-align:center;':'')+'">'+cc.rank+(lk?'<div style="font-size:0.85rem;margin-top:2px;">'+_pip(cc.suit)+'</div>':'')+'</div><div style="font-size:1.35rem;">'+_pip(cc.suit)+'</div></div>';
     }
     h+='</div></div>';
     // ── HISTORY OVERLAY ─────────────────────────────────────────

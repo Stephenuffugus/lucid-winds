@@ -208,7 +208,11 @@ function GGF(a){
     if(sc)sc.textContent=shownLeft();
 
     // Top row: stock, waste, score. Tableau is 7 columns.
-    var fit=window._cdFit?window._cdFit(7,{maxW:72,gap:3,pad:10}):{w:'clamp(52px,13.5vw,72px)',h:'clamp(72px,18.9vw,100px)',font:'clamp(.6rem,1.7vw,.8rem)',gap:'3px',raw:{h:100}};
+    // Locked screen (22 Nov 2026): the card is sized once per screen so the
+    // stock row and five-card columns fit the box under the header.
+    var LK=!!(window._cdLocked&&window._cdLocked());
+    var lkKey=LK?(gd.clientWidth+'x'+(_ag?_ag.clientHeight:0)):'';
+    var fit=window._cdFit?window._cdFit(7,LK?{maxW:72,gap:3,pad:10,container:gd,maxH:lkH[lkKey]||0}:{maxW:72,gap:3,pad:10}):{w:'clamp(52px,13.5vw,72px)',h:'clamp(72px,18.9vw,100px)',font:'clamp(.6rem,1.7vw,.8rem)',gap:'3px',raw:{h:100}};
     var gfW=fit.w,gfH=fit.h,gfF=fit.font;
     var topRow=document.createElement('div');
     topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:center';
@@ -315,8 +319,15 @@ function GGF(a){
       tabRow.appendChild(colDiv);
     }
     gd.appendChild(tabRow);
+    if(LK&&!lkH[lkKey]){
+      var lh=window._cdLockH(tabRow,fit.raw.h,1,0,5,0.28);
+      lkH[lkKey]=lh||fit.raw.h;
+      if(lh&&lh<fit.raw.h){rn();return;}
+    }
+    if(window._cdLockSqueeze)window._cdLockSqueeze(tabRow.children,0.2);
     if(_ag)_ag.scrollTop=_scrollY;
   }
+  var lkH={};
 
   window._GFN=function(){init()};
   // Exit cleanup: a deal still in flight would keep firing timers into a board

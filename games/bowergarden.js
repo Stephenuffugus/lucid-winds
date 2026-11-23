@@ -48,6 +48,142 @@ if(!document.getElementById('bg-anim-style')){
   document.head.appendChild(_bgs);
 }
 
+// ⛔ LOCKED SCREEN (Stephen 18 Nov 2026: "a little bit of scrolling when I am
+// dealing or not dealing or calling ... Everything should just be locked on
+// screen. It shouldn't be changing sizes."). Two causes, both measured:
+//  1. The /play/ shell stacks header + game + install button + footer in a
+//     body that only has a MIN height, so the page was always taller than a
+//     phone (953px at 390x844, 966px at 360x640) and scrolled.
+//  2. The table had no fixed rows: the call / go-alone / discard prompts were
+//     appended under the hand (+60 to +110px), six cards in the discard wrapped
+//     the hand onto a second row, and the score strips and bid tags wrapped
+//     their text. Every phase change moved everything below it.
+// Fix, for THIS game in the shell only (html.bg-locked, set below when the
+// shell's LW_PLAY.id is bowergarden; inside the main Lucid Winds app nothing
+// changes): the page is exactly one dynamic viewport tall and cannot scroll,
+// the table is a grid of fixed rows in design pixels with a permanent prompt
+// slot, and one zoom factor, the smaller of width and height ratio, scales
+// the whole table to whatever is left (bwFit). Shared shell fix: see
+// docs/briefs/euchre-locked-screen.md.
+if(!document.getElementById('bg-lock-style')){
+  var _bgl=document.createElement('style');_bgl.id='bg-lock-style';
+  var L='html.bg-locked ';
+  _bgl.textContent=
+    // font-size: shared.css sizes the root clamp(18px,4.5vw,22px), so every rem in
+    // the table grew with the screen WIDTH (11px labels in landscape spilled their
+    // rows). The table is one design box scaled by bwFit, so the root is pinned to
+    // the 18px every phone already gets. text-size-adjust stops font boosting.
+    'html.bg-locked{height:100%;overflow:hidden;overscroll-behavior:none;font-size:18px;-webkit-text-size-adjust:100%;text-size-adjust:100%}'+
+    L+'body{height:100vh;height:100dvh;min-height:0;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}'+
+    L+'.shell-hdr{position:relative;flex:0 0 auto;padding-top:max(10px,env(safe-area-inset-top,0px));padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}'+
+    '@media (max-height:500px){'+L+'.shell-hdr{padding-top:max(4px,env(safe-area-inset-top,0px));padding-bottom:4px}}'+
+    L+'.shell-footer,'+L+'#shell-install-btn{display:none!important}'+
+    // the directions sheet sits above the shell's song card, which otherwise covered LET'S PLAY
+    L+'.shell-dir{z-index:2147483000}'+
+    L+'.shell-mount{flex:1 1 0;min-height:0;overflow:hidden}'+
+    L+'#fg-ag{flex:1 1 0;min-height:0;overflow:hidden;padding:2px max(6px,env(safe-area-inset-right,0px)) max(6px,env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}'+
+    L+'#fg-ag .gu-bar,'+L+'#fg-ag .gcr{display:none!important}'+   // the gu-bar repeated the score strips
+    L+'#fg-ag #_gm{flex:0 0 auto;height:24px;line-height:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}'+
+    L+'.bg-fit{flex:1 1 0;min-height:0;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center}'+
+    // the table: fixed rows in design px, the same at every phase; bwFit zooms it
+    L+'#BGpan.bg-lock{flex:0 0 auto;width:380px!important;max-width:none!important;height:738px;margin:0!important;padding:6px 10px 10px!important;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:44px 60px 50px 86px minmax(0,1fr) var(--bwhr,160px);row-gap:6px}'+
+    // 18 Nov lead review: the reserved prompt row left a ~150px empty band under the
+    // hand whenever no prompt showed. Prompts now sit at the bottom of the trick well
+    // (every prompt comes before the first card is played, when the well holds at
+    // most the upcard, which moves to the well's top), and that height went to the hand.
+    L+'#BGpan.bg-lock>[data-bg=prompt]{grid-row:5;grid-column:1;align-self:end;z-index:4;position:relative}'+
+    L+'#BGpan.bg-lock:not(.bg-land)>[data-bg=ctrl]{grid-row:1}'+L+'#BGpan.bg-lock:not(.bg-land)>[data-bg=score]{grid-row:2}'+
+    L+'#BGpan.bg-lock:not(.bg-land)>[data-bg=head]{grid-row:3}'+L+'#BGpan.bg-lock:not(.bg-land)>[data-bg=north]{grid-row:4}'+
+    L+'#BGpan.bg-lock:not(.bg-land)>[data-bg=mid]{grid-row:5;grid-column:1}'+L+'#BGpan.bg-lock:not(.bg-land)>[data-bg=south]{grid-row:6}'+
+    L+'#BGpan.bg-lock>[data-bg=prompt]:empty{visibility:hidden}'+
+    L+'#BGpan.bg-lock>[data-bg=prompt]>div{background:#10261a!important;box-shadow:0 -4px 14px rgba(0,0,0,0.5)}'+
+    L+'#BGpan.bg-lock:not(.bg-land):has(>[data-bg=prompt]:not(:empty)) .bg-trick{justify-content:flex-start!important;align-items:flex-start!important}'+
+    // 22 Nov: a tall phone's spare height goes to the hand (bwFit sets --bwhw/--bwhh);
+    // five cards that no longer fit side by side overlap a little at the right edge
+    L+'#BGpan.bg-lock:not(.bg-land) .bg-hand>div{width:var(--bwhw,64px)!important;height:var(--bwhh,92px)!important}'+
+    L+'#BGpan.bg-lock:not(.bg-land) .bg-hand>div+div{margin-left:var(--bwhm,0px)!important}'+
+    // six cards (the dealer's pick-up) keep the same card size and overlap a little more
+    L+'#BGpan.bg-lock:not(.bg-land) .bg-hand:has(>div:nth-child(6))>div+div{margin-left:var(--bwhm6,0px)!important}'+
+    L+'#BGpan.bg-lock .bg-hand:has(>div:nth-child(6)){gap:3px!important}'+
+    L+'#BGpan.bg-lock:not(.bg-land) .bg-hand>div>span:first-child{font-size:calc(1.05rem * var(--bwhs,1))!important}'+
+    L+'#BGpan.bg-lock:not(.bg-land) .bg-hand>div>span:last-child{font-size:calc(1.6rem * var(--bwhs,1))!important}'+
+    L+'#BGpan.bg-lock>*{min-width:0;min-height:0;margin:0!important;box-sizing:border-box}'+
+    // equal strips whatever their text: the CALLER tag used to widen its own strip
+    L+'#BGpan.bg-lock [data-bg=score]>div{flex:1 1 0!important;min-width:0;height:100%;box-sizing:border-box}'+
+    L+'#BGpan.bg-lock [data-bg=score]>div{position:relative}'+
+    L+'#BGpan.bg-lock [data-bg=score] .bg-lbl{white-space:nowrap;height:17px;line-height:17px}'+
+    // 22 Nov: at 360 wide the 11px floor made "YOU + PARTNER" run into "tricks".
+    // The team name now has the strip's whole top line to itself; the score and
+    // the tricks meter share the line under it. No word is dropped or shrunk.
+    L+'#BGpan.bg-lock [data-bg=score]>div{padding:3px 9px 4px!important}'+
+    L+'#BGpan.bg-lock [data-bg=score]>div>div{padding-top:18px;align-items:flex-end!important}'+
+    L+'#BGpan.bg-lock [data-bg=score] .bg-lbl{position:absolute;left:9px;right:9px;top:6px;overflow:visible}'+
+    L+'#BGpan.bg-lock [data-bg=score] .bg-trk{line-height:1.1}'+
+    L+'#BGpan.bg-lock [data-bg=score] .bg-trk+div{line-height:10px;height:10px}'+   // the pips row inherited a 29px line
+    L+'#BGpan.bg-lock [data-bg=score] .bg-lbl>span{top:-23px!important}'+   // the CALLER tab rides the strip's top border, off the team name
+    // the CALLER tag sat inline after the label and ran into the tricks meter: it
+    // becomes a tab on the strip's top edge instead
+    L+'#BGpan.bg-lock [data-bg=score] .bg-lbl>span{position:absolute;top:-8px;left:50%;transform:translateX(-50%);margin:0!important;background:#0b3a20;line-height:1.3}'+
+    // the trump chip and its "Awaiting call" placeholder are one width, so the chip never resizes
+    // 22 Nov: with the 11px floor "Your team called" broke onto three lines and out
+    // of the pill at 360 wide. The pill is a little wider, its padding tighter, and
+    // the caller note takes the width two lines need.
+    L+'#BGpan.bg-lock [data-bg=head]{gap:4px!important}'+
+    L+'#BGpan.bg-lock .bg-chip{box-sizing:border-box;width:200px;height:44px;padding:3px 10px!important;gap:6px!important;flex:0 0 auto;justify-content:center}'+
+    L+'#BGpan.bg-lock .bg-chip-by{white-space:normal;width:auto;max-width:84px;line-height:1.1;flex:0 1 auto;padding-left:6px!important}'+
+    L+'#BGpan.bg-lock [data-bg=head]{padding:0 2px!important;white-space:nowrap}'+
+    L+'#BGpan.bg-lock [data-bg=north]{padding:2px!important}'+
+    L+'#BGpan.bg-lock [data-bg=north]>div:first-child,'+L+'#BGpan.bg-lock [data-bg=south]>div:first-child{white-space:nowrap;height:18px;line-height:18px;margin-bottom:4px!important}'+
+    L+'#BGpan.bg-lock [data-bg=mid]{min-height:0!important;padding:0 2px!important;align-items:stretch!important}'+
+    // West and East: one fixed column box, the name line fixed at two lines, so a
+    // bid tag or the dealer chip appearing never moves a stack, and a stack that
+    // shrinks as cards are played never moves its name
+    // (three lines: name + dealer chip, the bid tag, and "sitting out" on a loner hand;
+    // a tag wider than the column hangs evenly over both sides instead of off the table)
+    L+'#BGpan.bg-lock [data-bg=mid]>div{align-self:center;height:172px;box-sizing:border-box}'+
+    L+'#BGpan.bg-lock [data-bg=mid]>div:not(.bg-trick){width:78px!important}'+
+    L+'#BGpan.bg-lock [data-bg=mid]>div:not(.bg-trick)>div:first-child{height:56px}'+
+    L+'#BGpan.bg-lock [data-bg=mid] .bg-bidtag{margin:0 -6px!important}'+
+    L+'#BGpan.bg-lock [data-bg=mid]>.bg-trick{min-height:0!important;height:auto;align-self:stretch}'+
+    // partner's and your played cards sit on the well's top and bottom edges, a
+    // little less padded, so the two never touch in the fixed well
+    L+'#BGpan.bg-lock .bg-trick .bg-face{padding:3px 4px!important}'+
+    L+'#BGpan.bg-lock .bg-pcard[data-seat="2"]{top:0!important}'+
+    L+'#BGpan.bg-lock .bg-pcard[data-seat="0"]{bottom:0!important}'+
+    L+'#BGpan.bg-lock [data-bg=south]{padding:2px!important}'+
+    L+'#BGpan.bg-lock .bg-hand{flex-wrap:nowrap!important}'+
+    L+'#BGpan.bg-lock [data-bg=prompt]{display:flex;flex-direction:column;justify-content:center}'+
+    L+'#BGpan.bg-lock [data-bg=prompt]>div{margin:0!important;padding:6px 10px!important}'+
+    L+'#BGpan.bg-lock [data-bg=prompt] .gb{min-height:48px}'+
+    // the prompts' small print was 0.55rem, about 7px once a 360 phone zooms the table
+    L+'#BGpan.bg-lock [data-bg=prompt] div[style*="0.55rem"]{font-size:max(0.66rem,var(--bwmin,0px))!important;line-height:1.35!important}'+
+    // 18 Nov lead review: at 360 wide the small labels (YOU + PARTNER, tricks, DEALER)
+    // rendered 7 to 8px. No text a player reads may be under 11px on screen: bwFit sets
+    // --bwmin = 11px / zoom, and every small inline size is raised to at least that.
+    // Room comes from dropping the wide letter-spacing (decoration), not from the words.
+    (function(){var r='',z=['0.42','0.45','0.48','0.5','0.52','0.55','0.6','0.62','0.65','0.66','0.68','0.7','0.72','0.75','0.78','0.8','0.85'];
+      for(var i=0;i<z.length;i++)r+=L+'#BGpan.bg-lock [style*="font-size:'+z[i]+'rem"]{font-size:max('+z[i]+'rem,var(--bwmin,0px))!important;letter-spacing:0.03em!important}';
+      r+=L+'#BGpan.bg-lock .bg-lbl{font-size:max(0.5rem,var(--bwmin,0px))!important;letter-spacing:0.03em!important}';
+      return r;})()+
+    // 18 Nov lead review: the gold dot on the table's right edge (y~218 at 360x640,
+    // y~581 at 390x844) is not a chip in flight: it is .bg-seat-caller::before, the
+    // caller's orb pinned to the top-right corner of the calling seat's box. On the
+    // locked table the seat boxes span the full width, so it floats alone at the edge.
+    // The caller already shows twice (the CALLER tab on the score strip, the bid tag
+    // on the seat), so the orb is dropped on the locked screen.
+    L+'#BGpan.bg-lock .bg-seat-caller::before{display:none}'+
+    // short landscape: table on the left, score, trump and prompts on the right
+    L+'#BGpan.bg-lock.bg-land{width:820px!important;height:434px;grid-template-columns:minmax(0,1fr) 390px;column-gap:10px;grid-template-rows:44px 36px 54px 50px 104px 100px}'+
+    L+'#BGpan.bg-land>[data-bg=ctrl]{grid-column:2;grid-row:1}'+
+    L+'#BGpan.bg-land>[data-bg=score]{grid-column:2;grid-row:2/4;align-self:center;height:66px}'+
+    L+'#BGpan.bg-land>[data-bg=head]{grid-column:2;grid-row:4}'+
+    L+'#BGpan.bg-land>[data-bg=prompt]{grid-column:2;grid-row:5/7}'+
+    L+'#BGpan.bg-land>[data-bg=north]{grid-column:1;grid-row:1/3}'+
+    L+'#BGpan.bg-land>[data-bg=mid]{grid-column:1;grid-row:3/6}'+
+    L+'#BGpan.bg-land>[data-bg=south]{grid-column:1;grid-row:6}';
+  document.head.appendChild(_bgl);
+}
+
 window._gameFns = window._gameFns || {};
 window._gameFns.bowergarden = function BG(a){
   // Generation-guarded timers (2026-07-03 audit): New Game during a trick pause
@@ -119,7 +255,57 @@ window._gameFns.bowergarden = function BG(a){
       +'inset 0 0 0 1px rgba(180,140,70,0.25),'
       +'inset 0 0 38px rgba(0,0,0,0.4),'
       +'0 6px 22px rgba(0,0,0,0.55);';
-  a.appendChild(pan);
+  // Locked screen, in the /play/ shell only (see bg-lock-style above).
+  var LOCK=!!(window.LW_PLAY&&window.LW_PLAY.id==='bowergarden'&&document.getElementById('shell-mount'));
+  var fit=null;
+  if(LOCK){
+    document.documentElement.classList.add('bg-locked');
+    pan.className='bg-lock';
+    fit=document.createElement('div');fit.className='bg-fit';
+    fit.appendChild(pan);a.appendChild(fit);
+  } else a.appendChild(pan);
+  // One zoom for the whole table: the smaller of the width and height ratios
+  // of the space left under the header, so it fits every phone and tablet
+  // without a single fixed pixel height for the page. Re-run on resize.
+  function bwFit(){
+    if(!LOCK||!fit.isConnected)return;
+    var fw=fit.clientWidth,fh=fit.clientHeight;if(!fw||!fh)return;
+    var land=fw/fh>1.3;
+    if(land!==pan.classList.contains('bg-land'))pan.classList.toggle('bg-land',land);
+    var W0=land?820:380,H0=land?434:738;
+    var z=Math.min(fw/W0,fh/H0,1.6);
+    var zf=Math.floor(z*1000)/1000;
+    pan.style.zoom=String(zf);
+    // 22 Nov: a phone taller than the design (390x844) left ~70px empty under the
+    // hand. The table now runs the full height; up to 44px of the spare goes to the
+    // hand row and its cards grow with it, the rest to the trick well.
+    // The hand row (160) always held ~46px of slack under 92px cards; the row is
+    // now the cards plus their label, and the cards take the spare height.
+    var ex=land?0:Math.max(0,Math.floor(fh/zf-H0-2));
+    pan.style.height=land?'':(H0+ex)+'px';
+    var hh=Math.min(92+Math.round((ex+40)*0.8),124); if(ex<4)hh=92;
+    var hw=Math.round(hh*0.696), room=356, gapH=5;
+    var mg=5*hw+4*gapH>room?Math.floor((room-5*hw)/4)-gapH:0;
+    pan.style.setProperty('--bwhr',(ex<4?160:hh+46)+'px');
+    pan.style.setProperty('--bwhh',hh+'px');pan.style.setProperty('--bwhw',hw+'px');
+    pan.style.setProperty('--bwhm',mg+'px');
+    pan.style.setProperty('--bwhm6',(6*hw+5*gapH>room?Math.floor((room-6*hw)/5)-gapH:0)+'px');pan.style.setProperty('--bwhs',(hh/92).toFixed(3));
+    pan.style.setProperty('--bwmin',(11/(Math.floor(z*1000)/1000)).toFixed(2)+'px');
+  }
+  if(LOCK){
+    bwFit();
+    window.addEventListener('resize',bwFit);
+    window.addEventListener('orientationchange',bwFit);
+    if(window.visualViewport)window.visualViewport.addEventListener('resize',bwFit);
+    // the header can change height after mount (fonts, wallet): refit then too
+    var bwRO=window.ResizeObserver?new ResizeObserver(bwFit):null;if(bwRO)bwRO.observe(fit);
+    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+      if(bwRO)bwRO.disconnect();
+      window.removeEventListener('resize',bwFit);window.removeEventListener('orientationchange',bwFit);
+      if(window.visualViewport)window.visualViewport.removeEventListener('resize',bwFit);
+      document.documentElement.classList.remove('bg-locked');
+    });
+  }
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SUIT_ICONS[suitName];}
   // mc(a) still runs so downstream code finds the controls container, but
   // we leave it empty — NEW + Style now live inside the pan.
@@ -604,7 +790,7 @@ window._gameFns.bowergarden = function BG(a){
         try{localStorage.setItem('lw_euchre_w',String(w));localStorage.setItem('lw_euchre_l',String(l));}catch(e){}
         var _o=document.getElementById('BW-over');if(_o)_o.remove();
         var ov=document.createElement('div');ov.id='BW-over';
-        ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+        ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%),rgba(13,16,12,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;overflow-y:auto;overscroll-behavior:contain;';
         ov.innerHTML='<div style="font-size:3rem;line-height:1;">'+(won?'\ud83c\udfc6':'\ud83c\udf42')+'</div>'
           +'<div style="font-size:1.7rem;font-weight:700;color:'+(won?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;">'+(won?'MATCH WON':'MATCH LOST')+'</div>'
           +'<div style="font-size:0.95rem;color:#e8dcc8;margin-top:10px;">You '+teamScore[0]+' \u00b7 Them '+teamScore[1]+' \u00b7 '+roundNum+' hands</div>'
@@ -656,7 +842,7 @@ window._gameFns.bowergarden = function BG(a){
   function _scoreBarHtml(){
     var h='';
     var pCol='#7ab356', oCol='#dc8a8a';
-    h+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
+    h+='<div data-bg="score" style="display:flex;gap:6px;margin-bottom:8px;">';
     h+=_teamStrip('YOU + PARTNER', teamScore[0], teamTricks[0], pCol, callingTeam===0);
     h+=_teamStrip('OPPONENTS',     teamScore[1], teamTricks[1], oCol, callingTeam===1);
     h+='</div>';
@@ -678,11 +864,11 @@ window._gameFns.bowergarden = function BG(a){
     return '<div style="flex:1;background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.5));border:1.5px solid '+color+';border-radius:8px;padding:6px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 2px 6px rgba(0,0,0,0.35);">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;">'
         +'<div>'
-          +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;">'+label+callerTag+'</div>'
+          +'<div class="bg-lbl" style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;color:'+color+';text-transform:uppercase;">'+label+callerTag+'</div>'
           +'<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#f5ebd0;line-height:1;margin-top:1px;text-shadow:0 2px 3px rgba(0,0,0,0.4);">'+score+'</div>'
         +'</div>'
         +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;opacity:'+(showFilled?'1':'0.45')+';">'
-          +'<div style="font-family:DM Mono,monospace;font-size:0.48rem;letter-spacing:0.1em;color:rgba(232,220,200,0.55);">tricks</div>'
+          +'<div class="bg-trk" style="font-family:DM Mono,monospace;font-size:0.48rem;letter-spacing:0.1em;color:rgba(232,220,200,0.55);">tricks</div>'
           +'<div style="white-space:nowrap;">'+tricksHtml+'</div>'
         +'</div>'
       +'</div>'
@@ -699,7 +885,7 @@ window._gameFns.bowergarden = function BG(a){
   }
   function _headerHtml(){
     // Persistent trump chip (center) + dealer name (left) + alone badge
-    var h='<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px 2px 10px;">';
+    var h='<div data-bg="head" style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px 2px 10px;">';
     // Dealer name
     h+='<div style="font-family:DM Mono,monospace;font-size:0.68rem;letter-spacing:0.12em;color:rgba(232,220,200,0.7);text-transform:uppercase;">Dealer<br/><span style="color:#f5ebd0;font-family:Georgia,serif;font-size:0.85rem;letter-spacing:0;text-transform:none;">'+PLAYER_NAMES[dealer]+'</span></div>';
     // Trump/prompt chip — same pill shape either way so the header height
@@ -709,13 +895,13 @@ window._gameFns.bowergarden = function BG(a){
       var pipCol= red ? '#e63946' : '#f5ebd0';
       var borderCol = callingTeam===0 ? '#7ab356' : '#dc8a8a';
       var callerName = callingTeam>=0 ? (callingTeam===0?'Your team':'Opponents') : '';
-      h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:2px solid '+borderCol+';border-radius:999px;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.65));box-shadow:0 0 14px '+borderCol+'55,inset 0 1px 0 rgba(255,255,255,0.1);">';
+      h+='<div class="bg-chip" style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:2px solid '+borderCol+';border-radius:999px;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.65));box-shadow:0 0 14px '+borderCol+'55,inset 0 1px 0 rgba(255,255,255,0.1);">';
       h+='<span style="font-size:1.6rem;line-height:1;color:'+pipCol+';text-shadow:0 2px 4px rgba(0,0,0,0.6);">'+_pip(trumpSuit)+'</span>';
       h+='<div style="font-family:Georgia,serif;line-height:1.1;">';
       h+='<div style="font-size:0.68rem;font-style:italic;color:rgba(232,220,200,0.75);letter-spacing:0.06em;">Strong</div>';
       h+='<div style="font-size:0.85rem;color:#f5ebd0;text-transform:capitalize;">'+trumpSuit+'</div>';
       h+='</div>';
-      if(callerName)h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:'+borderCol+';padding-left:8px;border-left:1px solid rgba(255,255,255,0.15);">'+callerName+' called</div>';
+      if(callerName)h+='<div class="bg-chip-by" style="font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:'+borderCol+';padding-left:8px;border-left:1px solid rgba(255,255,255,0.15);">'+callerName+' called</div>';
       h+='</div>';
     }else{
       // Placeholder pill with identical dimensions to the trump chip.
@@ -725,7 +911,7 @@ window._gameFns.bowergarden = function BG(a){
       var ucRed=(uc==='hearts'||uc==='diamonds');
       var ucCol=uc?(ucRed?'#e63946':'#f5ebd0'):'rgba(232,220,200,0.35)';
       var promptLine = phase==='dealing' ? (shuffling?'Shuffling…':'Dealing…') : phase==='call1' ? 'Order up?' : phase==='call2' ? 'Call a suit' : 'Awaiting call';
-      h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:2px dashed rgba(232,220,200,0.3);border-radius:999px;background:linear-gradient(180deg,rgba(0,0,0,0.3),rgba(0,0,0,0.45));">';
+      h+='<div class="bg-chip" style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:2px dashed rgba(232,220,200,0.3);border-radius:999px;background:linear-gradient(180deg,rgba(0,0,0,0.3),rgba(0,0,0,0.45));">';
       h+='<span style="font-size:1.6rem;line-height:1;color:'+ucCol+';opacity:'+(uc?'0.85':'0.4')+';">'+(uc?_pip(uc):'♠')+'</span>';
       h+='<div style="font-family:Georgia,serif;line-height:1.1;">';
       h+='<div style="font-size:0.52rem;font-style:italic;color:rgba(232,220,200,0.55);letter-spacing:0.06em;">Strong</div>';
@@ -778,7 +964,7 @@ window._gameFns.bowergarden = function BG(a){
     function dealCls(seat,idx,count){return (phase==='dealing'&&lastDealtSeat===seat&&idx>=count-lastDealtN)?'bg-deal-in':'';}
     // ── CONTROLS BAR — top right, unobtrusive ──
     var bgStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
-    h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
+    h+='<div data-bg="ctrl" style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
     h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
     h+='<img src="assets/decks/floral/suit-club.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
     h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
@@ -791,12 +977,12 @@ window._gameFns.bowergarden = function BG(a){
     // ── TRUMP CHIP + DEALER + CALLER — pinned top center throughout the hand ──
     h+=_headerHtml();
     // North (partner) hand - face down. Bumped to 38x52 (was 32x44).
-    h+='<div style="text-align:center;padding:6px;" class="'+activeClass(NORTH).replace(/^\s+/,'')+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+_bidTag(NORTH)+sittingOutBadge(NORTH)+'</div><div style="display:inline-flex;justify-content:center;">';
+    h+='<div data-bg="north" style="text-align:center;padding:6px;" class="'+activeClass(NORTH).replace(/^\s+/,'')+'"><div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:5px;">PARTNER'+dealerBadge(NORTH)+_bidTag(NORTH)+sittingOutBadge(NORTH)+'</div><div style="display:inline-flex;justify-content:center;">';
     var nCt=seatCount(NORTH);
     for(var n=0;n<nCt;n++)h+='<div class="'+dealCls(NORTH,n,nCt)+'" style="'+_cdBackCss(38,52,5)+'margin-left:'+(n===0?'0':'-22px')+';"></div>';
     h+='</div></div>';
     // Middle: West | Trick | East. Bumped min-height + side card sizes.
-    h+='<div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:236px;">';
+    h+='<div data-bg="mid" style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 4px;min-height:236px;">';
     // West — bumped to 32x46 (was 28x40)
     h+='<div class="'+activeClass(WEST).replace(/^\s+/,'')+'" style="padding:4px;width:64px;text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:#dc8a8a;text-align:center;letter-spacing:0.08em;margin-bottom:5px;line-height:1.5;">WEST'+dealerBadge(WEST)+'<br>'+_bidTag(WEST)+sittingOutBadge(WEST)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
     var wCt=seatCount(WEST);
@@ -805,7 +991,7 @@ window._gameFns.bowergarden = function BG(a){
     // Trick area — bumped min-height
     /* the trick well was a flat lighter rectangle with a hard edge; a radial that fades to nothing at
        the rim makes it an inlay in the felt instead of a box on it (fleet audit row 172) */
-    h+='<div style="position:relative;min-height:236px;background:radial-gradient(ellipse at 50% 50%,rgba(26,31,23,0.55) 0%,rgba(26,31,23,0.35) 55%,rgba(26,31,23,0) 78%);border-radius:50%/40%;">';
+    h+='<div class="bg-trick" style="position:relative;min-height:236px;background:radial-gradient(ellipse at 50% 50%,rgba(26,31,23,0.55) 0%,rgba(26,31,23,0.35) 55%,rgba(26,31,23,0) 78%);border-radius:50%/40%;">';
     if(phase==='dealing'){
       // The deck at table center: wiggles during the shuffle, counts
       // down as the batches go out.
@@ -839,7 +1025,7 @@ window._gameFns.bowergarden = function BG(a){
       // was unreadable, you could not tell who put what down.
       var seatNm = pl===SOUTH?'YOU':pl===NORTH?'PARTNER':pl===WEST?'WEST':'EAST';
       var tagCol = pl%2===0?'#7ab356':'#dc8a8a';
-      h+='<div class="bg-pcard'+animCls+winCls+'" style="position:absolute;'+pos[pl]+dim+'text-align:center;">';
+      h+='<div class="bg-pcard'+animCls+winCls+'" data-seat="'+pl+'" style="position:absolute;'+pos[pl]+dim+'text-align:center;">';
       h+='<div class="bg-face" style="background:#F5F0E1;color:'+col+';border:2.5px solid '+(pl%2===0?'#4A7C35':'#C47A7A')+';border-radius:8px;padding:6px 4px;font-weight:700;font-size:1rem;box-shadow:0 4px 12px rgba(0,0,0,0.45);">';
       h+='<div>'+c.rank+'</div><div style="font-size:1.5rem;text-align:center;">'+_pip(c.suit)+'</div></div>';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:'+tagCol+';margin-top:3px;text-shadow:0 1px 2px rgba(0,0,0,0.7);">'+seatNm+'</div>';
@@ -853,8 +1039,8 @@ window._gameFns.bowergarden = function BG(a){
     h+='</div></div>';
     h+='</div>';
     // South (player) hand
-    h+='<div class="'+activeClass(SOUTH).replace(/^\s+/,'')+'" style="padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#7ab356;text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND'+dealerBadge(SOUTH)+_bidTag(SOUTH)+sittingOutBadge(SOUTH)+'</div>';
-    h+='<div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">';
+    h+='<div data-bg="south" class="'+activeClass(SOUTH).replace(/^\s+/,'')+'" style="padding:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#7ab356;text-align:center;letter-spacing:0.1em;margin-bottom:6px;">YOUR HAND'+dealerBadge(SOUTH)+_bidTag(SOUTH)+sittingOutBadge(SOUTH)+'</div>';
+    h+='<div class="bg-hand" style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">';
     var ls=trick.length>0?effSuit(trick[0].card,trumpSuit):'';
     var pl2=phase==='play'&&currentPlayer===SOUTH?playable(hands[SOUTH],trumpSuit,ls):[];
     // Sort hand for display: when trump is set, group by effective
@@ -911,18 +1097,21 @@ window._gameFns.bowergarden = function BG(a){
       h+='<span style="font-size:1.2rem;">'+_pip(cc.suit)+'</span></div>';
     }
     h+='</div>';
+    h+='</div>';
+    // ── PROMPT SLOT — every prompt (discard, go alone, order up, call) appears
+    // here, in a row the locked table always reserves, so nothing above it moves.
+    h+='<div data-bg="prompt">';
     if(isDiscardPhase){
       h+='<div style="padding:8px 10px;margin-top:8px;text-align:center;background:rgba(200,168,75,0.12);border:1.5px solid rgba(200,168,75,0.4);border-radius:8px;">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:3px;">PICK UP AND DISCARD</div>';
-      h+='<div style="font-size:0.55rem;color:var(--muted);line-height:1.5;">You picked up <strong style="color:#ffdc70;">'+(pickedUp?pickedUp.rank+' '+_pip(pickedUp.suit):'')+'</strong>. Tap any card in your hand to discard it face-down.</div>';
+      h+='<div style="font-size:0.55rem;color:#e8dcc8;line-height:1.5;">You picked up <strong style="color:#ffdc70;">'+(pickedUp?pickedUp.rank+' '+_pip(pickedUp.suit):'')+'</strong>. Tap any card in your hand to discard it face-down.</div>';
       h+='</div>';
     }
-    h+='</div>';
     // Go-alone prompt — shown after player commits to a call
     if(phase==='goalone'){
       h+='<div style="padding:10px;text-align:center;background:rgba(26,31,23,0.6);border:1.5px solid rgba(200,168,75,0.3);border-radius:8px;margin:6px 0;">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:4px;">GO ALONE?</div>';
-      h+='<div style="font-size:0.55rem;color:var(--muted);margin-bottom:8px;line-height:1.5;">Play this hand without your partner. Sweep all 5 alone = <strong style="color:var(--gold);">+4 points</strong>.</div>';
+      h+='<div style="font-size:0.55rem;color:#e8dcc8;margin-bottom:8px;line-height:1.5;">Play this hand without your partner. Sweep all 5 alone = <strong style="color:var(--gold);">+4 points</strong>.</div>';
       h+='<div style="display:flex;gap:6px;justify-content:center;">';
       h+='<button class="gb" onclick="_BGalone(true)" style="min-height:48px;padding:8px 18px;background:rgba(200,168,75,0.2);border-color:rgba(200,168,75,0.5);color:var(--gold);">⚡ ALONE</button>';
       h+='<button class="gb" onclick="_BGalone(false)" style="min-height:48px;padding:8px 18px;">WITH PARTNER</button>';
@@ -949,6 +1138,7 @@ window._gameFns.bowergarden = function BG(a){
       if(currentPlayer!==dealer)h+='<button class="gb" onclick="_BGP2()" style="min-height:44px;padding:8px 16px;">PASS</button>';
       h+='</div></div>';
     }
+    h+='</div>';
     pan.innerHTML=h;
     // One-shot animation flags: clear AFTER paint so the next render (which
     // can fire for any reason — score change, turn advance, new card played)
