@@ -118,6 +118,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .toggle.on{background:var(--deep)}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
+@media (prefers-reduced-motion: reduce){ .toggle b{transition:none} .skincard{transition:none} }
 .sk-head{color:var(--muted); font-size:12px; letter-spacing:3px; text-transform:uppercase; width:100%; max-width:400px; margin:0 auto 10px}
 .skincard{display:flex; align-items:center; gap:12px; width:100%; min-height:72px; margin-bottom:12px; padding:12px 16px;
   border:1px solid var(--line); border-radius:14px; background:#0f150c; color:var(--cream); cursor:pointer; text-align:left;
@@ -197,6 +198,7 @@ h2.sc-h{font-size:30px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="height:12px"></div>
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Colour tint on tiles</span><div class="toggle on" id="tg-color"><b></b></div></div>
+    <div class="settingline"><span>Motion</span><div class="toggle on" id="tg-motion"><b></b></div></div>
     <div style="height:14px"></div>
     <div class="sk-head">Skins</div>
     <div id="skin-list" style="width:100%;max-width:400px;margin:0 auto"></div>
@@ -240,7 +242,7 @@ function $(id){ return document.getElementById(id); }
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; if(id==='s-title'&&typeof paintTitleStats==='function')paintTitleStats(); }
 function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
-var BUILD='v1.4';
+var BUILD='v1.5';
 
 /* Local calendar day stamp (YYYYMMDD). The daily used to key off Math.floor(Date.now()/864e5),
    which is a UTC day index, so the bed flipped over mid-evening for anyone west of Greenwich.
@@ -282,8 +284,16 @@ var SKIN=(function(){ var s=LS.get(K.skin); return (s==='classic')?'classic':'en
 function setSkin(k){ SKIN=(k==='classic')?'classic':'enamel'; LS.set(K.skin,SKIN); applySkin(); return true; }
 
 /* ============================ audio ================================= */
-var AC=null, SET={ sound:true, color:true };
-(function loadSet(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; if(typeof s.color==='boolean') SET.color=s.color; }catch(e){} })();
+var AC=null, SET={ sound:true, color:true, motion:true };
+(function loadSet(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; if(typeof s.color==='boolean') SET.color=s.color; if(typeof s.motion==='boolean') SET.motion=s.motion; }catch(e){} })();
+/* Reduced motion (2026-11-18): the phone's own setting, read once and on change, AND the Motion
+   toggle in Settings. Either one off means every setup animation is skipped: the bed is dealt
+   flat, already playable, on the first frame. */
+var RM=false;
+(function(){ try{ var mq=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)'); if(!mq) return;
+  RM=!!mq.matches; var on=function(){ RM=!!mq.matches; if(!motionOn()&&typeof introEnd==='function') introEnd(); };
+  if(mq.addEventListener) mq.addEventListener('change',on); else if(mq.addListener) mq.addListener(on); }catch(e){} })();
+function motionOn(){ return SET.motion&&!RM; }
 function saveSet(){ LS.set(K.set, JSON.stringify(SET)); }
 function actx(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } } if(AC&&AC.state==='suspended') AC.resume(); return AC; }
 function beep(freq,dur,type,vol,slideTo){
@@ -419,7 +429,24 @@ function cellRect(cellIdx){ var n=P.n; var r=Math.floor(cellIdx/n), c=cellIdx%n;
 function traySlotRect(i){ var cols=LAY.trayCols, tc=LAY.trayCell; var r=Math.floor(i/cols), c=i%cols; return { x:LAY.trayX+c*tc, y:LAY.trayY+r*tc, s:tc }; }
 
 /* ============================ tile drawing ================================= */
-function drawTile(g, x, y, s, tile, alpha, seamState){
+/* #2 fold-open (2026-11-18): fold<1 draws the tile folded on its top-left to bottom-right diagonal.
+   The bottom+left half lies flat; the top+right half is squashed toward the crease (fold=0: a folded
+   triangle, fold=1: flat) and shaded while it lifts, with a light line on the crease. fold==null is the
+   ordinary flat draw, so every caller outside the intro is untouched. */
+function drawTile(g, x, y, s, tile, alpha, seamState, fold){
+  if(fold==null||fold>=1){ drawTileFlat(g, x, y, s, tile, alpha, seamState); return; }
+  var cx=x+s/2, cy=y+s/2, f=Math.max(0.001,fold);
+  g.save(); g.beginPath(); g.moveTo(x,y); g.lineTo(x+s,y+s); g.lineTo(x,y+s); g.closePath(); g.clip();
+  drawTileFlat(g, x, y, s, tile, alpha, null); g.restore();
+  g.save(); g.translate(cx,cy); g.rotate(Math.PI/4); g.scale(1,f); g.rotate(-Math.PI/4); g.translate(-cx,-cy);
+  g.beginPath(); g.moveTo(x,y); g.lineTo(x+s,y); g.lineTo(x+s,y+s); g.closePath(); g.clip();
+  drawTileFlat(g, x, y, s, tile, alpha, null);
+  g.fillStyle='rgba(52,36,18,'+(0.42*(1-f)).toFixed(3)+')'; g.fillRect(x,y,s,s);
+  g.restore();
+  g.save(); g.strokeStyle='rgba(255,246,226,'+(0.55*(1-f)).toFixed(3)+')'; g.lineWidth=Math.max(1,s*0.016);
+  g.beginPath(); g.moveTo(x+1,y+1); g.lineTo(x+s-1,y+s-1); g.stroke(); g.restore();
+}
+function drawTileFlat(g, x, y, s, tile, alpha, seamState){
   // seamState optional: {top,right,bottom,left} each 'match'|'bad'|null
   g.save();
   g.globalAlpha=alpha==null?1:alpha;
@@ -542,7 +569,7 @@ function render(){
   ctx.textAlign='right';
   // #e8dcc8 cream was invisible on the cream paper background (QA 7/27)
   ctx.fillStyle='#5c6350'; ctx.font='800 22px system-ui';
-  ctx.fillText(P.solved?fmtTime(P.t):fmtTime(Date.now()-P.startT), VW-18, 34);
+  ctx.fillText(P.solved?fmtTime(P.t):(P.intro?fmtTime(0):fmtTime(Date.now()-P.startT)), VW-18, 34);
   ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui';
   ctx.fillText('nudges '+P.hints, VW-18, 58);
 
@@ -562,6 +589,8 @@ function render(){
   // subtle bed frame
   ctx.strokeStyle='rgba(120,90,52,0.55)'; ctx.lineWidth=3;
   ctx.strokeRect(LAY.gx-4, LAY.gy-4, LAY.cell*n+8, LAY.cell*n+8);
+  if(P.mode.daily){ drawSeal(introAge()); drawStreakRibbon(introAge()); }
+  if(P.intro) drawCrease(introAge());
 
   // ---- placed board tiles ----
   for(i=0;i<n*n;i++){ if(P.board[i]){ var Rr=cellRect(i); drawTile(ctx, Rr.x, Rr.y, Rr.s, P.board[i], 1, seamFor(i)); } }
@@ -569,7 +598,8 @@ function render(){
   // ---- tray label + tiles ----
   ctx.textAlign='left'; ctx.fillStyle='#8a9178'; ctx.font='700 12px system-ui'; ctx.textBaseline='alphabetic';
   ctx.fillText('TRAY', LAY.trayX, LAY.trayY-6);
-  for(i=0;i<P.tray.length;i++){ if(!P.tray[i]) continue; var Ts=traySlotRect(i); drawTile(ctx, Ts.x+2, Ts.y+2, Ts.s-4, P.tray[i], 1, null); }
+  if(P.intro) drawDeal(introAge());
+  else for(i=0;i<P.tray.length;i++){ if(!P.tray[i]) continue; var Ts=traySlotRect(i); drawTile(ctx, Ts.x+2, Ts.y+2, Ts.s-4, P.tray[i], 1, null); }
 
   // ---- dragged tile ----
   if(drag){ var s=LAY.cell; drawTile(ctx, drag.x-s/2, drag.y-s/2, s, drag.tile, 0.94, null); }
@@ -591,12 +621,99 @@ function render(){
   ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
 }
 
+/* ============================ setup intro (2026-11-18) ================================= */
+/* A short quiet opening on every bed, drawn by render() inside the one rAF loop below; no DOM,
+   no new timers. It only moves pixels: the puzzle, the tray order, the solution and the saves are
+   untouched. The bed is not playable until it ends, so the clock (P.startT) is restarted at the
+   moment it ends, which is exactly when the old instant deal made the bed playable. Any pointerdown
+   anywhere ends it first (capture phase), so a tap is never lost and a fast player loses nothing.
+   Motion off (Settings) or the phone's reduced motion: no intro at all, the first frame is final. */
+var INTRO_DEAL0=100, INTRO_SLIDE=320, INTRO_FOLD=350;
+function perfNow(){ return (window.performance&&performance.now)?performance.now():Date.now(); }
+function introStagger(N){ return N>1?Math.min(40, 650/(N-1)):0; }   /* 40 ms apart, squeezed on big beds so 6x6 still ends by 1.1 s */
+function introBegin(){
+  if(!P||!motionOn()) return;
+  var N=P.tray.length;
+  P.intro={ t0:perfNow(), end:Math.max(INTRO_CREASE, P.mode.daily?800:0, INTRO_DEAL0+introStagger(N)*(N-1)+Math.max(INTRO_SLIDE,INTRO_FOLD)) };
+  startAnim();
+}
+function introEnd(){ if(!P||!P.intro) return; P.intro=null; P.startT=Date.now(); if(ctx) render(); }
+var _introFreeze=null;   /* test hook only (?pvxtest=1): hold the intro at one age for a frame grab */
+function introAge(){ return (P&&P.intro)?(_introFreeze!=null?_introFreeze:perfNow()-P.intro.t0):1e9; }
+/* #3 crease light: one soft band of lamp light sweeps the empty bed from its top-left corner to its
+   bottom-right, along the light that casts the plate's shadow. One gradient fill per frame. */
+var INTRO_CREASE=700;
+function drawCrease(age){
+  if(age>=INTRO_CREASE) return;
+  var W=LAY.cell*P.n, u=age/INTRO_CREASE, e=u*u*(3-2*u), c=-0.35+1.7*e, a=Math.sin(Math.PI*u);
+  var x0=LAY.gx, y0=LAY.gy, g=ctx.createLinearGradient(x0+(c-0.22)*W, y0+(c-0.22)*W, x0+(c+0.22)*W, y0+(c+0.22)*W);
+  g.addColorStop(0,'rgba(255,248,230,0)'); g.addColorStop(0.5,'rgba(255,248,230,'+(0.20*a).toFixed(3)+')'); g.addColorStop(1,'rgba(255,248,230,0)');
+  ctx.fillStyle=g; ctx.fillRect(x0, y0, W, W);
+}
+/* #7 daily seal: on a daily bed today's date is blind-embossed into the bed's bottom-right slot (under
+   the tiles, part of the sheet), fading in over 0.6 s on deal. Static with motion off. */
+var MON3=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function drawSeal(age){
+  var d=P.day; if(!d) return;
+  var a=P.intro?clamp((age-150)/600,0,1):1; if(a<=0) return;
+  var R=cellRect(P.n*P.n-1), cx=R.x+R.s/2, cy=R.y+R.s/2, r=R.s*0.33, txt=(d%100)+' '+MON3[(Math.floor(d/100)%100)-1];
+  ctx.save(); ctx.globalAlpha=a; ctx.lineWidth=Math.max(1.5,R.s*0.018);
+  ctx.font='800 '+Math.max(9,Math.round(R.s*0.095))+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='rgba(14,18,10,0.22)'; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();   /* the pressed disc, so it reads over any theme's art */
+  /* pressed in: the lamp catches the lower-right lip, the upper-left lip falls in shadow */
+  var pass=[[-1,-1,'rgba(10,8,4,0.34)'],[1,1,'rgba(255,246,226,0.26)'],[0,0,'rgba(40,46,34,0.30)']];
+  for(var k=0;k<3;k++){ var o=pass[k]; ctx.strokeStyle=o[2]; ctx.fillStyle=o[2];
+    ctx.beginPath(); ctx.arc(cx+o[0],cy+o[1],r,0,6.2832); ctx.stroke(); ctx.fillText(txt,cx+o[0],cy+o[1]); }
+  ctx.restore();
+}
+/* #8 streak notch: on a daily bed a paper ribbon on the bed's top edge carries one folded notch per day of
+   streak (up to 14 shown), and the newest notch folds in on deal in 0.5 s. No streak, no ribbon. */
+function drawStreakRibbon(age){
+  var k=Math.min(14, streakNow()); if(k<=0) return;
+  var step=18, w=k*step+18, x0=Math.round(VW/2-w/2), y0=LAY.gy-23, h=13, i;
+  ctx.save();
+  ctx.fillStyle='rgba(20,14,6,0.25)'; ctx.fillRect(x0+2,y0+3,w,h);                     /* its shadow on the plate */
+  ctx.fillStyle='#e6d3ad'; ctx.beginPath(); ctx.moveTo(x0-7,y0); ctx.lineTo(x0+w+7,y0); ctx.lineTo(x0+w+2,y0+h/2); ctx.lineTo(x0+w+7,y0+h); ctx.lineTo(x0-7,y0+h); ctx.lineTo(x0-2,y0+h/2); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(120,90,52,0.55)'; ctx.lineWidth=1; ctx.stroke();
+  for(i=0;i<k;i++){ var f=(i===k-1&&P.intro)?easeOut3((age-300)/500):1; if(f<=0) continue;
+    var nx=x0+9+i*step+step/2, half=5;
+    ctx.fillStyle='rgba(150,112,62,0.85)'; ctx.beginPath(); ctx.moveTo(nx-half,y0+2); ctx.lineTo(nx+half,y0+2); ctx.lineTo(nx,y0+2+(h-4)*f); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='rgba(255,246,226,'+(0.6*f).toFixed(3)+')'; ctx.beginPath(); ctx.moveTo(nx-half,y0+2); ctx.lineTo(nx,y0+2+(h-4)*f); ctx.stroke(); }
+  ctx.restore();
+}
+/* the outline a tile shows at a given fold: the flat bottom+left half plus the lifting corner */
+function foldPath(x,y,s,f){ var h=s/2*f; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+s/2+h,y+s/2-h); ctx.lineTo(x+s,y+s); ctx.lineTo(x,y+s); ctx.closePath(); }
+function easeOut3(u){ u=clamp(u,0,1); return 1-(1-u)*(1-u)*(1-u); }
+/* #1 deal from the stack: every tray tile starts in one neat pile at the tray's centre and slides
+   to its own slot, in slot order, 40 ms apart. The pile shows only its top few sheets. */
+function drawDeal(age){
+  var N=P.tray.length, stg=introStagger(N), cols=LAY.trayCols, tc=LAY.trayCell, ts=tc-4;
+  var rows=Math.ceil(N/cols);
+  var px=LAY.trayX+cols*tc/2-ts/2, py=LAY.trayY+rows*tc/2-ts/2;
+  var i, first=N, shown=0;
+  for(i=0;i<N;i++){ if(age<INTRO_DEAL0+i*stg){ first=i; break; } }
+  /* the pile: undealt tiles, deepest drawn first, each sheet 1.5 px under the one above */
+  var top=Math.min(N-1, first+3);
+  /* one soft shadow under the pile so it reads as a stack of sheets on the desk, not a flat tile */
+  if(first<N){ ctx.fillStyle='rgba(20,14,6,0.28)'; foldPath(px+3+(top-first)*1.2, py+5+(top-first)*1.5, ts, 0); ctx.fill(); }
+  for(i=top;i>=first;i--){ if(!P.tray[i]) continue; var d=i-first;
+    drawTile(ctx, px+d*1.2, py+d*1.5, ts, P.tray[i], 1, null, 0); }
+  /* the dealt tiles, in flight or home */
+  for(i=0;i<first;i++){ if(!P.tray[i]) continue;
+    var R=traySlotRect(i), a=age-INTRO_DEAL0-i*stg, u=easeOut3(a/INTRO_SLIDE);
+    /* a sheet in the air casts a small shadow that closes up as it lands, so it reads above the tiles already home */
+    var fo=easeOut3(a/INTRO_FOLD);
+    if(u<1){ var lx=px+(R.x+2-px)*u, ly=py+(R.y+2-py)*u, so=2+5*(1-u); ctx.fillStyle='rgba(20,14,6,'+(0.24*(1-u)+0.06).toFixed(3)+')'; foldPath(lx+so*0.6, ly+so, ts, fo); ctx.fill(); }
+    drawTile(ctx, px+(R.x+2-px)*u, py+(R.y+2-py)*u, ts, P.tray[i], 1, null, fo); }
+}
+
 /* ============================ animation loop (runs only when needed) ================================= */
-function needAnim(){ return parts.length>0; }
+function needAnim(){ return parts.length>0||!!(P&&P.intro); }
 function startAnim(){ if(!animating){ animating=true; lastTs=0; animId=requestAnimationFrame(tick); } }
 var lastTs=0;
 function tick(ts){
   var dt=lastTs?Math.min(0.05,(ts-lastTs)/1000):0.016; lastTs=ts;
+  if(P&&P.intro&&introAge()>=P.intro.end){ P.intro=null; P.startT=Date.now(); }   /* introEnd() without its extra render */
   for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=520*dt; p.ang=(p.ang||0)+(p.spin||0)*dt; p.life-=dt*0.9; if(p.life<=0) parts.splice(i,1); }
   render();
   if(needAnim()) animId=requestAnimationFrame(tick); else animating=false;
@@ -793,6 +910,7 @@ function startMode(key){
   P.themeIdx = mode.daily ? (((seed%8)+8)%8) : (_pvThemeN++ % 8);
   parts=[]; drag=null;
   show(null); // canvas gameplay (no DOM screen)
+  introBegin();
   computeLayout(); render();
   startClock();
 }
@@ -883,7 +1001,7 @@ function updateCtrlVisibility(){ var bar=$('ctrlbar'); if(bar) bar.style.display
 
 /* wrap show() to toggle control bar */
 var _show=show;
-show=function(id){ _show(id); updateCtrlVisibility(); };
+show=function(id){ if(id!==null) introEnd(); _show(id); updateCtrlVisibility(); };
 
 /* ============================ skin UI ================================= */
 /* apply the selected skin to the DOM surfaces (menu bg, logo, win hero); the canvas reads SKIN live */
@@ -949,6 +1067,7 @@ function boot(){
   buildSkinRow();
   window.addEventListener('resize',fit);
   window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+  window.addEventListener('pointerdown',function(){ if(P&&P.intro) introEnd(); },true);   /* any tap ends the setup intro first: input is never blocked */
   cv.addEventListener('pointerdown',onDown,{passive:false});
   window.addEventListener('pointermove',onMove,{passive:false});   // on window (like pointerup) so dragging off the canvas doesn't freeze the tile
   window.addEventListener('pointerup',onUp,{passive:false});
@@ -965,7 +1084,7 @@ function boot(){
   if(window.SWS_IN_TWA){ var _ex=$('b-exit'); if(_ex)_ex.style.display='none'; var _in=$('b-install'); if(_in)_in.style.display='none'; var _pv=$('set-privacy'); if(_pv)_pv.style.display=''; }   /* the Play app */
   // ---- add to home screen (button stays useful even if beforeinstallprompt never fires) ----
   (function(){ var b=$('b-install'); if(!b)return;
-    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=6').catch(function(){}); }catch(e){} }
+    if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=7').catch(function(){}); }catch(e){} }
     function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
     if(standalone()){ b.style.display='none'; return; }
     var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
@@ -989,6 +1108,7 @@ function boot(){
   tap('win-modes', function(){ toModes(); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; if(v) sfx('ui'); });
   wireToggle('tg-color', function(){ return SET.color; }, function(v){ SET.color=v; });
+  wireToggle('tg-motion', function(){ return SET.motion; }, function(v){ SET.motion=v; });
 
   $('buildstamp').textContent='OriVex '+BUILD;
   // first-run: bounce to how-to once
@@ -1019,6 +1139,8 @@ window._sbCapEarn=function(n,tag){
 if(/[?&]pvxtest=1/.test(location.search)){
   window.PVX_DEV={
     start:startMode, state:function(){ return P; }, modes:MODES,
+    freezeIntro:function(ms){ _introFreeze=ms; if(ms==null&&P&&P.intro) P.intro.t0=perfNow()-P.intro.end; render(); },
+    playable:function(){ return !!P&&!P.intro&&!P.solved; }, introLeft:function(){ return P&&P.intro?Math.max(0,P.intro.end-introAge()):0; },
     render:render, nudge:nudge, checkWin:checkWin,
     lay:function(){ return LAY; }, traySlot:traySlotRect, tidy:tidyTray,
     solveNow:function(){ // arrange tiles to their solution cells
