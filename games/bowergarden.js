@@ -310,6 +310,8 @@ window._gameFns.bowergarden = function BG(a){
   // mc(a) still runs so downstream code finds the controls container, but
   // we leave it empty — NEW + Style now live inside the pan.
   mc(a);
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'bowergarden',pan:pan,cloth:'forest',redraw:function(){try{render();}catch(e){}}});
   window._BGToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){
       if(window._toast)window._toast('Card styles loading, try again in a sec.');
@@ -1003,8 +1005,9 @@ window._gameFns.bowergarden = function BG(a){
       h+='<div class="'+(justDealt?'bg-flip-up':'')+'" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">';
       h+='<div style="position:relative;">';
       h+='<div style="position:absolute;top:4px;left:4px;right:-4px;bottom:-4px;border-radius:6px;background:linear-gradient(135deg,#3f6b2d,#2f4f20);border:1.5px solid #2d4a1e;"></div>';
-      h+='<div style="position:relative;background:#F5F0E1;color:'+ucol+';border:2px solid #C4B998;border-radius:6px;padding:6px 10px;font-weight:700;">';
-      h+='<div style="font-size:0.95rem;">'+upcard.rank+'</div><div style="font-size:1.4rem;text-align:center;">'+_pip(upcard.suit)+'</div></div>';
+      var ULC=window._cdLampCls?window._cdLampCls(upcard.suit):'';
+      h+='<div'+(ULC?' class="'+ULC.slice(1)+'"':'')+' style="position:relative;background:#F5F0E1;color:'+ucol+';border:2px solid #C4B998;border-radius:6px;padding:6px 10px;font-weight:700;">';
+      h+='<div style="font-size:0.95rem;">'+(ULC?window._cdLampRk(upcard.rank):upcard.rank)+'</div><div style="font-size:1.4rem;text-align:center;">'+(ULC?window._cdLampPip(upcard.suit,_pip(upcard.suit)):_pip(upcard.suit))+'</div></div>';
       h+='</div></div>';
     } else if(upcard&&phase==='call2'){
       h+='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.55;">';
@@ -1026,8 +1029,9 @@ window._gameFns.bowergarden = function BG(a){
       var seatNm = pl===SOUTH?'YOU':pl===NORTH?'PARTNER':pl===WEST?'WEST':'EAST';
       var tagCol = pl%2===0?'#7ab356':'#dc8a8a';
       h+='<div class="bg-pcard'+animCls+winCls+'" data-seat="'+pl+'" style="position:absolute;'+pos[pl]+dim+'text-align:center;">';
-      h+='<div class="bg-face" style="background:#F5F0E1;color:'+col+';border:2.5px solid '+(pl%2===0?'#4A7C35':'#C47A7A')+';border-radius:8px;padding:6px 4px;font-weight:700;font-size:1rem;box-shadow:0 4px 12px rgba(0,0,0,0.45);">';
-      h+='<div>'+c.rank+'</div><div style="font-size:1.5rem;text-align:center;">'+_pip(c.suit)+'</div></div>';
+      var TLC=window._cdLampCls?window._cdLampCls(c.suit):'';
+      h+='<div class="bg-face'+TLC+'" style="background:#F5F0E1;color:'+col+';border:2.5px solid '+(pl%2===0?'#4A7C35':'#C47A7A')+';border-radius:8px;padding:6px 4px;font-weight:700;font-size:1rem;box-shadow:0 4px 12px rgba(0,0,0,0.45);">';
+      h+='<div>'+(TLC?window._cdLampRk(c.rank):c.rank)+'</div><div style="font-size:1.5rem;text-align:center;">'+(TLC?window._cdLampPip(c.suit,_pip(c.suit)):_pip(c.suit))+'</div></div>';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:'+tagCol+';margin-top:3px;text-shadow:0 1px 2px rgba(0,0,0,0.7);">'+seatNm+'</div>';
       h+='</div>';
     }
@@ -1090,11 +1094,13 @@ window._gameFns.bowergarden = function BG(a){
       var oc='';
       if(canDiscard)oc=' onclick="_BGDC(\''+cc.rank+'\',\''+cc.suit+'\')"';
       else if(canPlay)oc=' onclick="_BGCC(\''+cc.rank+'\',\''+cc.suit+'\')"';
-      h+='<div class="'+(justDealt?'bg-deal-in':'')+'" style="'+sty+'"'+oc+'><span style="font-size:0.78rem;position:absolute;top:2px;left:5px;">'+cc.rank+'</span>';
+      var HLC=window._cdLampCls?window._cdLampCls(cc.suit):'';
+      if(HLC&&isPickedUp)HLC+=' cd-sel'; else if(HLC&&(canPlay||canDiscard))HLC+=' cd-legal';
+      h+='<div class="'+(justDealt?'bg-deal-in':'')+HLC+'" style="'+sty+'"'+oc+'><span style="font-size:0.78rem;position:absolute;top:2px;left:5px;">'+(HLC?window._cdLampRk(cc.rank):cc.rank)+'</span>';
       if(isPickedUp)h+='<span style="font-size:0.42rem;color:#3a2a08;background:#ffdc70;position:absolute;top:-8px;right:-6px;padding:1px 4px;border-radius:3px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;box-shadow:0 1px 3px rgba(0,0,0,0.5);">NEW</span>';
       if(isLeftBower)h+='<span style="font-size:0.42rem;color:#c8a84b;position:absolute;top:2px;right:4px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;">L</span>';
       if(isRightBower)h+='<span style="font-size:0.42rem;color:#c8a84b;position:absolute;top:2px;right:4px;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;">R</span>';
-      h+='<span style="font-size:1.2rem;">'+_pip(cc.suit)+'</span></div>';
+      h+='<span style="font-size:1.2rem;">'+(HLC?window._cdLampPip(cc.suit,_pip(cc.suit)):_pip(cc.suit))+'</span></div>';
     }
     h+='</div>';
     h+='</div>';

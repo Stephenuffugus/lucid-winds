@@ -77,6 +77,8 @@ function GSP(a){
     return _cdSh(d);
   }
   window._cdActiveRn=function(){try{rn()}catch(e){}};
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'spider',cloth:'slate'});
   function init(){
     // ⛔ CANCEL FIRST. New Game mid-deal would otherwise leave the previous
     // deal's timers advancing `dealt` into a table that has been rebuilt under

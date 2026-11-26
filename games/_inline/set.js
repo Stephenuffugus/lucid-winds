@@ -100,6 +100,10 @@
     '.ts-table.morning{background-image:url("' + art2('table/table_morning.webp') + '")}',
     '.ts-table.rain{background-image:url("' + art2('table/table_rain.webp') + '")}',
     '.ts-table:before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(10,18,14,.58),rgba(10,18,14,.58));pointer-events:none}',
+    // the shared walnut table (games/_table.js): her painted cards stay, her painted room steps aside, and the cards take the one lamp's shadows
+    'html.cd-lamp .ts-table.lt-pan:before{display:none}html.cd-lamp .ts-mat{display:none}',
+    // (a drop shadow, so it follows her painted card edge and not the button's box)
+    'html.cd-lamp .ts-card{box-shadow:none;filter:drop-shadow(var(--shx,2px) var(--shy,4px) calc(var(--shb,7px) * .5) rgba(0,0,0,.5))}html.cd-lamp .ts-card.found{filter:brightness(1.12) drop-shadow(var(--shx,2px) var(--shy,4px) calc(var(--shb,7px) * .5) rgba(0,0,0,.5))}',
     '.ts-table>*{position:relative}',
     '.ts-modes{display:flex;justify-content:center;gap:8px;margin:4px auto 8px}',
     '.ts-pill{min-height:48px;min-width:120px;padding:10px 18px;border:none;border-radius:24px;background:#f3e6c9 url("' + art('ui/button_pill.webp') + '") center/100% 100% no-repeat;color:#16271e;font-family:Georgia,serif;font-weight:700;font-size:.78rem;letter-spacing:.05em;cursor:pointer}',
@@ -209,6 +213,10 @@
       '<div class="ts-line" id="ts-line" role="status" aria-live="polite"></div>';
     container.appendChild(table);
     var grid = table.querySelector('#ts-board'), line = table.querySelector('#ts-line');
+    // THE WALNUT TABLE, shared by every card game (games/_table.js): a fifth choice in her Table row. Her cards keep
+    // their painted faces; only the table and the light change. Remembered per device with the other card games.
+    var LT = window.LW_TABLE || null;
+    if (LT) LT.register({ id: 'set', cloth: 'umber', pan: table, cards: '.ts-card', redraw: function(){ try{ applySettings(); }catch(e){} } });
     var controls = mc(container);
 
     // the settings sheet and the results sheet
@@ -243,9 +251,9 @@
     function applySettings(){
       grid.className = 'ts-board' + (SET.larger ? ' large' : '') + (SET.plain ? ' plain' : '');
       container.classList.toggle('ts-nomotion', motionOff());
-      table.className = 'ts-table ' + tableScene();
+      table.className = 'ts-table ' + tableScene() + ((LT && LT.isOn()) ? ' lt-pan' : '');   // her room steps aside for the walnut table
       var inks = { painted: 'Painted', botanical: 'Flat ink', clear: 'Alternate', mono: 'Monochrome' }, tb = { auto: 'Follows the clock', lamp: 'Evening lamp', morning: 'Morning window', rain: 'Rain on the glass' }, mo = { auto: 'Follows the phone', off: 'Reduced', on: 'Full' };
-      sheet.querySelector('#ts-inks').textContent = inks[SET.inks]; sheet.querySelector('#ts-table').textContent = tb[SET.table]; sheet.querySelector('#ts-motion').textContent = mo[SET.motion];
+      sheet.querySelector('#ts-inks').textContent = inks[SET.inks]; sheet.querySelector('#ts-table').textContent = (LT && LT.isOn()) ? 'Walnut table' : tb[SET.table]; sheet.querySelector('#ts-motion').textContent = mo[SET.motion];
       var tg = function(id, on, label){ var b = sheet.querySelector(id); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.textContent = label || (on ? 'On' : 'Off'); };
       tg('#ts-plain', SET.plain); tg('#ts-larger', SET.larger); tg('#ts-labels', SET.labels); tg('#ts-sound', SET.sound);
     }
@@ -373,7 +381,11 @@
     table.querySelector('#ts-mode-daily').onclick = function(){ window._setDaily(); };
     sheet.querySelector('#ts-close').onclick = function(){ sheet.classList.remove('open'); };
     sheet.querySelector('#ts-inks').onclick = function(){ SET.inks = SET.inks === 'painted' ? 'botanical' : SET.inks === 'botanical' ? 'clear' : SET.inks === 'clear' ? 'mono' : 'painted'; saveSettings(); applySettings(); renderBoard(); };
-    sheet.querySelector('#ts-table').onclick = function(){ SET.table = SET.table === 'auto' ? 'lamp' : SET.table === 'lamp' ? 'morning' : SET.table === 'morning' ? 'rain' : 'auto'; saveSettings(); applySettings(); };
+    sheet.querySelector('#ts-table').onclick = function(){
+      // her four scenes, then the walnut table every card game shares, then round again
+      if (LT && LT.isOn()) { SET.table = 'auto'; saveSettings(); LT.set('plain'); applySettings(); return; }
+      if (LT && SET.table === 'rain') { LT.set('lamp'); applySettings(); return; }
+      SET.table = SET.table === 'auto' ? 'lamp' : SET.table === 'lamp' ? 'morning' : SET.table === 'morning' ? 'rain' : 'auto'; saveSettings(); applySettings(); };
     sheet.querySelector('#ts-plain').onclick = function(){ SET.plain = !SET.plain; saveSettings(); applySettings(); renderBoard(); };   // the seals change with the surface
     sheet.querySelector('#ts-larger').onclick = function(){ SET.larger = !SET.larger; saveSettings(); applySettings(); };
     sheet.querySelector('#ts-labels').onclick = function(){ SET.labels = !SET.labels; saveSettings(); applySettings(); renderBoard(); };

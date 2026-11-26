@@ -113,6 +113,8 @@ window._gameFns.bleedinghearts = function BH(a){
   // we leave it empty — NEW + Style now live inside the pan so the bottom
   // controls row never overlaps the player's hand.
   mc(a);
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'bleedinghearts',pan:pan,cloth:'rose',redraw:function(){try{render();}catch(e){}}});
   window._BHToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -395,7 +397,9 @@ window._gameFns.bleedinghearts = function BH(a){
     if(faceDown){return '<div style="'+_cdBackCss(28,40,4)+'display:inline-block;"></div>';}
     var col=c.suit==='hearts'||c.suit==='diamonds'?'#c47a7a':'#1a1f17';
     var bc=extraClass==='sel'?'var(--gold)':extraClass==='play'?'#7AB956':'#C4B998';
-    return '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:48px;aspect-ratio:29/40;height:auto;border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;'+(extraClass==='play'?'cursor:pointer;':'')+(extraClass==='sel'?'transform:translateY(-6px);box-shadow:0 4px 12px rgba(200,168,75,0.4);cursor:pointer;':'')+'"><div style="font-size:0.75rem;position:absolute;top:2px;left:4px;">'+c.rank+'</div><div style="font-size:1.2rem;">'+_pip(c.suit)+'</div></div>';
+    var LC=window._cdLampCls?window._cdLampCls(c.suit):'';
+    if(LC&&extraClass==='sel')LC+=' cd-sel';
+    return '<div'+(LC?' class="'+LC.slice(1)+'"':'')+' style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:48px;aspect-ratio:29/40;height:auto;border-radius:6px;background:#F5F0E1;border:2px solid '+bc+';color:'+col+';font-weight:700;position:relative;'+(extraClass==='play'?'cursor:pointer;':'')+(extraClass==='sel'?'transform:translateY(-6px);box-shadow:0 4px 12px rgba(200,168,75,0.4);cursor:pointer;':'')+'"><div style="font-size:0.75rem;position:absolute;top:2px;left:4px;">'+(LC?window._cdLampRk(c.rank):c.rank)+'</div><div style="font-size:1.2rem;">'+(LC?window._cdLampPip(c.suit,_pip(c.suit)):_pip(c.suit))+'</div></div>';
   }
 
   function render(){
@@ -482,8 +486,8 @@ window._gameFns.bleedinghearts = function BH(a){
         var card=passSelection[ps];
         if(card){
           var cCol=card.suit==='hearts'||card.suit==='diamonds'?'#b42a2a':'#1a1a1a';
-          passH+='<div style="width:36px;height:52px;border-radius:5px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid #ffdc70;color:'+cCol+';font-family:Georgia,serif;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(255,220,112,0.4);font-size:0.7rem;">';
-          passH+=card.rank+'<span style="font-size:0.9rem;">'+_pip(card.suit)+'</span></div>';
+          passH+='<div'+window._cdLampAttr(card.suit,'cd-sel')+' style="width:36px;height:52px;border-radius:5px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid #ffdc70;color:'+cCol+';font-family:Georgia,serif;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(255,220,112,0.4);font-size:0.7rem;">';
+          passH+=window._cdLampRk(card.rank)+'<span style="font-size:0.9rem;">'+window._cdLampPip(card.suit,_pip(card.suit))+'</span></div>';
         }else{
           passH+='<div style="width:36px;height:52px;border-radius:5px;border:2px dashed rgba(232,220,200,0.35);background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.35);">·</div>';
         }
@@ -520,8 +524,8 @@ window._gameFns.bleedinghearts = function BH(a){
       if(isWin)extraCls+=' bh-win-glow';
       var dim=(lastWinnerSeat>=0 && pl!==lastWinnerSeat)?'filter:saturate(.55) brightness(.75);':'';
       var seatColor = PLAYER_COLORS[pl];
-      h+='<div class="'+extraCls+'" style="position:absolute;'+pos[pl]+dim+'background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+col+';border:2px solid '+seatColor+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:40px;text-align:center;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55);">';
-      h+='<div style="font-size:0.9rem;">'+c.rank+'</div><div style="font-size:1.2rem;line-height:1;">'+_pip(c.suit)+'</div></div>';
+      h+='<div class="'+extraCls+(window._cdLampCls?window._cdLampCls(c.suit):'')+'" style="position:absolute;'+pos[pl]+dim+'background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+col+';border:2px solid '+seatColor+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:40px;text-align:center;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55);">';
+      h+='<div style="font-size:0.9rem;">'+window._cdLampRk(c.rank)+'</div><div style="font-size:1.2rem;line-height:1;">'+window._cdLampPip(c.suit,_pip(c.suit))+'</div></div>';
     }
     h+='</div>';
     h+='<div class="'+_seatCls(E)+'" style="padding:4px;border-radius:10px;"><div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+PLAYER_COLORS[E]+';text-align:center;letter-spacing:0.14em;margin-bottom:5px;text-transform:uppercase;font-weight:700;">EAST <span style="color:rgba(232,220,200,0.5);font-size:0.52rem;margin-left:2px;">×'+seatCount(E)+'</span>'+_voidTags(E)+'</div><div style="display:inline-flex;flex-direction:column;align-items:center;">';
@@ -555,11 +559,11 @@ window._gameFns.bleedinghearts = function BH(a){
       if(!canP&&phase==='play')sty+='opacity:0.45;filter:saturate(0.6);';
       // Q♠ aura — the signature poison card always reminds you it's in your hand.
       if(isQS&&!isSel)sty+='box-shadow:0 0 0 1px rgba(139,0,0,0.4),0 0 10px rgba(139,0,0,0.35),0 2px 5px rgba(0,0,0,0.5);';
-      h+='<div style="'+sty+'" onclick="_BHCC(\''+cc.rank+'\',\''+cc.suit+'\')">';
-      h+='<span style="font-size:0.78rem;position:absolute;top:2px;left:5px;line-height:1;">'+cc.rank+'</span>';
-      h+='<span style="font-size:0.58rem;position:absolute;top:14px;left:6px;line-height:1;">'+_pip(cc.suit)+'</span>';
-      h+='<span style="font-size:1.4rem;line-height:1;">'+_pip(cc.suit)+'</span>';
-      h+='<span style="font-size:0.78rem;position:absolute;bottom:2px;right:5px;line-height:1;transform:rotate(180deg);">'+cc.rank+'</span>';
+      h+='<div'+window._cdLampAttr(cc.suit,isSel?'cd-sel':(canP&&phase==='play')?'cd-legal':'')+' style="'+sty+'" onclick="_BHCC(\''+cc.rank+'\',\''+cc.suit+'\')">';
+      h+='<span style="font-size:0.78rem;position:absolute;top:2px;left:5px;line-height:1;">'+window._cdLampRk(cc.rank)+'</span>';
+      h+='<span style="font-size:0.58rem;position:absolute;top:14px;left:6px;line-height:1;">'+window._cdLampPip(cc.suit,_pip(cc.suit))+'</span>';
+      h+='<span style="font-size:1.4rem;line-height:1;">'+window._cdLampPip(cc.suit,_pip(cc.suit))+'</span>';
+      h+='<span style="font-size:0.78rem;position:absolute;bottom:2px;right:5px;line-height:1;transform:rotate(180deg);">'+window._cdLampRk(cc.rank)+'</span>';
       h+='</div>';
     }
     h+='</div></div>';
@@ -582,8 +586,8 @@ window._gameFns.bleedinghearts = function BH(a){
         var ltWin=(ltc.player===lastTrick.winner);
         h+='<div style="text-align:center;">';
         h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;color:'+ltSeatCol+';text-transform:uppercase;margin-bottom:4px;font-weight:700;">'+NAMES[ltc.player]+(ltWin?' <span style="color:#ffdc70;">✦</span>':'')+'</div>';
-        h+='<div style="width:60px;height:84px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(ltWin?'#ffdc70':ltSeatCol)+';color:'+ltCol+';display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;box-shadow:'+(ltWin?'0 0 18px rgba(255,220,112,0.5),':'')+'0 3px 8px rgba(0,0,0,0.6);">';
-        h+='<span>'+ltc.card.rank+'</span><span style="font-size:1.6rem;line-height:1;">'+_pip(ltc.card.suit)+'</span>';
+        h+='<div'+window._cdLampAttr(ltc.card.suit,ltWin?'cd-sel':'')+' style="width:60px;height:84px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(ltWin?'#ffdc70':ltSeatCol)+';color:'+ltCol+';display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;box-shadow:'+(ltWin?'0 0 18px rgba(255,220,112,0.5),':'')+'0 3px 8px rgba(0,0,0,0.6);">';
+        h+='<span>'+window._cdLampRk(ltc.card.rank)+'</span><span style="font-size:1.6rem;line-height:1;">'+window._cdLampPip(ltc.card.suit,_pip(ltc.card.suit))+'</span>';
         h+='</div></div>';
       }
       h+='</div>';

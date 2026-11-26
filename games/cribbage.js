@@ -57,6 +57,8 @@ window._gameFns.cribbage = function CRIB(a){
   // Style-picker repaint hook — _cdPickStyle calls this after a deck switch
   // so the felt repaints with the new pips immediately (2026-07-04).
   window._cdActiveRn=function(){try{render()}catch(e){}};
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'cribbage',pan:pan,cloth:'oxblood',redraw:function(){try{render();}catch(e){}}});
   window._CBToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -678,10 +680,10 @@ window._gameFns.cribbage = function CRIB(a){
       var shadow = hl
         ? 'box-shadow:0 0 0 2px #ffdc70,0 0 18px rgba(255,220,112,0.55);transform:translateY(-6px);'
         : 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 4px rgba(0,0,0,0.45);';
-      h+='<div style="width:clamp(36px,12vw,48px);height:auto;aspect-ratio:8/11;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;border:2px solid '+bdr+';background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+color+';position:relative;font-family:Georgia,serif;transition:transform .25s,box-shadow .25s;'+shadow+'">';
-      h+='<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+RANKS[card.rank]+'</span>';
-      h+='<span style="font-size:10px;position:absolute;top:13px;left:5px;line-height:1;">'+_pip(card.suit)+'</span>';
-      h+='<span style="font-size:22px;line-height:1;">'+_pip(card.suit)+'</span>';
+      h+='<div'+window._cdLampAttr(card.suit,(hl||isStarter)?'cd-sel':'')+' style="width:clamp(36px,12vw,48px);height:auto;aspect-ratio:8/11;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;border:2px solid '+bdr+';background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+color+';position:relative;font-family:Georgia,serif;transition:transform .25s,box-shadow .25s;'+shadow+'">';
+      h+='<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+window._cdLampRk(RANKS[card.rank])+'</span>';
+      h+='<span style="font-size:10px;position:absolute;top:13px;left:5px;line-height:1;">'+window._cdLampPip(card.suit,_pip(card.suit))+'</span>';
+      h+='<span style="font-size:22px;line-height:1;">'+window._cdLampPip(card.suit,_pip(card.suit))+'</span>';
       h+='</div>';
     }
     h+='</div>';
@@ -769,11 +771,14 @@ window._gameFns.cribbage = function CRIB(a){
     if(who==='player')whoTag='<span title="You" style="position:absolute;bottom:2px;left:3px;font-size:10px;line-height:1;font-weight:700;font-family:DM Mono,monospace;color:#fff8e0;background:#4a7c35;border-radius:3px;padding:1px 3px;">Y</span>';
     else if(who==='ai')whoTag='<span title="Computer" style="position:absolute;bottom:2px;left:3px;font-size:10px;line-height:1;font-weight:700;font-family:DM Mono,monospace;color:#fff8e0;background:#a04848;border-radius:3px;padding:1px 3px;">A</span>';
     // Rank at top-left, big pip centered, rotated rank at bottom-right.
-    return '<div style="'+style+'" '+(onclick?'onclick="'+onclick+'"':'')+'>'
-      +'<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+RANKS[c.rank]+'</span>'
-      +'<span style="font-size:10px;position:absolute;top:13px;left:5px;line-height:1;">'+_pip(c.suit)+'</span>'
-      +'<span style="font-size:22px;line-height:1;">'+_pip(c.suit)+'</span>'
-      +'<span style="font-size:12px;position:absolute;bottom:2px;right:4px;line-height:1;transform:rotate(180deg);transform-origin:center;font-weight:700;">'+RANKS[c.rank]+'</span>'
+    // the lamp table prints the same card in its own stock and inks (games/_cards.js)
+    var LC=window._cdLampCls?window._cdLampCls(c.suit):'', rk=LC?window._cdLampRk(RANKS[c.rank]):RANKS[c.rank], pp=LC?window._cdLampPip(c.suit,_pip(c.suit)):_pip(c.suit);
+    if(LC&&(sel||isStarter))LC+=' cd-sel';
+    return '<div'+(LC?' class="'+LC.slice(1)+'"':'')+' style="'+style+'" '+(onclick?'onclick="'+onclick+'"':'')+'>'
+      +'<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+rk+'</span>'
+      +'<span style="font-size:10px;position:absolute;top:13px;left:5px;line-height:1;">'+pp+'</span>'
+      +'<span style="font-size:22px;line-height:1;">'+pp+'</span>'
+      +'<span style="font-size:12px;position:absolute;bottom:2px;right:4px;line-height:1;transform:rotate(180deg);transform-origin:center;font-weight:700;">'+rk+'</span>'
       +whoTag
     +'</div>';
   }

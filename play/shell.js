@@ -440,6 +440,8 @@
   // ════════════════════════════════════════════════════════════════════
 
   function showToast(msg) {
+    // the lamp table seats its toast on the top rail, where it covers no control (games/_table.js)
+    try { if (global.LW_TABLE && global.LW_TABLE.toast(msg)) return; } catch (e) {}
     var el = document.getElementById('shell-toast');
     if (!el) {
       el = document.createElement('div');
@@ -995,7 +997,7 @@
       || !!window.navigator.standalone;
     /* ⛔ Versioned registration (2026-07-27): bare SW URLs get edge-pinned for
        7 days, stranding installs on old workers. Bump ?v= with play/sw.js CACHE. */
-    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/play/sw.js?v=4'); } catch (e) {} }
+    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('/play/sw.js?v=5'); } catch (e) {} }
     if (isStandalone) return;
     // Labeled button above the footer — the header is already full (back,
     // how-to, feedback, title, music, wallet) and an extra icon there

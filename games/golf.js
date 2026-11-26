@@ -76,6 +76,8 @@ function GGF(a){
   };
 
   window._cdActiveRn=function(){try{rn()}catch(e){}};
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'golf',cloth:'fairway'});
   function init(){
     deck=_cdSh(_cdMk());
     cols=[];stock=[];waste=[];gameOver=false;score=35;

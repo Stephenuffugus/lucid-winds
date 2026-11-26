@@ -535,7 +535,7 @@ function _cdOpenStylePicker(){
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.14em;color:var(--gold);">CARD STYLE</div>';
   h+='<button class="gb" onclick="document.getElementById(\'cdStyleOV\').remove()" style="min-height:48px;padding:6px 14px;">CLOSE</button>';
   h+='</div>';
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);margin-bottom:'+(land?'8px':'12px')+';line-height:1.5;">Tap a deck to switch every card game to that style. More decks unlock as you play.</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:'+(land?'8px':'12px')+';line-height:1.5;">Tap a deck to switch every card game to that style. More decks unlock as you play.</div>';
   h+='<div style="display:grid;grid-template-columns:'+(land?'repeat(auto-fill,minmax(220px,1fr))':'1fr')+';gap:0 8px;">';
   for(var i=0;i<_DECKS.length;i++){
     var d=_DECKS[i];
@@ -546,17 +546,41 @@ function _cdOpenStylePicker(){
       +(sel?'background:rgba(200,168,75,0.22);border-color:var(--gold);':locked?'opacity:0.45;':'')+'">';
     h+='<div style="flex-shrink:0;">'+_cdDeckPreviewHTML(d.id)+'</div>';
     h+='<div style="flex:1;min-width:0;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.06em;color:var(--cream);">'+d.name+(sel?' <span style="color:var(--gold);font-size:0.65rem;letter-spacing:0.12em;">· ACTIVE</span>':'')+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.06em;color:var(--cream);">'+d.name+(sel?' <span style="color:var(--gold);font-size:0.7rem;letter-spacing:0.12em;">· ACTIVE</span>':'')+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--sage);opacity:0.85;margin-top:2px;overflow-wrap:anywhere;">'+d.tag+'</div>';
-    if(locked)h+='<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);margin-top:4px;">🔒 Locked</div>';
+    if(locked)h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-top:4px;">🔒 Locked</div>';
     h+='</div>';
     h+='</button>';
   }
   h+='</div>';
+  // THE TABLE (22 Nov 2026): the same choice in every card game, remembered on
+  // this device (games/_table.js). Plain is the old table; Lamp is the walnut
+  // table under one warm lamp, with its own cream cards.
+  if(window.LW_TABLE&&_lpReg){
+    var tcur=window.LW_TABLE.isOn()?'lamp':'plain';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.14em;color:var(--gold);margin:'+(land?'2px':'8px')+' 0 8px;">TABLE</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+    var tabs=[{id:'plain',name:'Plain',tag:'Dark garden',sw:'background:#0d100c;box-shadow:inset 0 0 0 1px rgba(122,179,86,.35)'},
+              {id:'lamp',name:'Lamp',tag:'Walnut and lamp',sw:"background:radial-gradient(ellipse 90% 80% at 25% 15%,rgba(255,206,140,.45),rgba(0,0,0,0) 70%),radial-gradient(ellipse 130% 110% at 15% 0%,rgba(0,0,0,0) 45%,rgba(0,0,0,.7)),#34513b;box-shadow:inset 0 0 0 3px #3a2414,inset 0 0 0 4px rgba(0,0,0,.6)"}];
+    for(var ti=0;ti<tabs.length;ti++){
+      var tb=tabs[ti], tsel=tb.id===tcur;
+      h+='<button class="gb" onclick="_cdPickTable(\''+tb.id+'\')" style="display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:6px 10px;text-align:left;font-family:inherit;'
+        +(tsel?'background:rgba(200,168,75,0.22);border-color:var(--gold);':'')+'">';
+      h+='<span style="flex:0 0 auto;width:44px;height:34px;border-radius:5px;'+tb.sw+'"></span>';
+      h+='<span style="flex:1;min-width:0;"><span style="display:block;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.06em;color:var(--cream);">'+tb.name+(tsel?' <span style="color:var(--gold);font-size:0.7rem;letter-spacing:0.12em;">· ACTIVE</span>':'')+'</span>';
+      h+='<span style="display:block;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--sage);opacity:0.85;margin-top:2px;overflow-wrap:anywhere;">'+tb.tag+'</span></span>';
+      h+='</button>';
+    }
+    h+='</div>';
+  }
   h+='</div>';
   ov.innerHTML=h;
   document.body.appendChild(ov);
 }
+window._cdPickTable=function(v){
+  var ov=document.getElementById('cdStyleOV');if(ov)ov.remove();
+  if(window.LW_TABLE)window.LW_TABLE.set(v);
+};
 window._cdPickStyle=function(id){
   _cdSetStyle(id);
   try{document.dispatchEvent(new CustomEvent('lw-card-style-change',{detail:{style:id}}));}catch(e){}
@@ -770,50 +794,38 @@ window._cdDeal=_cdDeal;
 window._cdCancelDeal=_cdCancelDeal;
 try{ _cdKitCss(); }catch(e){}
 // ═══════════════════════════════════════════════════════════════════════════
-// THE LAMP TABLE (pilot, 18 Nov 2026) — the card pack's table, cards and backs
+// THE LAMP TABLE, the cards' half (round two, 22 Nov 2026)
 //
 // Owner: "take all of our card games and release them in a pack but make like
-// the backgrounds and everything look a lot better." The rules are in
-// docs/briefs/card-pack/STYLE.md; this is the code half of them.
+// the backgrounds and everything look a lot better." Rules: STYLE.md in
+// docs/briefs/card-pack/. The TABLE and the LIGHT are games/_table.js
+// (window.LW_TABLE, one shared implementation for all twelve games); this half
+// prints the cards for it: cream stock, two inks with one fixed misregistration,
+// the rank face, the back grown from the game's id, court cards re-inked.
 //
-// ⛔ OFF UNLESS BOTH: the address carries ?table=lamp AND the game calls
-//   window._cdLamp({id:'<game id>', cloth:'<cloth key>'})
-// A game that never calls it, or a page without the switch, gets exactly the
-// old table. Not approved yet: the switch exists so the owner can judge it.
-//
-// One call per game, later: the other eleven add the call and are done; the
-// card renderer (_cdEl, _cdBackStyle, _cdBackCss, _cdFndEmpty) already asks
-// _cdLampOn() before it draws.
+// ⛔ A PLAYER'S CHOICE, plain by default. The Style sheet offers it (TABLE:
+// Plain / Lamp), remembered per device; ?table=lamp still turns it on for a visit.
+// A game opts in with ONE call at the top of its mount:
+//   var LAMP=window._cdLamp&&window._cdLamp({id:'<game id>', cloth:'<key>', redraw:<its render>});
+// Layout never depends on it: the lamp is a skin over each game's own locked
+// screen, so it can come and go mid-game (the game's redraw is called).
+// Pages without games/_table.js (the main Lucid Winds app) never see it.
 //
 // Each material is ONE named file in assets/cards-pack/ so the owner's own
-// scans replace them without a code change: walnut.webp, cloth.webp (neutral
-// grey, dyed per game by the cloth colour), stock.webp (the card stock),
-// rank.woff2 (the index face). The grain and the motes are drawn in code.
-//
-// Slow phones: textures are plain background images (decoded once, cached);
-// the back and the re-inked pips are drawn once into data URLs; the motes are
-// one small canvas at device pixel 1, 30 fps, stopped when the tab hides; the
-// lamp flicker is an opacity animation (compositor only). Nothing reads layout
-// per frame. Reduced motion: no motes, no flicker.
+// scans replace them without a code change: walnut.webp, stock.webp, rank.woff2,
+// and the pips and courts printed in the two inks (pip-*.webp, court-*.webp).
+// The weave, the grain, the motes and the back are drawn in code once (data
+// URLs in CSS variables on the root, so a card carries a class and never a
+// copy of a picture).
 // ═══════════════════════════════════════════════════════════════════════════
 var _LP_DIR='assets/cards-pack/';
-var _LP_INK={iron:'#1f2328',madder:'#922b24'};   // the two inks
+var _LP_INK={iron:'#1f2328',madder:'#7e221c'};   // the two inks (madder deepened 22 Nov: #922b24 was 6.5:1 on the stock)
 var _LP_STOCK='#efe6d0';                          // card stock, unprinted
-// The pack's twelve cloths (STYLE.md). One per game; Klondike is moss.
-var _LP_CLOTH={
-  moss:'#34513b', slate:'#2f4151', loden:'#284a40', ochre:'#6c5329',
-  heather:'#4b3649', fairway:'#3e5633', oxblood:'#5b2c28', forest:'#27412f',
-  rose:'#6a3338', indigo:'#29334d', juniper:'#374b41', umber:'#5c4a31'
-};
-var _lpState=null;   // {id, cloth, backUrl, pips:{}, ...} once a game turns it on
-function _cdLampWanted(){
-  try{ return /[?&]table=lamp(&|$)/.test(location.search); }catch(e){ return false; }
-}
+var _LP_CLOTH=(window.LW_TABLE&&window.LW_TABLE.CLOTH)||{moss:'#34513b'};
+var _lpState=null;   // {id, pips:{}} while the lamp is on
+var _lpReg=null, _lpHooked=false;
 function _cdLampOn(){ return !!_lpState; }
-function _lpReduced(){
-  try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; }
-}
-function _lpRedraw(){ try{ if(typeof window._cdActiveRn==='function')window._cdActiveRn(); }catch(e){} }
+function _lpRedraw(){ try{ if(_lpReg&&typeof _lpReg.redraw==='function')_lpReg.redraw(); else if(typeof window._cdActiveRn==='function')window._cdActiveRn(); }catch(e){} }
 
 // ── A small SHA-256 (sync), so a back is grown from the hash of the game's id
 // the way the studio's plants are grown from theirs. 32 bytes out.
@@ -940,78 +952,28 @@ function _lpDrawBack(id,stockImg){
   try{ return cv.toDataURL('image/png'); }catch(e){ return ''; }
 }
 
-// ── Re-ink a pip image (transparent PNG line art) into one ink, once, small.
-function _lpInkPip(img,ink,size){
-  var cv=document.createElement('canvas'); cv.width=cv.height=size;
-  var x=cv.getContext('2d'), iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
-  var sc=Math.min(size/iw,size/ih), dw=iw*sc, dh=ih*sc;
-  x.drawImage(img,(size-dw)/2,(size-dh)/2,dw,dh);
-  // the art's white is paper, not ink: coverage = how dark the line is
-  try{
-    var id=x.getImageData(0,0,size,size), dd=id.data;
-    for(var i=0;i<dd.length;i+=4){
-      // distance from white by the weakest channel: black and red line both
-      // read as full ink, pale fills as a tint, white as bare paper
-      var lo=Math.min(dd[i],dd[i+1],dd[i+2])/255;
-      dd[i+3]=Math.round(dd[i+3]*Math.min(1,Math.max(0,(1-lo)*1.3)));
-    }
-    x.putImageData(id,0,0);
-  }catch(e){}
-  x.globalCompositeOperation='source-in'; x.fillStyle=ink; x.fillRect(0,0,size,size);
-  try{ return cv.toDataURL('image/png'); }catch(e){ return ''; }
-}
-// The fine grain over everything: one 128 px tile of light and dark specks,
-// plain alpha (no blend mode, so it costs the compositor nothing).
-function _lpGrainUrl(){
-  var n=128,cv=document.createElement('canvas');cv.width=cv.height=n;
-  var x=cv.getContext('2d'),d=x.createImageData(n,n),s=0x2545F491;
-  for(var i=0;i<n*n;i++){
-    s^=s<<13;s^=s>>>17;s^=s<<5; var v=(s>>>0)/4294967296;
-    var o=i*4, lt=v>0.5; d.data[o]=d.data[o+1]=d.data[o+2]=lt?255:0;
-    d.data[o+3]=Math.round(Math.abs(v-0.5)*2*(lt?9:26));
-  }
-  x.putImageData(d,0,0);
-  try{ return cv.toDataURL('image/png'); }catch(e){ return ''; }
-}
-
-function _lpCss(clothHex){
+// The pips and the court cards are printed once, ahead of time, into the two
+// inks (assets/cards-pack/pip-*.webp, court-*.webp; the rule is in STYLE.md):
+// the floral scans they come from are 1 to 3 MB each, the inked files 2 to 30 KB.
+function _lpCss(){
   var D=_LP_DIR, I=_LP_INK;
+  // a card's shadow falls straight away from the lamp; games/_table.js writes
+  // its length and softness per card (--shx --shy --shb --sha) once per render
+  var SH='0 0 0 .5px rgba(48,32,16,.6),calc(var(--shx,2px)*.35) calc(var(--shy,3px)*.35) 1.5px rgba(0,0,0,calc(var(--sha,.4) + .02)),var(--shx,2px) var(--shy,4px) var(--shb,7px) rgba(0,0,0,var(--sha,.32))';
   return ''
   +'@font-face{font-family:"LampRank";src:url('+D+'rank.woff2) format("woff2");font-display:block}'
-  // the page becomes one screen: no scroll, nothing to move
-  +'html.cd-lamp,html.cd-lamp body{background:#0b0704!important;height:100%;overflow:hidden;overscroll-behavior:none}'
-  +'html.cd-lamp body{height:100vh;height:100dvh;min-height:0}'
-  +'html.cd-lamp .shell-footer,html.cd-lamp #shell-install-btn{display:none!important}'
-  +'html.cd-lamp .shell-hdr{background:linear-gradient(180deg,rgba(14,8,4,.55),rgba(14,8,4,.25))!important;border-bottom:0!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;position:relative;flex:0 0 auto}'
-  +'html.cd-lamp .shell-mount{position:relative;z-index:1;flex:1 1 0;min-height:0;overflow:hidden}'
-  +'html.cd-lamp #fg-ag{padding:8px 12px 14px!important;min-height:0;overflow:hidden;background:none!important}'
-  // the table: walnut, a cloth let into it, the lamp's pool and its far dark
-  +'#cd-lamp-table{position:fixed;inset:0;z-index:0;pointer-events:none;background:#1c120a url('+D+'walnut.webp) 0 0/300px 300px repeat}'
-  +'#cd-lamp-table .cl{position:absolute;left:7px;right:7px;bottom:7px;top:calc(var(--cd-hdr,60px) + 2px);border-radius:7px;'
-  +'background-color:'+clothHex+';background-image:url('+D+'cloth.webp);background-size:240px 240px;background-blend-mode:overlay;'
-  +'box-shadow:inset 3px 4px 7px rgba(0,0,0,.62),inset 0 0 0 1px rgba(0,0,0,.55),0 0 0 1px rgba(255,226,180,.07),1px 1px 0 1px rgba(255,226,180,.06)}'
-  // the lamp on the cloth: warm pool at the upper left, true dark in the far corner
-  +'#cd-lamp-table .lp{position:absolute;inset:0;border-radius:inherit;background:'
-  +'radial-gradient(105% 72% at 12% 8%,rgba(255,206,138,.40) 0%,rgba(255,196,122,.22) 22%,rgba(255,190,110,.07) 42%,rgba(0,0,0,0) 56%)}'
-  +'#cd-lamp-table .dk{position:absolute;inset:0;background:'
-  +'radial-gradient(70% 50% at 10% 4%,rgba(255,196,130,.16) 0%,rgba(255,196,130,0) 100%),'
-  +'radial-gradient(135% 100% at 10% 6%,rgba(0,0,0,0) 40%,rgba(0,0,0,.32) 64%,rgba(0,0,0,.64) 88%,rgba(0,0,0,.88) 118%)}'
-  // over the game, quiet: a faint warmth near the lamp, a faint dusk away from it, the grain
-  +'#cd-lamp-over{position:fixed;inset:0;z-index:60;pointer-events:none}'
-  +'#cd-lamp-over .gl{position:absolute;inset:0;background:radial-gradient(120% 90% at 8% 4%,rgba(255,214,160,.06) 0%,rgba(0,0,0,0) 45%,rgba(0,0,0,.06) 80%,rgba(0,0,0,.12) 110%);animation:cdLpFlick 11s linear infinite}'
-  +'@keyframes cdLpFlick{0%,61%,63.5%,100%{opacity:1}62%{opacity:.82}62.7%{opacity:.93}}'
-  +'#cd-lamp-over .gr{position:absolute;inset:0;background-size:128px 128px;opacity:.9}'
-  +'#cd-lamp-over canvas{position:absolute;left:0;top:0}'
-  +'@media (prefers-reduced-motion:reduce){#cd-lamp-over .gl{animation:none!important}#cd-lamp-over canvas{display:none!important}}'
-  // ── cards: cream stock, lit from the upper left, shadow to the lower right
+  // ── cards: cream stock, lit from the upper left
   +'html.cd-lamp .gc.cd-lp{background:'+_LP_STOCK+'!important;border:0!important;border-radius:.42em!important;color:'+I.iron+'!important;text-shadow:none!important;'
-  +'box-shadow:0 0 0 .5px rgba(48,32,16,.6),1px 1.5px 1.5px rgba(0,0,0,.38),2px 4px 7px rgba(0,0,0,.30)!important;position:relative;isolation:isolate;overflow:hidden}'
-  +'html.cd-lamp .gc.cd-lp::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;'
+  +'box-shadow:'+SH+'!important;position:relative;isolation:isolate;overflow:hidden}'
+  +'html.cd-lamp .gc.cd-lp::before,html.cd-lamp .cd-lpt::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;'
   +'background:linear-gradient(140deg,rgba(255,252,240,.38) 0%,rgba(255,250,235,0) 42%,rgba(70,48,24,.10) 100%),url('+D+'stock.webp) var(--sx,0) var(--sy,0)/180px 180px}'
-  +'html.cd-lamp .gc.cd-lp .cd-rk{font-family:"LampRank",Georgia,serif!important;font-weight:400!important;font-size:1.62em!important;line-height:.86!important;letter-spacing:-.04em;text-shadow:1px 1px 0 var(--mis)}'
-  +'html.cd-lamp .gc.cd-lp .cd-pp{display:block;width:1.05em;height:1.05em;margin:.12em auto 0;background:center/contain no-repeat;filter:drop-shadow(1px 1px 0 var(--mis))}'
-  +'html.cd-lamp .cd-s0{background-image:var(--cd-pip0)!important}html.cd-lamp .cd-s1{background-image:var(--cd-pip1)!important}'
-  +'html.cd-lamp .cd-s2{background-image:var(--cd-pip2)!important}html.cd-lamp .cd-s3{background-image:var(--cd-pip3)!important}'
+  // a red card prints its rank in madder (the !important on .cd-lp above would otherwise make every rank iron)
+  +'html.cd-lamp .gc.cd-lp.gc-red{color:'+I.madder+'!important}'
+  +'html.cd-lamp .gc.cd-lp .cd-rk,html.cd-lamp .cd-lpt .cd-rk{font-family:"LampRank",Georgia,serif!important;font-weight:400!important;font-size:1.62em!important;line-height:.86!important;letter-spacing:-.04em;text-shadow:1px 1px 0 var(--mis)}'
+  +'html.cd-lamp .cd-pp{display:inline-block;vertical-align:middle;width:1.05em;height:1.05em;background:center/contain no-repeat;filter:drop-shadow(1px 1px 0 var(--mis,rgba(126,34,28,.4)))}'
+  +'html.cd-lamp .gc.cd-lp .cd-pp{display:block;margin:.12em auto 0}'
+  +'html.cd-lamp .cd-s0{background-image:url('+D+'pip-spade.webp)!important}html.cd-lamp .cd-s1{background-image:url('+D+'pip-heart.webp)!important}'
+  +'html.cd-lamp .cd-s2{background-image:url('+D+'pip-diamond.webp)!important}html.cd-lamp .cd-s3{background-image:url('+D+'pip-club.webp)!important}'
   +'html.cd-lamp .gc.cd-lp .cd-gl{font-family:Georgia,serif;font-size:1.05em;line-height:1;text-shadow:1px 1px 0 var(--mis)}'
   +'html.cd-lamp .gc-peek.cd-lp .gc-corner-tl>.cd-pp{width:.95em;height:.95em;margin:0}'
   +'html.cd-lamp .gc.cd-lp .gc-corner-tl{position:absolute;top:.28em;left:.3em;text-align:center;z-index:2;pointer-events:none}'
@@ -1020,135 +982,96 @@ function _lpCss(clothHex){
   +'html.cd-lamp .gc.cd-lp .cd-mid{position:absolute;left:24%;right:24%;top:24%;bottom:24%;pointer-events:none;display:flex;align-items:center;justify-content:center}'
   +'html.cd-lamp .gc.cd-lp .cd-big{display:block;width:100%;height:100%;background:center/contain no-repeat;filter:drop-shadow(1px 1px 0 var(--mis))}'
   +'html.cd-lamp .gc.cd-lp .cd-mid .cd-gl{font-size:2.7em}'
-  +'html.cd-lamp .gc.cd-lp .cd-face{position:absolute;left:13%;right:13%;top:11%;bottom:11%;pointer-events:none}'
-  +'html.cd-lamp .gc.cd-lp .cd-face img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}'
+  // court cards: printed in the suit's ink with the second plate off register,
+  // inside a hairline frame printed in the same ink, like a real court panel
+  +'html.cd-lamp .gc.cd-lp .cd-face{position:absolute;left:15%;right:15%;top:12%;bottom:12%;pointer-events:none;border:1px solid rgba(31,35,40,.42);border-radius:2px;'
+  +'background:center/contain no-repeat;filter:drop-shadow(1px 1px 0 var(--mis))}'
+  +'html.cd-lamp .gc.cd-lp.gc-red .cd-face{border-color:rgba(126,34,28,.46)}'
+  +'html.cd-lamp .gc.cd-lp .cd-face.cd-ace{border:0}'
+  +'html.cd-lamp .gc.cd-lp .cd-face.cd-f-ace-red{background-image:url('+D+'court-ace-red.webp)}'
+  +'html.cd-lamp .gc.cd-lp .cd-face.cd-f-ace-black{background-image:url('+D+'court-ace-black.webp)}'
+  +'html.cd-lamp .gc.cd-lp .cd-face.cd-f-jack-red{background-image:url('+D+'court-jack-red.webp)}'
+  +'html.cd-lamp .gc.cd-lp .cd-face.cd-f-jack-black{background-image:url('+D+'court-jack-black.webp)}'
+  +'html.cd-lamp .gc.cd-lp .cd-face.cd-f-queen-red{background-image:url('+D+'court-queen-red.webp)}'
+  +'html.cd-lamp .gc.cd-lp .cd-face.cd-f-queen-black{background-image:url('+D+'court-queen-black.webp)}'
+  +'html.cd-lamp .gc.cd-lp .cd-face.cd-f-king-red{background-image:url('+D+'court-king-red.webp)}'
+  +'html.cd-lamp .gc.cd-lp .cd-face.cd-f-king-black{background-image:url('+D+'court-king-black.webp)}'
   // a picked-up card and a legal place still say so, in the lamp's gold
-  +'html.cd-lamp .gc.gc-sel{box-shadow:0 0 0 2px rgba(224,178,76,.98),0 0 14px 2px rgba(224,178,76,.55),2px 4px 7px rgba(0,0,0,.30)!important}'
+  +'html.cd-lamp .gc.gc-sel{box-shadow:0 0 0 2px rgba(224,178,76,.98),0 0 14px 2px rgba(224,178,76,.55),var(--shx,2px) var(--shy,4px) var(--shb,7px) rgba(0,0,0,.30)!important}'
   +'html.cd-lamp .gc.gc-sel.cd-lp::before{background:linear-gradient(rgba(240,196,96,.20),rgba(240,196,96,.20)),url('+D+'stock.webp) var(--sx,0) var(--sy,0)/180px 180px}'
-  +'html.cd-lamp .gc.gc-legal{box-shadow:0 0 0 2px rgba(150,206,104,.95),0 0 16px 2px rgba(150,206,104,.50),2px 4px 7px rgba(0,0,0,.30)!important}'
+  +'html.cd-lamp .gc.gc-legal{box-shadow:0 0 0 2px rgba(150,206,104,.95),0 0 16px 2px rgba(150,206,104,.50),var(--shx,2px) var(--shy,4px) var(--shb,7px) rgba(0,0,0,.30)!important}'
   // backs
   +'html.cd-lamp .gc.gc-dn.cd-lp-dn{background-color:'+I.iron+'!important;background-image:var(--cd-lp-back)!important;background-size:100% 100%!important;border:0!important;border-radius:.42em!important;'
-  +'box-shadow:0 0 0 .5px rgba(20,12,6,.8),1px 1.5px 1.5px rgba(0,0,0,.40),2px 4px 7px rgba(0,0,0,.30)!important}'
-  // a count on a back sits on its own ink chip so the knot never fights it
+  +'box-shadow:0 0 0 .5px rgba(20,12,6,.8),'+SH.replace(/^0 0 0 \.5px rgba\(48,32,16,\.6\),/,'')+'!important}'
   +'html.cd-lamp .cd-lp-dn>span{background:rgba(24,27,31,.88);border-radius:1em;padding:.12em .5em;box-shadow:0 0 0 1px rgba(239,230,208,.35)}'
   // empty places: pressed into the cloth, not drawn on it
-  +'html.cd-lamp .gc-empty,html.cd-lamp .gc-fnd:not(.cd-lp){background-color:rgba(0,0,0,.13)!important;border:0!important;border-radius:.42em!important;'
+  +'html.cd-lamp .gc-empty,html.cd-lamp .gc-fnd:not(.cd-lp){background-color:rgba(0,0,0,.14)!important;border:0!important;border-radius:.42em!important;'
   +'box-shadow:inset 1.5px 2px 3px rgba(0,0,0,.45),inset 0 0 0 1px rgba(0,0,0,.22),.5px .5px 0 1px rgba(255,232,196,.07)!important}'
   +'html.cd-lamp .gc-fnd:not(.cd-lp){background-size:44% auto!important;background-position:center!important;background-repeat:no-repeat!important;opacity:1}'
-  // the controls: quiet, under the cards in weight
-  +'html.cd-lamp #fg-ag .gu-bar{background:none!important;min-height:22px!important;padding:0 2px 2px!important;font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,.62)!important;font-size:13px!important}'
-  +'html.cd-lamp #fg-ag .gu-bar strong{color:rgba(240,230,210,.9)!important;font-style:normal}'
-  +'html.cd-lamp #fg-ag .gm{font-family:Georgia,serif;font-size:13px!important;color:rgba(232,220,200,.8)!important;min-height:18px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
-  +'html.cd-lamp #fg-ag .gcr .gb,html.cd-lamp #fg-ag .gcr .gsl{font-family:Georgia,serif!important;font-size:14px!important;letter-spacing:.01em!important;font-weight:400!important;color:#eadfc9!important;'
-  +'background-color:rgba(16,10,6,.50)!important;border:1px solid rgba(234,223,201,.16)!important;border-radius:10px!important;min-height:48px!important;padding:6px 8px!important;'
-  +'box-shadow:inset 0 1px 0 rgba(255,240,214,.06),1px 2px 4px rgba(0,0,0,.35)!important;white-space:nowrap;margin:0!important;width:100%;box-sizing:border-box}'
-  +'html.cd-lamp #fg-ag .gcr .gsl{padding-right:26px!important;background-position:right 10px center!important}'
-  +'html.cd-lamp #fg-ag .gcr .gb:disabled{opacity:.45!important}';
+  // ── the trick-taking games print their own faces (Hearts, Spades, Rummy,
+  // Cribbage, Euchre): the same stock, inks and rank face, through .cd-lpt
+  +'html.cd-lamp .cd-lpt{background:'+_LP_STOCK+'!important;border-color:transparent!important;color:'+I.iron+'!important;text-shadow:none!important;position:relative;isolation:isolate;overflow:hidden;'
+  +'box-shadow:'+SH+'!important;--mis:rgba(126,34,28,.42)}'
+  +'html.cd-lamp .cd-lpt.gc-red{color:'+I.madder+'!important;--mis:rgba(31,35,40,.22)}'
+  +'html.cd-lamp .cd-lpt .cd-rk,html.cd-lamp .cd-lpt .cd-pp{color:inherit!important;text-shadow:1px 1px 0 var(--mis)}'
+  +'html.cd-lamp .cd-lpt .cd-rk{font-size:1.35em!important}'
+  +'html.cd-lamp .cd-lpt.cd-sel{box-shadow:0 0 0 2px rgba(224,178,76,.98),0 0 12px 2px rgba(224,178,76,.5),var(--shx,2px) var(--shy,4px) var(--shb,7px) rgba(0,0,0,.30)!important}'
+  +'html.cd-lamp .cd-lpt.cd-meld-set{box-shadow:0 0 0 2px rgba(196,143,58,.95),var(--shx,2px) var(--shy,4px) var(--shb,7px) rgba(0,0,0,.30)!important}'
+  +'html.cd-lamp .cd-lpt.cd-meld-run{box-shadow:0 0 0 2px rgba(91,155,209,.95),var(--shx,2px) var(--shy,4px) var(--shb,7px) rgba(0,0,0,.30)!important}'
+  +'html.cd-lamp .cd-lpt.cd-legal{box-shadow:0 0 0 2px rgba(150,206,104,.9),var(--shx,2px) var(--shy,4px) var(--shb,7px) rgba(0,0,0,.30)!important}';
 }
 
-// The dust in the beam: about twenty motes on one small canvas over the lamp's
-// side of the screen. Device pixel 1, 30 fps, paused while hidden.
-function _lpMotes(host){
-  var cv=document.createElement('canvas'), x=cv.getContext('2d');
-  var W=0,H=0,motes=[],raf=0,last=0,alive=true;
-  var spr=document.createElement('canvas'); spr.width=spr.height=16;
-  var sx=spr.getContext('2d'), g=sx.createRadialGradient(8,8,0,8,8,8);
-  g.addColorStop(0,'rgba(255,236,200,0.95)'); g.addColorStop(0.35,'rgba(255,226,180,0.45)'); g.addColorStop(1,'rgba(255,220,170,0)');
-  sx.fillStyle=g; sx.fillRect(0,0,16,16);
-  var seed=7; function rnd(){ seed=(seed*16807)%2147483647; return seed/2147483647; }
-  function size(){
-    W=Math.round(Math.min(window.innerWidth,560)*0.8); H=Math.round(window.innerHeight*0.62);
-    cv.width=W; cv.height=H; cv.style.width=W+'px'; cv.style.height=H+'px';
+// Turning the skin on: its CSS, and the back grown from the game's id (drawn
+// at once on flat stock, then again with the stock's fibre when that arrives).
+function _lpBuild(){
+  var root=document.documentElement, st=_lpState;
+  var css=document.createElement('style'); css.id='cd-lamp-css'; css.textContent=_lpCss(); document.head.appendChild(css);
+  st.css=css;
+  // ⛔ the back goes into the variable as a SHORT blob: URL, never as the data
+  // URL itself: a variable holding a 100 KB string is re-parsed for every
+  // face-down card on every render (measured: 1.2 s instead of 0.25 s a render
+  // with the CPU slowed 4x).
+  function setVar(k,u){
+    if(!u)return;
+    try{
+      var bin=atob(u.split(',')[1]), arr=new Uint8Array(bin.length);
+      for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+      var bu=URL.createObjectURL(new Blob([arr],{type:'image/png'}));
+      if(st.blob)URL.revokeObjectURL(st.blob); st.blob=bu; u=bu;
+    }catch(e){}
+    root.style.setProperty(k,"url('"+u+"')");
   }
-  size();
-  for(var i=0;i<20;i++)motes.push({x:rnd()*W,y:rnd()*H,r:0.5+rnd()*1.3,vx:0.05+rnd()*0.12,vy:-0.03-rnd()*0.08,ph:rnd()*6.28,w:0.004+rnd()*0.01});
-  function frame(t){
-    if(!alive)return;
-    raf=requestAnimationFrame(frame);
-    if(t-last<33)return; last=t;
-    x.clearRect(0,0,W,H);
-    for(var i=0;i<motes.length;i++){
-      var m=motes[i]; m.ph+=m.w; m.x+=m.vx+Math.sin(m.ph)*0.06; m.y+=m.vy+Math.cos(m.ph*0.7)*0.04;
-      if(m.x>W+8)m.x=-8; if(m.y<-8)m.y=H+8; if(m.x<-8)m.x=W+8;
-      // brightest in the beam near the lamp, gone by the edge of the pool
-      var dx=m.x/W, dy=m.y/H, beam=Math.max(0,1-Math.sqrt(dx*dx*0.8+dy*dy*1.1)*1.05);
-      var a=beam*(0.35+0.45*(0.5+0.5*Math.sin(m.ph*1.7)));
-      if(a<0.02)continue;
-      x.globalAlpha=a; var s=m.r*6; x.drawImage(spr,m.x-s/2,m.y-s/2,s,s);
-    }
-  }
-  function vis(){ if(document.hidden){ cancelAnimationFrame(raf); raf=0; } else if(!raf&&alive){ raf=requestAnimationFrame(frame); } }
-  document.addEventListener('visibilitychange',vis);
-  host.appendChild(cv); raf=requestAnimationFrame(frame);
-  return { resize:size, stop:function(){ alive=false; cancelAnimationFrame(raf); document.removeEventListener('visibilitychange',vis); if(cv.parentNode)cv.parentNode.removeChild(cv); } };
+  setVar('--cd-lp-back',_lpDrawBack(st.id,null));
+  var si=new Image(); si.onload=function(){ if(_lpState===st)setVar('--cd-lp-back',_lpDrawBack(st.id,si)); }; si.src=_LP_DIR+'stock.webp';
 }
-
-// THE ONE CALL. o.id = the game's id (grows its back), o.cloth = a key of
-// _LP_CLOTH. Returns true when the lamp table is on.
+function _lpSkin(want){
+  if(want&&!_lpState){
+    _lpState={id:(_lpReg&&_lpReg.id)||'deck', pips:{}};
+    _lpBuild();
+  }else if(!want&&_lpState){
+    if(_lpState.css&&_lpState.css.parentNode)_lpState.css.parentNode.removeChild(_lpState.css);
+    _lpState=null;
+  }
+}
+// THE ONE CALL. o.id = the game's id (grows its back), o.cloth = a key of the
+// pack's cloths, o.redraw = the game's render (called when the player switches
+// the table mid-game; default _cdActiveRn), o.rail = a selector for the game's
+// control strip if it is not #fg-ag > .gcr, o.pan = the game's own felt panel
+// (cleared under the lamp). Returns true while the lamp is on.
 function _cdLamp(o){
   o=o||{};
-  if(!_cdLampWanted())return false;
-  if(_lpState){ _lpState.id=o.id||_lpState.id; return true; }
-  var cloth=_LP_CLOTH[o.cloth]||_LP_CLOTH.moss;
-  var st={id:o.id||'deck', pips:{}};
-  _lpState=st;
-  var root=document.documentElement; root.classList.add('cd-lamp');
-  var css=document.createElement('style'); css.id='cd-lamp-css'; css.textContent=_lpCss(cloth); document.head.appendChild(css);
-  var tb=document.createElement('div'); tb.id='cd-lamp-table'; tb.setAttribute('aria-hidden','true');
-  tb.innerHTML='<div class="cl"><div class="lp"></div></div><div class="dk"></div>';
-  document.body.insertBefore(tb,document.body.firstChild);
-  var ov=document.createElement('div'); ov.id='cd-lamp-over'; ov.setAttribute('aria-hidden','true');
-  ov.innerHTML='<div class="gl"></div><div class="gr"></div>';
-  document.body.appendChild(ov);
-  var gu=_lpGrainUrl(); if(gu)ov.querySelector('.gr').style.backgroundImage='url('+gu+')';
-  var motes=_lpReduced()?null:_lpMotes(ov);
-  // the cloth starts under the header; measured on resize only
-  var hdr=document.querySelector('.shell-hdr'), lastSz='';
-  function measure(){
-    var sz=window.innerWidth+'x'+window.innerHeight; if(sz===lastSz)return false; lastSz=sz;
-    root.style.setProperty('--cd-hdr',(hdr?hdr.offsetHeight:0)+'px');
-    if(motes)motes.resize();
-    return true;
-  }
-  measure();
-  var rt=0;
-  function onRs(){ clearTimeout(rt); rt=setTimeout(function(){ if(measure())_lpRedraw(); },120); }
-  window.addEventListener('resize',onRs);
-  // the back: drawn at once on flat stock, then again with the stock's fibre
-  // Images live in CSS variables on the root, set once: cards carry a class,
-  // never a copy of the picture, so a re-render moves no image data.
-  function setVar(k,u){ if(u)root.style.setProperty(k,"url('"+u+"')"); }
-  setVar('--cd-lp-back',_lpDrawBack(st.id,null));
-  var si=new Image(); si.onload=function(){ setVar('--cd-lp-back',_lpDrawBack(st.id,si)); }; si.src=_LP_DIR+'stock.webp';
-  // the pips, re-inked once from the floral line art (128 px, two inks)
-  var files=['suit-spade.png','suit-heart.png','suit-diamond.png','suit-club.png'];
-  for(var s=0;s<4;s++)(function(s){
-    var im=new Image();
-    im.onload=function(){
-      setVar('--cd-pip'+s,_lpInkPip(im,_cdIsRed(s)?_LP_INK.madder:_LP_INK.iron,128));
-      setVar('--cd-fpip'+s,_lpInkPip(im,'rgba(0,0,0,0.30)',96));
-      st.pips[s]=true;
-    };
-    im.src=_FL_BASE+files[s];
-  })(s);
-  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
-    window.removeEventListener('resize',onRs);
-    if(motes)motes.stop();
-    if(tb.parentNode)tb.parentNode.removeChild(tb);
-    if(ov.parentNode)ov.parentNode.removeChild(ov);
-    if(css.parentNode)css.parentNode.removeChild(css);
-    root.classList.remove('cd-lamp');
-    var vs=['--cd-hdr','--cd-lp-back','--cd-pip0','--cd-pip1','--cd-pip2','--cd-pip3','--cd-fpip0','--cd-fpip1','--cd-fpip2','--cd-fpip3'];
-    for(var i=0;i<vs.length;i++)root.style.removeProperty(vs[i]);
-    _lpState=null;
-  });
-  return true;
+  if(!window.LW_TABLE)return false;
+  _lpReg=o;
+  if(!_lpHooked){ _lpHooked=true; window.LW_TABLE.onChange(_lpSkin); }
+  var on=window.LW_TABLE.register({id:o.id, cloth:o.cloth, name:o.name||(window.LW_PLAY&&window.LW_PLAY.name), rail:o.rail, pan:o.pan, redraw:_lpRedraw});
+  _lpSkin(on);
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){ _lpSkin(false); _lpReg=null; });
+  return on;
 }
 
 // The lamp card face. Same DOM contract as the other styles: .gc-corner-tl is
 // the only child a buried (peek) card keeps.
 function _cdElLamp(d,card){
-  var st=_lpState;
   if(!card.up){
     d.className+=' gc-dn cd-lp-dn';
     d.innerHTML='';
@@ -1158,7 +1081,7 @@ function _cdElLamp(d,card){
   d.className+=' gc-up cd-lp'+(red?' gc-red':'');
   d.style.color=ink;
   // the second plate: the other ink, faint, one pixel right and down
-  d.style.setProperty('--mis',red?'rgba(31,35,40,.22)':'rgba(156,47,39,.42)');
+  d.style.setProperty('--mis',red?'rgba(31,35,40,.22)':'rgba(126,34,28,.42)');
   // the stock's fibre sits differently on every card
   var k=card.s*13+card.r; d.style.setProperty('--sx',((k*37)%180)+'px'); d.style.setProperty('--sy',((k*71)%180)+'px');
   var classic=_cdStyle()==='classic', rnk=_cdRnk(card.r);
@@ -1169,19 +1092,39 @@ function _cdElLamp(d,card){
     if(classic){ mid='<div class="cd-mid"><span class="cd-gl">'+_CL_SYM[card.s]+'</span></div>'; }
     else{
       var face=card.r===0?'ace':(card.r===10?'jack':(card.r===11?'queen':'king'));
-      mid='<div class="cd-face"><img src="'+_FL_BASE+face+'-'+(red?'red':'black')+'.png" alt=""></div>';
+      mid='<div class="cd-face cd-f-'+face+'-'+(red?'red':'black')+(card.r===0?' cd-ace':'')+'"></div>';
     }
   }else{
     mid='<div class="cd-mid">'+(classic?'<span class="cd-gl">'+_CL_SYM[card.s]+'</span>':'<i class="cd-big cd-s'+card.s+'"></i>')+'</div>';
   }
   d.innerHTML=mid+corner('gc-corner-tl')+corner('gc-corner-br');
 }
+var _LP_SUITF=['spade','heart','diamond','club'];
 function _cdFndEmptyLamp(el,suitIdx){
   el.innerHTML='';
-  el.style.backgroundImage='var(--cd-fpip'+suitIdx+')';
+  el.style.backgroundImage="url('"+_LP_DIR+'pip-'+_LP_SUITF[suitIdx]+"-faint.webp')";
+}
+// For the trick-taking games, which print their own faces: the class a face-up
+// card carries under the lamp ('' when off), and the re-inked pip.
+function _cdLampCls(suitIdxOrName){
+  if(!_lpState)return '';
+  var s=typeof suitIdxOrName==='number'?suitIdxOrName:_SUIT_NAME_TO_IDX[suitIdxOrName];
+  return ' cd-lpt'+(_cdIsRed(s)?' gc-red':'');
+}
+// the rank in the lamp's rank face, and the re-inked pip ('' / the game's own when off)
+function _cdLampRk(r){ return _lpState?'<span class="cd-rk">'+r+'</span>':r; }
+function _cdLampPip(suitName,own){
+  if(!_lpState)return own;
+  var s=typeof suitName==='number'?suitName:_SUIT_NAME_TO_IDX[suitName];
+  return s===undefined?own:'<i class="cd-pp cd-s'+s+'"></i>';
 }
 window._cdLamp=_cdLamp;
 window._cdLampOn=_cdLampOn;
+window._cdLampCls=_cdLampCls;
+window._cdLampRk=_cdLampRk;
+// ' class="cd-lpt ..."' to put right after '<div' (nothing when the lamp is off)
+window._cdLampAttr=function(suit,extra){ var c=_cdLampCls(suit); return c?' class="'+c.slice(1)+(extra?' '+extra:'')+'"':''; };
+window._cdLampPip=_cdLampPip;
 window._cdLampBack=function(id){ return _lpDrawBack(id,null); };   // preview sheets
 window._LP_CLOTH=_LP_CLOTH;
 window._LP_INK=_LP_INK;

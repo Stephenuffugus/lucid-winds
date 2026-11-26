@@ -84,6 +84,8 @@ window._gameFns.juniper = function Juniper(a){
   function _pip(suitName){return (window._cdPipFor)?window._cdPipFor(suitName):SI[suitName];}
   // mc(a) empty — controls render inside the pan.
   mc(a);
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'juniper',pan:pan,cloth:'juniper',redraw:function(){try{render();}catch(e){}}});
   window._JUToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     window._cdToggleStyle();
@@ -480,10 +482,10 @@ window._gameFns.juniper = function Juniper(a){
       var col=top.suit==='hearts'||top.suit==='diamonds'?'#b42a2a':'#1a1a1a';
       var hoverGlow = aiHoverDiscard ? 'box-shadow:0 0 18px rgba(220,138,138,0.7),inset 0 1px 0 rgba(255,255,255,0.5);transform:translateY(-4px);' : '';
       var flipCls = (phase==='dealing'&&dealFlip)?'cd-flip':'';
-      h+='<div onclick="_JUDD()" style="width:72px;height:100px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(canPickup?'#ffdc70':aiHoverDiscard?'#dc8a8a':'#c4b998')+';display:flex;flex-direction:column;align-items:center;justify-content:center;'+(canPickup?'cursor:pointer;box-shadow:0 0 14px rgba(255,220,112,0.35),inset 0 1px 0 rgba(255,255,255,0.5);':'cursor:default;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.5);')+hoverGlow+'transition:transform .2s,box-shadow .2s;color:'+col+';font-weight:700;font-family:Georgia,serif;position:relative;">';
-      h+='<span style="font-size:0.78rem;position:absolute;top:3px;left:5px;line-height:1;">'+top.rank+'</span>';
-      h+='<span style="font-size:1.7rem;line-height:1;">'+_pip(top.suit)+'</span>';
-      h+='<span style="font-size:0.78rem;position:absolute;bottom:3px;right:5px;line-height:1;transform:rotate(180deg);">'+top.rank+'</span>';
+      h+='<div'+window._cdLampAttr(top.suit,canPickup?'cd-legal':'')+' onclick="_JUDD()" style="width:72px;height:100px;border-radius:8px;background:linear-gradient(180deg,#faf3dd,#f0e7c8);border:2px solid '+(canPickup?'#ffdc70':aiHoverDiscard?'#dc8a8a':'#c4b998')+';display:flex;flex-direction:column;align-items:center;justify-content:center;'+(canPickup?'cursor:pointer;box-shadow:0 0 14px rgba(255,220,112,0.35),inset 0 1px 0 rgba(255,255,255,0.5);':'cursor:default;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.5);')+hoverGlow+'transition:transform .2s,box-shadow .2s;color:'+col+';font-weight:700;font-family:Georgia,serif;position:relative;">';
+      h+='<span style="font-size:0.78rem;position:absolute;top:3px;left:5px;line-height:1;">'+window._cdLampRk(top.rank)+'</span>';
+      h+='<span style="font-size:1.7rem;line-height:1;">'+window._cdLampPip(top.suit,_pip(top.suit))+'</span>';
+      h+='<span style="font-size:0.78rem;position:absolute;bottom:3px;right:5px;line-height:1;transform:rotate(180deg);">'+window._cdLampRk(top.rank)+'</span>';
       h+='</div>';
     }else{
       h+='<div style="width:72px;height:100px;border-radius:8px;background:rgba(0,0,0,0.3);border:2px dashed rgba(232,220,200,0.25);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.4);">empty</div>';
@@ -532,11 +534,12 @@ window._gameFns.juniper = function Juniper(a){
       else if(meldKind==='run'){ bgTop='#d6e6f5'; bgBot='#b9d4ec'; bdr='#5b9bd1'; }
       else { bgTop='#faf3dd'; bgBot='#f0e7c8'; bdr='#b8a878'; }
       var sty='min-width:48px;width:48px;height:66px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-family:Georgia,serif;border:2px solid '+bdr+';background:linear-gradient(180deg,'+bgTop+','+bgBot+');color:'+col+';position:relative;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.55),0 2px 5px rgba(0,0,0,0.5);transition:transform .15s;';
-      h+='<div onclick="_JUCC('+k+')" style="'+sty+'">';
-      h+='<span style="font-size:0.78rem;position:absolute;top:2px;left:5px;line-height:1;">'+c.rank+'</span>';
-      h+='<span style="font-size:0.58rem;position:absolute;top:14px;left:6px;line-height:1;">'+_pip(c.suit)+'</span>';
-      h+='<span style="font-size:1.4rem;line-height:1;">'+_pip(c.suit)+'</span>';
-      h+='<span style="font-size:0.78rem;position:absolute;bottom:2px;right:5px;line-height:1;transform:rotate(180deg);">'+c.rank+'</span>';
+      // under the lamp a meld keeps its tint as a wash over the stock (set warm, run cool)
+      h+='<div'+window._cdLampAttr(c.suit,meldKind?'cd-meld-'+meldKind:'')+' onclick="_JUCC('+k+')" style="'+sty+'">';
+      h+='<span style="font-size:0.78rem;position:absolute;top:2px;left:5px;line-height:1;">'+window._cdLampRk(c.rank)+'</span>';
+      h+='<span style="font-size:0.58rem;position:absolute;top:14px;left:6px;line-height:1;">'+window._cdLampPip(c.suit,_pip(c.suit))+'</span>';
+      h+='<span style="font-size:1.4rem;line-height:1;">'+window._cdLampPip(c.suit,_pip(c.suit))+'</span>';
+      h+='<span style="font-size:0.78rem;position:absolute;bottom:2px;right:5px;line-height:1;transform:rotate(180deg);">'+window._cdLampRk(c.rank)+'</span>';
       h+='</div>';
     }
     h+='</div>';

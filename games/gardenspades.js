@@ -101,6 +101,8 @@ window._gameFns.gardenspades = function GardenSpades(a){
   function _teamColor(p){return TEAM_COLORS[p%2];}
   // mc(a) empty — controls go inside the pan via render().
   mc(a);
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'gardenspades',pan:pan,cloth:'indigo',redraw:function(){try{render();}catch(e){}}});
   window._GSToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     window._cdToggleStyle();
@@ -521,8 +523,8 @@ window._gameFns.gardenspades = function GardenSpades(a){
       var isWin=(pl===lastTrickWinner);
       var winCls=isWin?' gs-win-glow':'';
       var dim=(lastTrickWinner>=0 && pl!==lastTrickWinner)?'filter:saturate(.55) brightness(.75);':'';
-      h+='<div class="'+winCls+'" style="position:absolute;'+pos[pl]+dim+'background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+col+';border:2px solid '+seatCol+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:42px;text-align:center;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55);">';
-      h+='<div style="font-size:0.92rem;line-height:1;">'+c.rank+'</div><div style="font-size:1.25rem;line-height:1;margin-top:2px;">'+_pip(c.suit)+'</div></div>';
+      h+='<div class="'+winCls+(window._cdLampCls?window._cdLampCls(c.suit):'')+'" style="position:absolute;'+pos[pl]+dim+'background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+col+';border:2px solid '+seatCol+';border-radius:6px;padding:6px 9px;font-weight:700;min-width:42px;text-align:center;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 3px 6px rgba(0,0,0,0.55);">';
+      h+='<div style="font-size:0.92rem;line-height:1;">'+window._cdLampRk(c.rank)+'</div><div style="font-size:1.25rem;line-height:1;margin-top:2px;">'+window._cdLampPip(c.suit,_pip(c.suit))+'</div></div>';
     }
     h+='</div>';
     h+='<div class="'+_seatCls(E)+'" style="padding:4px;">'
@@ -567,7 +569,9 @@ window._gameFns.gardenspades = function GardenSpades(a){
       // small suit stay readable in the uncovered left strip of every card
       var lk=GS_LOCK&&myCards.length>6;
       if(lk)sty=sty.replace('width:clamp(48px,12vw,64px);height:clamp(68px,17vw,90px)','width:56px;height:84px;flex:0 0 auto;align-items:flex-end;padding-right:6px;box-sizing:border-box')+'margin-left:'+(i===0?'0':'-'+Math.max(0,Math.round(56-(330-56)/Math.max(1,myCards.length-1)))+'px')+';';
-      h+='<div style="'+sty+'" onclick="_GSCC(\''+cc.rank+'\',\''+cc.suit+'\')"><div style="font-size:0.8rem;position:absolute;top:3px;left:5px;'+(lk?'font-size:0.95rem;line-height:1;text-align:center;':'')+'">'+cc.rank+(lk?'<div style="font-size:0.85rem;margin-top:2px;">'+_pip(cc.suit)+'</div>':'')+'</div><div style="font-size:1.35rem;">'+_pip(cc.suit)+'</div></div>';
+      var LC=window._cdLampCls?window._cdLampCls(cc.suit):'', pp=LC?window._cdLampPip(cc.suit,_pip(cc.suit)):_pip(cc.suit);
+      if(LC&&canP)LC+=' cd-legal';
+      h+='<div'+(LC?' class="'+LC.slice(1)+'"':'')+' style="'+sty+'" onclick="_GSCC(\''+cc.rank+'\',\''+cc.suit+'\')"><div style="font-size:0.8rem;position:absolute;top:3px;left:5px;'+(lk?'font-size:0.95rem;line-height:1;text-align:center;':'')+'">'+(LC?window._cdLampRk(cc.rank):cc.rank)+(lk?'<div style="font-size:0.85rem;margin-top:2px;">'+pp+'</div>':'')+'</div><div style="font-size:1.35rem;">'+pp+'</div></div>';
     }
     h+='</div></div>';
     // ── HISTORY OVERLAY ─────────────────────────────────────────

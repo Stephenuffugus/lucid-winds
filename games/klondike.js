@@ -38,10 +38,11 @@ function GKL(a){
   // repaint.
   //
   // Budget: 850ms shuffle + 28 x 80ms = 3090ms, inside the 2-3.5s window.
-  // THE LAMP TABLE pilot (18 Nov 2026): on only with ?table=lamp in the address.
-  // See _cdLamp in _cards.js and docs/briefs/card-pack/STYLE.md. Off, nothing
-  // in this file behaves differently.
-  var LAMP=!!(window._cdLamp&&window._cdLamp({id:'klondike',cloth:'moss'}));
+  // THE LAMP TABLE (a choice in the Style sheet; games/_table.js + _cards.js).
+  // A skin over the locked screen below: nothing here lays out differently
+  // under it except the controls, which sit in two rows on the walnut rail.
+  window._cdLamp&&window._cdLamp({id:'klondike',cloth:'moss',redraw:function(){lkH={};rn();}});
+  function lampNow(){return !!(window._cdLampOn&&window._cdLampOn());}
   var dealt=[0,0,0,0,0,0,0]; // cards revealed per column; the model is already complete
   var dealing=false,shuffling=false,dealHandle=null,laidCol=-1,laidIdx=-1,stockPop=false;
   function dealtTotal(){var n=0;for(var d=0;d<7;d++)n+=dealt[d];return n;}
@@ -50,24 +51,12 @@ function GKL(a){
   var gd=document.createElement('div');gd.id='KLgd';gd.style.cssText='padding:0 10px;box-sizing:border-box;max-width:100%;';a.appendChild(gd);
   var _kStyleLbl='🃏 Style';
   var _kc=mc(a);_kc.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:360px;margin:6px auto;padding:0 6px;';
-  if(LAMP){
-    _kc.className+=' kl-lamp-ctl';
-    // Locked screen: two fixed rows in portrait (Draw/Undo/Auto, New/Style),
-    // one column at the right in a landscape phone. Auto keeps its place when
-    // hidden, so nothing moves when it appears.
-    if(!document.getElementById('kl-lamp-css')){
-      var kst=document.createElement('style');kst.id='kl-lamp-css';
-      kst.textContent='html.cd-lamp #fg-ag .kl-lamp-ctl{display:grid!important;grid-template-columns:repeat(6,1fr)!important;gap:6px!important;max-width:420px!important;width:100%;margin:6px auto 0!important;padding:0!important;flex:0 0 auto}'
-        +'html.cd-lamp #fg-ag .kl-lamp-ctl>*{grid-column:span 2}'
-        +'html.cd-lamp #fg-ag .kl-lamp-ctl>#KLnew,html.cd-lamp #fg-ag .kl-lamp-ctl>#KLstyle{grid-column:span 3}'
-        +'html.cd-lamp #KLgd{flex:1 1 auto;min-height:0;padding:0!important}'
-        +'@media (orientation:landscape) and (max-height:520px){'
-        +'html.cd-lamp #fg-ag{display:grid!important;grid-template-columns:1fr 150px;grid-template-rows:auto auto 1fr;column-gap:12px}'
-        +'html.cd-lamp #fg-ag>*{grid-column:1}'
-        +'html.cd-lamp #fg-ag .kl-lamp-ctl{grid-column:2!important;grid-row:1/span 3;grid-template-columns:1fr!important;align-content:start;margin:0!important;gap:5px!important}'
-        +'html.cd-lamp #fg-ag .kl-lamp-ctl>*{grid-column:1!important;min-height:44px!important}}';
-      document.head.appendChild(kst);
-    }
+  // under the lamp the five controls lie in two rows (Draw, Undo, Auto over
+  // New Game and Style) on the walnut rail, as shell.css meant them to
+  if(!document.getElementById('kl-lamp-css')){
+    var kst=document.createElement('style');kst.id='kl-lamp-css';
+    kst.textContent='@media (orientation:portrait),(min-height:521px){html.cd-lamp.shell-locked-fill #fg-ag[data-game="klondike"] .gcr{grid-template-columns:repeat(6,minmax(0,1fr))!important;max-width:440px!important}}';
+    document.head.appendChild(kst);
   }
   _kc.innerHTML='<select class="gsl" id="KLdraw" onchange="_KLDraw(this.value)"><option value="1" selected>Draw 1</option><option value="3">Draw 3</option></select> <button class="gb" id="KLundoBtn" onclick="_KLUndo()" disabled style="opacity:0.65;min-height:48px;">↶ Undo</button> <button class="gb" id="KLautoBtn" onclick="_KLAuto()" style="display:none;background:rgba(200,168,75,0.18);border-color:rgba(200,168,75,0.5);color:var(--gold);">✨ Auto</button> <button class="gb" id="KLnew" onclick="_KLN()" style="min-height:48px;">↻ New Game</button> <button class="gb" id="KLstyle" onclick="_KLToggleStyle()" style="font-size:0.78rem;min-height:48px;">'+_kStyleLbl+'</button>';
   // Snapshot the full game state so undo can restore it exactly. Plain JSON
@@ -109,7 +98,6 @@ function GKL(a){
   function refreshAutoBtn(){
     var b=document.getElementById('KLautoBtn');
     if(!b)return;
-    if(LAMP){b.style.display='';b.style.visibility=autoEligible()?'visible':'hidden';return;}
     b.style.display=autoEligible()?'':'none';
   }
   // Cascade: find the lowest-rank card among tableau tops + waste top + stock
@@ -510,14 +498,6 @@ function GKL(a){
   // a square on the right, the tableau between. The top row's height goes
   // back to the cards (1 + 2.28 card heights instead of 2 + 2.28).
   function lampLand(){ return window.innerWidth>window.innerHeight&&window.innerHeight<=520; }
-  function lampMaxH(land){
-    var ag=document.getElementById('fg-ag'); if(!ag)return 0;
-    var r=gd.getBoundingClientRect(), agR=ag.getBoundingClientRect(), kc=_kc.getBoundingClientRect();
-    var pb=parseFloat(getComputedStyle(ag).paddingBottom)||0;
-    var side=kc.left>=r.right-4;
-    var avail=agR.bottom-pb-(side?0:(kc.height+6))-r.top;
-    return Math.max(40,Math.floor((avail-(land?8:14))/(land?3.3:4.3)));
-  }
   function rn(){
     // Preserve the scrollable container's position across rebuilds — otherwise
     // every click that triggers rn() snaps the viewport back to the top.
@@ -548,10 +528,10 @@ function GKL(a){
     // per screen so the worst column fits (_cdLockH), and a landscape phone
     // gets the lamp table's sideways arrangement (stock and waste left,
     // foundations right) on every deck, not only under the lamp.
-    var LK=!LAMP&&!!(window._cdLocked&&window._cdLocked());
-    var LAND=(LAMP||LK)&&lampLand();
-    var lkKey=LK?(gd.clientWidth+'x'+(_ag?_ag.clientHeight:0)+(LAND?'L':'P')):'';
-    var fit=window._cdFit?window._cdFit(LAND?10:7,LAMP?{maxW:84,gap:4,pad:LAND?40:2,container:gd,maxH:lampMaxH(LAND)}:LK?{maxW:84,gap:3,pad:LAND?40:10,container:gd,maxH:lkH[lkKey]||0}:{maxW:72,gap:3,pad:10}):{w:'clamp(52px,13.5vw,72px)',h:'clamp(72px,18.9vw,100px)',font:'clamp(.6rem,1.7vw,.8rem)',peek:'14px',raw:{w:66,h:100,peek:14}};
+    var LK=!!(window._cdLocked&&window._cdLocked());
+    var LAND=LK&&lampLand();
+    var lkKey=LK?(gd.clientWidth+'x'+(_ag?_ag.clientHeight:0)+(LAND?'L':'P')+(lampNow()?'l':'')):'';
+    var fit=window._cdFit?window._cdFit(LAND?10:7,LK?{maxW:84,gap:3,pad:LAND?40:10,container:gd,maxH:lkH[lkKey]||0}:{maxW:72,gap:3,pad:10}):{w:'clamp(52px,13.5vw,72px)',h:'clamp(72px,18.9vw,100px)',font:'clamp(.6rem,1.7vw,.8rem)',peek:'14px',raw:{w:66,h:100,peek:14}};
     var klW=fit.w,klH=fit.h,klF=fit.font;
     topRow.style.cssText='display:flex;gap:'+fit.gap+';justify-content:center;padding:4px 0;width:100%;max-width:100vw;margin:0 auto;align-items:flex-start;flex-wrap:nowrap';
 
@@ -683,7 +663,7 @@ function GKL(a){
         // Compress peek when the pile grows deep so the bottom stays on-screen.
         // Locked (22 Nov 2026), the overlap is the lock's job: a column keeps the full
         // reveal while there is room and tightens only as far as it must (_cdLockSqueeze).
-        var depthMult = (LK||(LAMP&&window._cdLocked&&window._cdLocked())) ? 1.0 : (depth>14 ? 0.5 : depth>11 ? 0.65 : depth>8 ? 0.8 : 1.0);
+        var depthMult = LK ? 1.0 : (depth>14 ? 0.5 : depth>11 ? 0.65 : depth>8 ? 0.8 : 1.0);
         for(var i=0;i<depth;i++){
           var card=tableau[c][i];
           var cdEl=_cdEl(card);

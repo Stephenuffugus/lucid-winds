@@ -68,6 +68,8 @@ function GPY(a){
   };
 
   window._cdActiveRn=function(){try{rn()}catch(e){}};
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'pyramid',cloth:'ochre'});
   function init(){
     var deck=_cdSh(_cdMk());
     pyr=[];stock=[];waste=[];sel=null;gameOver=false;moves=0;removed={};

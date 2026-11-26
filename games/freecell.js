@@ -68,6 +68,8 @@ function GFC(a){
   };
 
   window._cdActiveRn=function(){try{rn()}catch(e){}};
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'freecell',cloth:'loden'});
   function init(){
     var deck=_cdSh(_cdMk());
     tab=[];free=[null,null,null,null];fnd=[[],[],[],[]];sel=null;gameOver=false;moves=0;

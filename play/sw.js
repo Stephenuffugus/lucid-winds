@@ -28,7 +28,7 @@
    (304 when unchanged, so it costs headers, not bytes). Subresources keep the
    plain fetch: they are ?v-stamped, and rebuilding no-cors requests from a
    bare URL would break them. */
-var CACHE = "sws-play-v4";
+var CACHE = "sws-play-v5";   /* v5 22 Nov 2026: the card games' lamp table (games/_table.js) */
 
 /* Never let a hung request hang the page. fetch() only rejects on a hard
    failure; a half-connected phone leaves it pending forever, and a pending

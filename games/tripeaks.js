@@ -98,6 +98,8 @@ function GTP(a){
   }
 
   window._cdActiveRn=function(){try{rn()}catch(e){}};
+  // the lamp table, if the player chose it (Style sheet; games/_table.js)
+  window._cdLamp&&window._cdLamp({id:'tripeaks',cloth:'heather'});
   function init(){
     var deck=_cdSh(_cdMk());
     peaks=[];stock=[];waste=[];gameOver=false;moves=0;streak=0;removed={};
