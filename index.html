@@ -7675,7 +7675,8 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
         <button onclick="toggleSettingsMenu()" style="background:rgba(122,179,86,0.1);border:1.5px solid rgba(122,179,86,0.4);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.85rem;width:48px;height:48px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
       </div>
 
-      <div class="settings-group">
+      <!-- 20 Nov (the lead's pick): New Game and Add 3 Cards belong to the card game; the menu shows them only when the card game's own gear opened it (toggleSettingsMenu reads _lwSettingsFromCards) -->
+      <div class="settings-group" id="settings-game-group">
         <div class="settings-group-label">GAME</div>
         <button class="settings-big-btn" onclick="newGame();toggleSettingsMenu();">New Game</button>
         <button class="settings-big-btn" onclick="addCards();toggleSettingsMenu();">Add 3 Cards</button>
@@ -7769,7 +7770,7 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
     <div style="display:flex;gap:6px;flex-shrink:0;">
       <button onclick="if(window._showGameRules)window._showGameRules('set');" aria-label="How to play" style="min-width:48px;height:48px;padding:0 0.55rem;border-radius:10px;border:1.5px solid rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(120,100,40,0.32));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.14em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.25rem;-webkit-tap-highlight-color:transparent;">📖 RULES</button>
       <button onclick="triggerTutorialDemo()" aria-label="Interactive tutorial" style="width:48px;height:48px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.45);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(58,90,42,0.28));color:var(--sage);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">🎓</button>
-      <button onclick="toggleSettingsMenu()" aria-label="Settings" style="width:48px;height:48px;border-radius:10px;border:1.5px solid rgba(200,188,160,0.3);background:rgba(46,40,32,0.85);color:var(--cream);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">⚙</button>
+      <button onclick="window._lwSettingsFromCards=1;toggleSettingsMenu()" aria-label="Settings" style="width:48px;height:48px;border-radius:10px;border:1.5px solid rgba(200,188,160,0.3);background:rgba(46,40,32,0.85);color:var(--cream);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">⚙</button>
     </div>
   </div>
 
@@ -15306,6 +15307,10 @@ document.addEventListener('keydown', function(e) {
     // Hub R13: the overlay is written inside the game tab, so it drew nothing on the other tabs; it lives on body
     if (ov && ov.parentNode !== document.body) document.body.appendChild(ov);
     if (ov) ov.style.display = ov.style.display === 'none' ? 'block' : 'none';
+    // 20 Nov: the card game's two items show only when its own gear opened the menu, never from the greenhouse or the other tabs
+    var gg = document.getElementById('settings-game-group');
+    if (gg && ov && ov.style.display === 'block') gg.style.display = window._lwSettingsFromCards ? '' : 'none';
+    window._lwSettingsFromCards = 0;
     // Refresh perf-lite toggle label so it reflects the stored state
     var b = document.getElementById('perf-lite-btn');
     if (b) {
