@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <script>if(!("loading" in HTMLImageElement.prototype)||/[?&]lite=1/.test(location.search))document.documentElement.className+=" lite";</script>
+<script>if(/[?&]look=classic\b/.test(location.search))document.documentElement.className+=" look-classic";</script>
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -251,10 +252,10 @@
      made it unclickable, which a screenshot showed and a hit test confirmed. */
   .shot .kind{
     position:absolute;right:6px;bottom:6px;z-index:3;
-    font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+    font-size:11px;letter-spacing:.07em;text-transform:uppercase;
     color:rgba(237,228,212,.82);background:rgba(8,10,9,.5);
     border:1px solid rgba(237,228,212,.14);
-    padding:2px 7px;border-radius:20px;line-height:1.5;
+    padding:2px 7px;border-radius:20px;line-height:1.5;white-space:nowrap;
     backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
   }
   /* the in-development badge already lives top left; keep it above the scrim */
@@ -324,7 +325,7 @@
      target is ~48px (Stephen 7/17: expanded a description and couldn't close it) */
   .info-btn::before{content:'';position:absolute;inset:-9px;border-radius:50%}
   .card.desc-open .ds{-webkit-line-clamp:unset;display:block;font-size:12px;line-height:1.5}
-  .card.desc-open .ds::after{content:'✕ tap here to close';display:block;color:#c8a84b;font-size:10px;margin-top:5px;letter-spacing:.5px;font-weight:700}
+  .card.desc-open .ds::after{content:'✕ tap here to close';display:block;color:#c8a84b;font-size:11px;margin-top:5px;letter-spacing:.5px;font-weight:700}
   .card.desc-open .info-btn{background:rgba(200,168,75,0.5);border-color:#c8a84b}
   .hubcard{background:linear-gradient(145deg,#1e3326,#152019);border:1px solid var(--leaf)}
   .hubcard .shot{background:linear-gradient(135deg,#2c4a35,#1a2a20);color:var(--leaf)}
@@ -350,6 +351,11 @@
            color:#f2f6f2;opacity:.85;text-shadow:0 1px 5px rgba(0,0,0,.85);
            user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
   .fav-btn.on{color:var(--sun);opacity:1}
+  .fav-btn::before{content:"";position:absolute;inset:0 0 -8px -8px}
+  #wallet button{position:relative}
+  #wallet button::before{content:"";position:absolute;inset:-10px -4px}
+  footer a{display:inline-block;padding:15px 6px}
+  #studio-apps small a{padding:15px 3px}
   .fav-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:14px;line-height:1.6;
              padding:38px 16px;background:var(--panel);border:1px dashed var(--line);border-radius:12px}
   footer{color:var(--muted);font-size:12px;text-align:center;padding:40px 0 30px}
@@ -393,7 +399,7 @@
   /* MASTHEAD — wolf centered, words on the left over a scrim */
   .masthead{position:relative;height:clamp(230px,34vw,360px);overflow:hidden;border-radius:20px;
     border:1px solid var(--line);margin:8px 0 4px}
-  .masthead img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%;
+  .masthead img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%;
     opacity:.97;animation:mastBreathe 18s ease-in-out infinite}
   @keyframes mastBreathe{0%,100%{transform:scale(1.02)}50%{transform:scale(1.07)}}
   .masthead::after{content:"";position:absolute;inset:0;z-index:1;
@@ -762,6 +768,54 @@
            border:0;border-radius:16px;background:var(--gold);color:#1d1606;font:600 20px/1 var(--disp);letter-spacing:.4px;cursor:pointer;
            box-shadow:0 8px 22px rgba(0,0,0,.45)}
   .gp-play:active{transform:scale(.985)}
+  /* ═══════════ ONE HAND (23 Nov 2026, portal/STYLE.md) ═══════════
+     One lamp (warm, upper left), one paper grain, one hairline, one mount
+     around every picture, one heading voice. Everything here is scoped to
+     html:not(.look-classic), so ?look=classic shows the page as it was. */
+  html:not(.look-classic){--grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .94 0 0 0 0 .84 0 0 0 .55 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  html:not(.look-classic) body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:40;
+    background-image:var(--grain);background-size:160px;opacity:.5}
+  html.perf-lite:not(.look-classic) body::after,html.lite:not(.look-classic) body::after{display:none}
+  /* the card: one shape, its shadow falls down and right, away from the lamp */
+  html:not(.look-classic) .card{border-radius:14px;border-color:rgba(241,233,216,.10);
+    background:linear-gradient(160deg,#18221a 0%,#121a13 55%,#0f160f 100%);
+    box-shadow:3px 6px 16px rgba(0,0,0,.38)}
+  html:not(.look-classic) .card:hover{border-color:rgba(228,189,95,.45)}
+  /* the picture sits in a mount inside the card */
+  html:not(.look-classic) .card .shot{margin:6px 6px 0;border-radius:10px;overflow:hidden}
+  html:not(.look-classic) .shot::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+    border-radius:inherit;
+    background:radial-gradient(85% 75% at 10% 6%,rgba(255,232,190,.15) 0%,rgba(255,232,190,0) 58%),
+      linear-gradient(135deg,rgba(0,0,0,0) 55%,rgba(6,8,6,.28) 100%),var(--grain);
+    background-size:auto,auto,160px;
+    outline:1px solid rgba(241,233,216,.24);outline-offset:-6px}
+  html:not(.look-classic) .shot img{filter:saturate(.92) contrast(1.03)}
+  html:not(.look-classic) .card .body{padding:8px 10px 10px}
+  html:not(.look-classic) .card .nm{font-weight:800;font-size:13px;color:var(--cream);letter-spacing:.005em}
+  /* one heading voice: Fredoka 600, sentence case, cream; the subtitle beside it in Nunito */
+  html:not(.look-classic) .shelf-h,html:not(.look-classic) h2.arcade-h,html:not(.look-classic) .members h2{
+    font-family:var(--disp);font-weight:600;text-transform:none;letter-spacing:.005em;color:var(--cream);
+    border-bottom:0;padding-bottom:0}
+  html:not(.look-classic) .shelf-h{font-size:1.22rem;margin:0 0 10px;flex-wrap:wrap;row-gap:2px;white-space:nowrap}
+  html:not(.look-classic) .shelf-h span{white-space:normal}
+  html:not(.look-classic) h2.arcade-h{font-size:1.22rem}
+  html:not(.look-classic) .shelf-h span{display:inline-block;font-family:'Nunito',sans-serif;font-weight:600;
+    font-size:12.5px;text-transform:none;letter-spacing:0;color:var(--muted)}
+  html:not(.look-classic) .shelf-h span::first-letter{text-transform:uppercase}
+  html:not(.look-classic) .members h2{font-size:1.7rem;line-height:1.15;opacity:1}
+  html:not(.look-classic) .shelf{margin:0 0 26px}
+  html:not(.look-classic) .shelf-wrap::after{background:linear-gradient(to right,rgba(8,12,9,0),rgba(8,12,9,.9))}
+  /* the first screen shows games: a short masthead on phones, and Start here right under the search */
+  html:not(.look-classic) .masthead{height:clamp(190px,19vw,240px)}
+  @media (max-width:720px){
+    html:not(.look-classic) .masthead{height:auto;min-height:0}
+    html:not(.look-classic) .masthead .brandline{position:relative;padding:20px 20px 18px}
+    html:not(.look-classic) .masthead .aw{font-size:2.1rem}
+    html:not(.look-classic) .masthead .sub{font-size:.95rem;margin-top:8px}
+    html:not(.look-classic) .findgame{margin-top:10px}
+  }
+  html:not(.look-classic) #lead-shelf{margin:18px 0 6px}
+
 </style>
 </head>
 <body>
@@ -805,7 +859,7 @@
 
   <!-- Cinematic masthead: the wolf stays centered, brand words rise in on the left -->
   <div class="masthead reveal">
-    <img src="/portal-assets/sky-wolf-banner.png?v=20260916p" alt="Sky Wolf Studio">
+    <picture><source type="image/webp" srcset="/portal-assets/sky-wolf-banner.webp?v=20260916p"><img src="/portal-assets/sky-wolf-banner.png?v=20260916p" alt="Sky Wolf Studio" width="1200" height="514" fetchpriority="high"></picture>
     <div class="brandline">
       <div>
         <div class="st">Sky Wolf Studio</div>
@@ -838,6 +892,7 @@
          tap. The autofill attributes below are the whole defence now; portal/dev/probe-search-typing.mjs holds the law. -->
     <input id="fg-search" type="search" name="game-search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="search" enterkeyhint="search" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" aria-label="Search games"
       placeholder="Search a title, a type, or a classic you know: Peggle, Wordle, Mahjong…">
+    <script>(function(){var i=document.getElementById('fg-search');if(i&&window.innerWidth<600)i.placeholder='Search, or try Peggle, Wordle…';})();</script>
     <!-- 2026-09-02 (Stephen: "every time i go to search it suggests my email and
          password ... have it pop up some suggestions, sudoku, something new"):
          a chip row so a player rarely has to type into the box at all. Three
@@ -889,7 +944,7 @@
 
   <!-- Soundtrack — large, can't-miss button. -->
   <button id="music-fab" type="button" title="Soundtrack" aria-label="Play soundtrack">
-    <span class="mf-thumb"><img src="/portal-assets/music-thumb.png?v=20260916p" alt="" onerror="this.remove()"><span class="glyph">&#9835;</span></span>
+    <span class="mf-thumb"><picture><source type="image/webp" srcset="/portal-assets/music-thumb.webp?v=20260916p"><img src="/portal-assets/music-thumb.png?v=20260916p" alt="" width="512" height="512" loading="lazy" onerror="this.remove()"></picture><span class="glyph">&#9835;</span></span>
     <span class="mf-text">
       <span class="mf-label">Studio Soundtrack</span>
       <span class="mf-sub">Tap to play cozy music while you browse and game</span>
@@ -1110,13 +1165,13 @@ var FEATURED = [
   {nm:"Fathom", ds:"The only light is the sound you throw. Toss an echo stone, watch the cave sketch itself in, and move while the dark is busy with the noise.", cat:"action", url:"/satellites/fathom/?v=20260915a", ic:"🪨", thumb:"/portal-assets/thumbs/fathom.png?v=20260915a", beta:true, fresh:true},
   {nm:"Asterism", ds:"The real night sky over your head, right now. Join the stars into a shape of your own, name it, and read the myth the sky writes for it.", cat:"creative", url:"/satellites/asterism/?v=20260908d", ic:"✨", thumb:"/portal-assets/thumbs/asterism.png?v=20260908d", beta:true, fresh:true},
   {nm:"Swell", ds:"Hold the screen and an orchestra swells out of silence. Let go and it resolves, always. You cannot play a wrong note. You can only conduct.", cat:"creative", url:"/satellites/swell/?v=20260915a", ic:"🎻", thumb:"/portal-assets/thumbs/swell.png?v=20260915a", beta:true, fresh:true},
-  {nm:"Wardian", ds:"A sealed jar that lives on your time. Moss, ferns and small bugs grow while you are away, night falls when it falls outside, and nothing in the jar can ever die.", cat:"creative", url:"/satellites/wardian/?v=20260915a", ic:"🫙", thumb:"/portal-assets/thumbs/wardian.png?v=20260915a", beta:true, fresh:true},
-  {nm:"Doohickey", ds:"Drag ramps, dominoes, fans and balloons onto the page, press GO, and watch a marble set off beautiful chaos until the bell rings. Build something needlessly complicated. Watch it almost work.", cat:"puzzle", url:"/satellites/doohickey/?v=20260915a", ic:"⚙️", thumb:"/portal-assets/thumbs/doohickey.png?v=20260915a", beta:true, fresh:true},
+  {nm:"Wardian", ds:"A sealed jar that lives on your time. Moss, ferns and small bugs grow while you are away, night falls when it falls outside, and nothing in the jar can ever die.", cat:"creative", url:"/satellites/wardian/?v=20260915a", ic:"🫙", thumb:"/portal-assets/thumbs/live/wardian.webp", beta:true, fresh:true},
+  {nm:"Doohickey", ds:"Drag ramps, dominoes, fans and balloons onto the page, press GO, and watch a marble set off beautiful chaos until the bell rings. Build something needlessly complicated. Watch it almost work.", cat:"puzzle", url:"/satellites/doohickey/?v=20260915a", ic:"⚙️", thumb:"/portal-assets/thumbs/live/doohickey.webp", beta:true, fresh:true},
   {nm:"Airworthy", ds:"Fold a paper airplane crease by crease, see the air move over its wings in a wind tunnel, throw it across the gym, then bend the elevators a hair and throw it again. Every crease counts.", cat:"creative", url:"/satellites/airworthy/?v=20260915c", ic:"✈️", thumb:"/portal-assets/thumbs/airworthy.png?v=20260915c", beta:true, fresh:true},
-  {nm:"Windup", ds:"Punch holes in a paper strip, turn the crank yourself, and hear your song plink out of a little brass music box. Wrap it up and send it to someone.", cat:"creative", url:"/satellites/windup/?v=20260907c", ic:"🎁", thumb:"/portal-assets/thumbs/windup.png?v=20260907c", beta:true, fresh:true},
+  {nm:"Windup", ds:"Punch holes in a paper strip, turn the crank yourself, and hear your song plink out of a little brass music box. Wrap it up and send it to someone.", cat:"creative", url:"/satellites/windup/?v=20260907c", ic:"🎁", thumb:"/portal-assets/thumbs/live/windup.webp", beta:true, fresh:true},
   {nm:"Inkswing", ds:"Grab a brass pendulum and throw it. A pen underneath draws the swing as it slowly dies, and the lengths you set hum the chord your drawing is made of. Keep the ones you love.", cat:"creative", url:"/satellites/inkswing/?v=20260915a", ic:"🖋️", thumb:"/portal-assets/thumbs/inkswing.png?v=20260915a", beta:true, fresh:true},
-  {nm:"Whistlestop", ds:"Snap a wooden train set together on the rug, pull the whistle, and then work the switches so three little trains all get home without meeting nose to nose.", cat:"puzzle", url:"/satellites/whistlestop/?v=20260916c", ic:"🚂", thumb:"/portal-assets/thumbs/whistlestop.png?v=20260907d", beta:true, fresh:true},
-  {nm:"Strata", ds:"Brush and chisel a cliff face until a creature nobody has ever seen comes out of the stone. Every skeleton is generated once. Mount it, name it, and hang it in a museum that is only yours.", cat:"creative", url:"/satellites/strata/?v=20260907c", ic:"🦴", thumb:"/portal-assets/thumbs/strata.png?v=20260907c", beta:true, fresh:true},
+  {nm:"Whistlestop", ds:"Snap a wooden train set together on the rug, pull the whistle, and then work the switches so three little trains all get home without meeting nose to nose.", cat:"puzzle", url:"/satellites/whistlestop/?v=20260916c", ic:"🚂", thumb:"/portal-assets/thumbs/live/whistlestop.webp", beta:true, fresh:true},
+  {nm:"Strata", ds:"Brush and chisel a cliff face until a creature nobody has ever seen comes out of the stone. Every skeleton is generated once. Mount it, name it, and hang it in a museum that is only yours.", cat:"creative", url:"/satellites/strata/?v=20260907c", ic:"🦴", thumb:"/portal-assets/thumbs/live/strata.webp", beta:true, fresh:true},
   {nm:"Gerplunk", ds:"A lake at golden hour, a stone in your hand, and one flick. Angle, speed and spin decide the skips. Count them by ear and chase the record with no clock anywhere.", cat:"action", url:"/satellites/gerplunk/?v=20260914a", ic:"🪨", thumb:"/portal-assets/thumbs/gerplunk.png?v=20260914a", beta:true, fresh:true},
   {nm:"Updraft", ds:"Go fly a kite. Hold to reel in, let go to give it line, slide to lean. Loops, dives and saves come from your thumb, the tail cracks like a ribbon, and an oak named Mabel is waiting to snag you.", cat:"action", url:"/satellites/updraft/?v=20260915a", ic:"🪁", thumb:"/portal-assets/thumbs/updraft.png?v=20260915a", beta:true, fresh:true},
   {nm:"Marrowdeep", ds:"Roll a party of dice, decide who faces what, and bury the ones who fall; their callings come back as cards.", cat:"card", url:"/satellites/marrowdeep/?v=20260914a", ic:"🦴", thumb:"/portal-assets/thumbs/marrowdeep.png?v=20260914a", beta:true, fresh:true},
@@ -1138,7 +1193,7 @@ var FEATURED = [
   // tools/check.js runs every gate); deployed by tools/shutterbug-tests/deploy.sh, this row by portal-card.sh. The page
   // does NOT load /dev-gate.js: a shared room's link has to open for whoever it is sent to. No thumb yet (T3.8 shoots one
   // from the sample room), so card() shows the ic glyph. ?v= is the page's SB.BUILD.
-  {nm:"Shutterbug", ds:"Shoot any room and it develops into a pixel art level. A thumb sized clay bug climbs your own furniture to the ceiling light.", cat:"action", url:"/satellites/shutterbug/?v=sb-m1-1", ic:"📸", beta:true, fresh:true},
+  {nm:"Shutterbug", ds:"Shoot any room and it develops into a pixel art level. A thumb sized clay bug climbs your own furniture to the ceiling light.", cat:"action", url:"/satellites/shutterbug/?v=sb-m1-1", ic:"📸", beta:true, fresh:true, thumb:"/portal-assets/thumbs/live/shutterbug.webp"},
   {nm:"Aura Off", ds:"A gesture duel in a public square. No words, no contact. Reference everything, repeat nothing, and never look like you are trying.", cat:"action", url:"/satellites/aura-off/?v=20260829b", ic:"🥊", thumb:"/portal-assets/thumbs/aura-off.png", beta:true, fresh:true},
   /* THE MATH CATALOG (added 2026-09-16 at Stephen's ask: "put them in
      development in the studio"). Nine games plus a shared core, all serving,
@@ -1155,15 +1210,15 @@ var FEATURED = [
      shelved here.
      Descriptions are Stephen's own one line premises from
      assets/math-catalog/*-handoff.md, not invented copy. */
-  {nm:"Span", ds:"Two stone piers across a canyon. The span only lies flat when both sides match, so the equals sign turns into something you can see.", cat:"math", url:"/satellites/span/?v=20260915i", ic:"🌉", beta:true, fresh:true},
-  {nm:"Yonder", ds:"A road running out to a signpost in the distance. Say how far along the number falls, then walk out and see where it really was.", cat:"math", url:"/satellites/yonder/?v=20260915d", ic:"🛣️", beta:true, fresh:true},
-  {nm:"Crease", ds:"A paper strip pinned between zero and one. Fold it, pinch it, and the fractions show up in the creases you made yourself.", cat:"math", url:"/satellites/crease/?v=20260916a", ic:"📄", beta:true, fresh:true},
-  {nm:"Brim", ds:"Two glasses on a shelf and two fractions under them. Tap the fuller one, then watch the water rise and show you whether you were right.", cat:"math", url:"/satellites/brim/?v=20260916b", ic:"🥛", beta:true, fresh:true},
+  {nm:"Span", ds:"Two stone piers across a canyon. The span only lies flat when both sides match, so the equals sign turns into something you can see.", cat:"math", url:"/satellites/span/?v=20260915i", ic:"🌉", beta:true, fresh:true, thumb:"/portal-assets/thumbs/live/span.webp"},
+  {nm:"Yonder", ds:"A road running out to a signpost in the distance. Say how far along the number falls, then walk out and see where it really was.", cat:"math", url:"/satellites/yonder/?v=20260915d", ic:"🛣️", beta:true, fresh:true, thumb:"/portal-assets/thumbs/live/yonder.webp"},
+  {nm:"Crease", ds:"A paper strip pinned between zero and one. Fold it, pinch it, and the fractions show up in the creases you made yourself.", cat:"math", url:"/satellites/crease/?v=20260916a", ic:"📄", beta:true, fresh:true, thumb:"/portal-assets/thumbs/live/crease.webp"},
+  {nm:"Brim", ds:"Two glasses on a shelf and two fractions under them. Tap the fuller one, then watch the water rise and show you whether you were right.", cat:"math", url:"/satellites/brim/?v=20260916b", ic:"🥛", beta:true, fresh:true, thumb:"/portal-assets/thumbs/live/brim.webp"},
   {nm:"Glimpse", ds:"Fireflies blink on in a dark meadow and blink off again before you can count them. How many were there.", cat:"math", url:"/satellites/glimpse/?v=20260916c", ic:"🌌", beta:true, fresh:true},
-  {nm:"Notch", ds:"A dim workshop. Turn a carved piece in your head until it seats into its notch, then find it again inside the carving.", cat:"math", url:"/satellites/notch/?v=20260916e", ic:"🪵", beta:true, fresh:true},
-  {nm:"Hush", ds:"A deer in a dawn clearing. Step closer while it grazes and freeze the moment its head comes up. Every creature you do not startle stays.", cat:"math", url:"/satellites/hush/?v=20260916d", ic:"🦌", beta:true, fresh:true},
-  {nm:"Tint", ds:"A dyer's workshop with recipes in jugs. Mix until your colour comes out the same as the one on the bench, at any size of batch.", cat:"math", url:"/satellites/tint/?v=20260916g", ic:"🎨", beta:true, fresh:true},
-  {nm:"Gauge", ds:"A precision bench and a loupe. Look between two numbers that were touching and ten new ones open up in the gap.", cat:"math", url:"/satellites/gauge/?v=20260916h", ic:"🔬", beta:true, fresh:true},
+  {nm:"Notch", ds:"A dim workshop. Turn a carved piece in your head until it seats into its notch, then find it again inside the carving.", cat:"math", url:"/satellites/notch/?v=20260916e", ic:"🪵", beta:true, fresh:true, thumb:"/portal-assets/thumbs/live/notch.webp"},
+  {nm:"Hush", ds:"A deer in a dawn clearing. Step closer while it grazes and freeze the moment its head comes up. Every creature you do not startle stays.", cat:"math", url:"/satellites/hush/?v=20260916d", ic:"🦌", beta:true, fresh:true, thumb:"/portal-assets/thumbs/live/hush.webp"},
+  {nm:"Tint", ds:"A dyer's workshop with recipes in jugs. Mix until your colour comes out the same as the one on the bench, at any size of batch.", cat:"math", url:"/satellites/tint/?v=20260916g", ic:"🎨", beta:true, fresh:true, thumb:"/portal-assets/thumbs/live/tint.webp"},
+  {nm:"Gauge", ds:"A precision bench and a loupe. Look between two numbers that were touching and ten new ones open up in the gap.", cat:"math", url:"/satellites/gauge/?v=20260916h", ic:"🔬", beta:true, fresh:true, thumb:"/portal-assets/thumbs/live/gauge.webp"},
   // Hashblock flagships on the workbench (2026-07-30). Both stay beta:true
   // behind the tester wall until Stephen opens them. "The Attic" is the
   // working title on purpose; never "Retro Attic" (that is the store's name).
@@ -1366,7 +1421,7 @@ var FEATURED = [
   // _sbCapEarn (30/day, 1/floor·2/elite·4/boss). Coins are game-local (sd_meta),
   // never Sunbeams. Source of truth: /sprout-dice.html at repo root; re-vendor
   // `cp sprout-dice.html satellites/sprout-dice/index.html`. Glyph until art lands.
-  {nm:"Sprout Dice", ds:"A botanical dice roguelike where every roll plants thorns, heals, and bark across 12 floors.", cat:"dice", url:"/satellites/sprout-dice/?v=20260707a", ic:"🎲"},
+  {nm:"Sprout Dice", ds:"A botanical dice roguelike where every roll plants thorns, heals, and bark across 12 floors.", cat:"dice", url:"/satellites/sprout-dice/?v=20260707a", ic:"🎲", thumb:"/portal-assets/thumbs/live/sprout-dice.webp"},
   // Petal Plunge (Sky Wolf Studio, Jul 06): single-file, zero-asset botanical
   // SkiFree — ride a leaf-sled down an endless wild-garden slope, thread dewdrop
   // gates, launch ramps for tricks, and outrun the feral Gnome that wakes at depth
@@ -1387,14 +1442,14 @@ var FEATURED = [
   // Three revamped 1991 classics (Jul 07). Self-contained, same-origin, sunbeam
   // earns via _sbCapEarn (30/day). Glyph cards until thumbnails land.
   {nm:"Word Lightning", ds:"Spell as many words as you can from eight crackling letters before the storm clock runs out.", cat:"word", url:"/satellites/bloomzap/", ic:"⚡", thumb:"/portal-assets/thumbs/word-lightning.jpg?v=20260821b"},
-  {nm:"Rootbound", ds:"A botanical sliding puzzle where you shuffle planters aside to slide the golden bloom free.", cat:"puzzle", url:"/satellites/rootbound/", ic:"🪴"},
+  {nm:"Rootbound", ds:"A botanical sliding puzzle where you shuffle planters aside to slide the golden bloom free.", cat:"puzzle", url:"/satellites/rootbound/", ic:"🪴", thumb:"/portal-assets/thumbs/live/rootbound.webp"},
   {nm:"OriVex", ds:"Slot folded paper tiles so every touching edge shares a number in this quiet origami puzzle.", cat:"puzzle", url:"/satellites/petalvex/?v=ov6", ic:"🍃", thumb:"/portal-assets/thumbs/petalvex.jpg?r=20260727"},
   {nm:"Hedgerow", ds:"Grow hedge walls to fence the garden pests into a corner and win back the bed.", cat:"puzzle", url:"/satellites/hedgerow/?v=hg14", ic:"🌳", thumb:"/portal-assets/thumbs/hedgerow.jpg"},
   {nm:"Bubblenaut", ds:"Trap the runaway alien critters in bubbles and pop them across five treasure worlds.", cat:"action", url:"/satellites/bubblenaut/?v=5", ic:"🫧", thumb:"/portal-assets/thumbs/bubblenaut-v2.png", fresh:true},
   {nm:"Inkbound", ds:"You are a field mouse who shoves rows of stone planters to trap every garden grub in a corner.", cat:"puzzle", url:"/satellites/grubtrap/", ic:"🐭", thumb:"/portal-assets/thumbs/inkbound.jpg"},
   {nm:"Hexa Hive", ds:"Drop honeycomb chips into the comb, stack matching colors to ten, and pop cells in showers of gold.", cat:"puzzle", url:"/satellites/hexa-hive/?v=hh20", ic:"🐝", thumb:"/portal-assets/thumbs/hexa-hive.jpg", fresh:true},
   {nm:"No Pain, No Gain", ds:"Build a course of clay traps, drop poor little Clayton in, and get paid for every bonk.", cat:"puzzle", url:"/satellites/no-pain-no-gain/", ic:"🟢", thumb:"/portal-assets/thumbs/no-pain-no-gain.jpg", fresh:true},
-  {nm:"Jade Garden", ds:"A calm botanical Mahjong solitaire where every deal is guaranteed solvable.", cat:"board", url:"/satellites/mahjong/", ic:"🀄"},
+  {nm:"Jade Garden", ds:"A calm botanical Mahjong solitaire where every deal is guaranteed solvable.", cat:"board", url:"/satellites/mahjong/", ic:"🀄", thumb:"/portal-assets/thumbs/live/jade-garden.webp"},
   {nm:"Nectar Drop", ds:"A botanical peg bouncer where you ricochet a pollen ball through 120 flower meadows.", cat:"action", url:"/satellites/nectar-drop/", ic:"🌼", thumb:"/portal-assets/thumbs/nectar-drop.jpg"},
   {nm:"Jumping Jimothy", ds:"Hop Seattle's roundest raccoon across the rainy city to the greatest dumpster feast in town.", cat:"action", url:"/satellites/stream-hop/?v=v87", ic:"🦝", thumb:"/portal-assets/thumbs/stream-hop.jpg?v=2", fresh:true},
   {nm:"Petal Slice", ds:"Swipe to slice tossed seed pods and blossoms in one stroke for big combos.", cat:"action", url:"/satellites/petal-slice/", ic:"🌸", thumb:"/portal-assets/thumbs/petal-slice.jpg"},
@@ -1545,6 +1600,9 @@ var GAMES = [
 ];
 
 function _lwPh(el){ el.outerHTML = '<span class="ph">🌿</span>'; }
+window._swsClassic = /(^| )look-classic( |$)/.test(document.documentElement.className);
+/* name -> portal-assets/thumbs/live/<file>.webp (see portal/STYLE.md, Thumbnails) */
+var LIVE_THUMB = {"g:backgammon":"g-backgammon","g:checkers":"g-checkers","g:chess":"g-chess","g:colorgarden":"g-colorgarden","g:flood":"g-flood","g:freecell":"g-freecell","g:golf":"g-golf","g:hanoi":"g-hanoi","g:kakuro":"g-kakuro","g:klondike":"g-klondike","g:lights":"g-lights","g:livingstones":"g-livingstones","g:mines":"g-mines","g:petalmatch":"g-petalmatch","g:picross":"g-picross","g:pipe":"g-pipe","g:pyramid":"g-pyramid","g:rootflow":"g-rootflow","g:rootrush":"g-rootrush","g:seedsow":"g-seedsow","g:set":"g-set","g:simon":"g-simon","g:slider":"g-slider","g:sokoban":"g-sokoban","g:song":"g-song","g:spider":"g-spider","g:sudoku":"g-sudoku","g:trellis":"g-trellis","g:tripeaks":"g-tripeaks","g:vinewords":"g-vinewords","g:wordsearch":"g-wordsearch","s:Blobworks":"s-blobworks","s:Blooming Words":"s-blooming-words","s:Inkbound":"s-inkbound","s:Tally":"s-tally","s:Sweet Spot":"s-sweet-spot","s:Hexa Hive":"s-hexa-hive","s:Pollen Panic":"s-pollen-panic"};
 
 /* ---- Favorites (Stephen Jul 10 note #10) ----
    Hearted games live in localStorage sws_favs (keys: 's:<path, no ?v>' for satellites,
@@ -1633,7 +1691,13 @@ function card(g, isFeat){
   // locations (dewball, nectar-drop and stream-hop thumbs measured 429 HIT at IAD).
   // A new stamp is a new cache key. A Cloudflare Purge Everything also clears them.
   var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=20260916p'; });
-  if(isFeat){
+  /* one hand (23 Nov): a true shot of the live game replaces a painted or
+     squeezed thumbnail; ?look=classic keeps the old pictures */
+  var _lt = window._swsClassic ? null : LIVE_THUMB[isFeat ? 's:'+g.nm : 'g:'+g[0]];
+  if(_lt){
+    shot = '<img loading="lazy" decoding="async" alt="'+nm+'" data-lwsrc="'+_tv('/portal-assets/thumbs/live/'+_lt+'.webp')+'" onerror="_lwPh(this)">';
+  }
+  else if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
     if (g.thumb) shot = '<img loading="lazy" decoding="async" alt="'+nm+'" data-lwsrc="'+_tv(g.thumb)+'" onerror="_lwPh(this)">';
     else         shot = '<span class="ph">'+(g.ic||"🌿")+'</span>';
@@ -1656,7 +1720,7 @@ function card(g, isFeat){
   var kindName = kindKey ? (CAT_LABEL[catGroupOf(kindKey)] || '') : '';
   var kindChip = (kindName && !soon &&
                   catGroupOf(kindKey) !== window._swsHideKind)
-    ? '<span class="kind">'+kindName+'</span>' : '';
+    ? '<span class="kind">'+kindName.split(' & ')[0]+'</span>' : '';
   var inner = '<div class="shot">'+badge+favBtn+infoBtn+shot+kindChip+'</div>'+
     '<div class="body"><div class="nm">'+nm+'</div><div class="ds" onclick="return swsDescTap(event,this)">'+ds+'</div>'+
     (soon ? '<div class="soon-cta">COMING SOON</div>' : '')+'</div>';
@@ -1901,6 +1965,19 @@ function renderShelves(){
   html += shelf("Made by the studio", "the big ones",
     byName(FLAGSHIPS).filter(function(it){ return !it.g.beta; }));
   host.innerHTML = html;
+  /* one hand (23 Nov): a stranger sees games before scrolling, so the lead
+     row moves straight under the search; ?look=classic keeps the old order */
+  if (!/(^| )look-classic( |$)/.test(document.documentElement.className)) {
+    var lead = host.querySelector(".shelf.lead"), fg = document.getElementById("find-game");
+    if (lead && fg && fg.parentNode) {
+      var box = document.createElement("div"); box.id = "lead-shelf";
+      box.appendChild(lead); fg.parentNode.insertBefore(box, fg.nextSibling);
+      box.addEventListener("click", function(e){
+        var b = e.target.closest ? e.target.closest("[data-jump]") : null;
+        if (b) openCatalog(b.getAttribute("data-jump"));
+      });
+    }
+  }
   /* See all jumps to the wall with that tab already chosen */
   host.addEventListener("click", function(e){
     var b = e.target.closest ? e.target.closest("[data-jump]") : null;
@@ -2261,7 +2338,7 @@ function searchGames(qraw){
   var b=document.getElementById('fg-browse');
   if(b) b.textContent='Browse all '+open;
   var d=document.getElementById('cat-door');
-  if(d){ d.textContent='Open the full catalog · all '+open+' games, A to Z';
+  if(d){ d.textContent='Open the full catalog · all '+open+' games, A\u00a0to\u00a0Z';
     d.addEventListener('click',function(){ openCatalog('all'); }); }
 })();
 
@@ -2474,13 +2551,14 @@ renderVibes();
   var FAM=['Nectar Drop','Word Sprout','Jade Garden','Word Trellis','Berry Vine','Vine Words','Acorn Drop','Sled Vine'];
   var items=[];
   FAM.forEach(function(n){
+    if(START_HERE.indexOf(n)>=0) return;
     var f=FEATURED.find(function(g){ return g.nm===n && !g.beta; });
     if(f){ items.push({g:f, feat:true}); return; }
     var nat=GAMES.find(function(g){ return g[1]===n && g[4]!=='soon'; });
     if(nat) items.push({g:nat, feat:false});
   });
   if(items.length) host.innerHTML=shelf('Familiar favorites',
-    'our takes on Peggle, Wordle, Mahjong, Scrabble, Zuma, Boggle and more', items);
+    'our takes on Wordle, Mahjong, Scrabble, Zuma, Boggle and more', items);
 })();
 
 /* ── THE TEST LAB door ── */
