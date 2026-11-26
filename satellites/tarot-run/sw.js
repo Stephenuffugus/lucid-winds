@@ -1,7 +1,7 @@
 /* Tarot Run — service worker
    Network-first for shell (so deploys propagate fast); cache-first for art assets.
 */
-const CACHE = 'tarot-run-v2';
+const CACHE = 'tarot-run-v3';
 /* Only ever delete caches that belong to THIS app. `caches` is shared by the
    whole origin, so an unfiltered sweep deletes every sibling app's cache too. */
 const OWNED = /^tarot\-run\-/;

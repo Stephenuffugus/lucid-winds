@@ -10,7 +10,7 @@
    - ⛔ CREASE's scar: a module imported at two addresses must be precached at both. core.js imports pure.js and STAMP.js
      at CORE's stamp; engine.js and pairs.js import CREASE's bank at BRIM's. */
 
-const SHELL_VERSION = 'brim-shell-20261122a';
+const SHELL_VERSION = 'brim-shell-20261123m';
 const NET_TIMEOUT_MS = 4000;
 
 const SHELL_ASSETS = [

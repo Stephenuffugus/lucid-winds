@@ -6,7 +6,7 @@
 // immediately and we never get stuck on a stale UI), cache-first for other
 // static assets, with a cache fallback when offline. Bump CACHE on each deploy
 // you want to force-refresh.
-const CACHE = 'hunch-v6';
+const CACHE = 'hunch-v7';
 /* Only ever delete caches that belong to THIS app. `caches` is shared by the
    whole origin, so an unfiltered sweep deletes every sibling app's cache too. */
 const OWNED = /^hunch\-/;

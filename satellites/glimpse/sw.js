@@ -10,7 +10,7 @@
    - ⛔ a module imported at two addresses must be precached at both: core.js imports pure.js and STAMP.js at CORE's stamp;
      GLIMPSE's own modules import only core.js and each other, at GLIMPSE's. */
 
-const SHELL_VERSION = 'glimpse-shell-20261122a';
+const SHELL_VERSION = 'glimpse-shell-20261123m';
 const NET_TIMEOUT_MS = 4000;
 
 const SHELL_ASSETS = [

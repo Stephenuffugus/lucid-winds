@@ -1,6 +1,6 @@
 // SHINGLE service worker. The page: network first, so a new build shows on the next load; the cached copy when the
 // network fails or takes longer than 4 s (a phone on a weak signal still opens the game). Manifest and icon: cache first.
-var CACHE = 'shingle-v2';
+var CACHE = 'shingle-v3';
 var SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); })); });
 self.addEventListener('activate', function (e) { e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); })); }).then(function () { return self.clients.claim(); })); });

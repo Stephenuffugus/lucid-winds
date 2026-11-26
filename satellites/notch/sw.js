@@ -10,7 +10,7 @@
    - ⛔ a module imported at two addresses must be precached at both: core.js imports pure.js and STAMP.js at CORE's stamp;
      NOTCH's engine.js ALSO imports pure.js at NOTCH's stamp, so pure.js is precached at both addresses (CREASE's scar). */
 
-const SHELL_VERSION = 'notch-shell-20261122a';
+const SHELL_VERSION = 'notch-shell-20261123m';
 const NET_TIMEOUT_MS = 4000;
 
 const SHELL_ASSETS = [

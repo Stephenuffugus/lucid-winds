@@ -6,7 +6,7 @@
 /* Bump this string on every deploy — `activate` purges any cache whose key
    != CACHE, so a new value force-evicts the old shell and the fresh
    index.html is fetched. (Unrelated to the localStorage save key.) */
-const CACHE = 'gf-shell-2026-07-05-b25';
+const CACHE = 'gf-shell-2026-11-23-b26';
 /* Only ever delete caches that belong to THIS app. `caches` is shared by the
    whole origin, so an unfiltered sweep deletes every sibling app's cache too. */
 const OWNED = /^gf\-/;

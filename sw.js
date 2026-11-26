@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 var CACHE_VERSION = 'lw-v40';
-var ASSET_CACHE = 'lw-assets-v24';   // Hub R13: v24 drops the pre image diet set; saved pages are carried over in activate
+var ASSET_CACHE = 'lw-assets-v25';   // Hub R13: v24 drops the pre image diet set; saved pages are carried over in activate
 var GAME_CACHE = 'lw-games-v20';
 var TILE_CACHE = 'lw-tiles-v1';
 var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably

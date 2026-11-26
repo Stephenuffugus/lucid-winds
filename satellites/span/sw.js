@@ -9,7 +9,7 @@
    - SHELL_VERSION moves with SPAN's stamp, and so does the ?v= on the registration in main.js and screen.js. The
      precache list names CORE's own module by CORE's stamp, because that is the address core.js imports it from. */
 
-const SHELL_VERSION = 'span-shell-20261122a';
+const SHELL_VERSION = 'span-shell-20261123m';
 const NET_TIMEOUT_MS = 4000;
 
 const SHELL_ASSETS = [

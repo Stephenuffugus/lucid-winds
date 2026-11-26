@@ -10,7 +10,7 @@
    - ⛔ a module imported at two addresses must be precached at both: core.js imports pure.js and STAMP.js at CORE's stamp;
      TINT's modules import core.js and each other at TINT's stamp, never pure.js directly. */
 
-const SHELL_VERSION = 'tint-shell-20261122a';
+const SHELL_VERSION = 'tint-shell-20261123m';
 const NET_TIMEOUT_MS = 4000;
 
 const SHELL_ASSETS = [

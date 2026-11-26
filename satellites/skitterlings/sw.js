@@ -1,6 +1,6 @@
 /* Skitterlings service worker — network-first for the page (so updates show on
    reload), cache-first for static assets; offline-capable either way. */
-const CACHE = "skitterlings-v12";
+const CACHE = "skitterlings-v13";
 /* Only ever delete caches that belong to THIS app. `caches` is shared by the
    whole origin, so an unfiltered sweep deletes every sibling app's cache too. */
 const OWNED = /^skitterlings\-/;

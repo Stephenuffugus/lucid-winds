@@ -55,6 +55,86 @@
      the flag nothing below changes. Gate: test/music/unlocks.mjs, the HOLD block. */
   try { S.hold = window.SWS_MUSIC_HOLD === true; } catch (e) { S.hold = false; }
 
+  /* ==== SWS MANNERS v1 (23 Nov 2026) ====================================================================
+     The SAME block sits in feedback.js and music-unlocks.js; whichever loads first defines window.SWSManners
+     and the other uses it. The lead's rule (docs/briefs/fleet/FIRST-SCREEN-MANNERS.md): nothing from the
+     shared scripts shows until the player has made a FIRST MOVE in this game AND half a minute has passed
+     since the page opened; never over a board, a list or a control; one at a time.
+       when(fn)       run fn once the gate is open (now, if it already is)
+       move()         a game that announces a move or a result opens the move half of the gate
+                      (SWSMusic.milestone does; so does a document event 'sws:move')
+       claim(name)    the one-at-a-time token for pop-ups (tip, card, toast); release(name) hands it back
+       seatFree(r)    true when nothing of the game's is under rect r: no control, no text, no canvas, no
+                      tile or panel; only the page or a full screen backdrop
+     ?manners=0 in the URL or window.SWS_MANNERS_OFF = true opens the gate at once (tests and the owner). */
+  (function () {
+    try {
+      if (window.SWSManners && window.SWSManners.v >= 1) return;
+      var FLOOR = 30000, M = { v: 1, moved: false, floorDone: false, owner: null, waiters: [], armed: false };
+      var off = false; try { off = window.SWS_MANNERS_OFF === true || /[?&]manners=0(&|$)/.test(window.location.search || ''); } catch (e) {}
+      function ours(t) { try { return !!(t && t.closest && t.closest('[id^="sws-music"],.lwfb-fab,.lwfb-bg,.lwfb-tip')); } catch (e) { return false; } }
+      function flush() {
+        if (!M.isOpen()) return;
+        var w = M.waiters, i; M.waiters = [];
+        for (i = 0; i < w.length; i++) { try { w[i](); } catch (e) {} }
+      }
+      function onMove(ev) {
+        if (M.moved) return;
+        if (ev && ev.target && ours(ev.target)) return;
+        M.moved = true; flush();
+      }
+      M.arm = function () {
+        if (M.armed) return; M.armed = true;
+        if (off) { M.moved = true; M.floorDone = true; return; }
+        var d = window.document, ev = ['pointerdown', 'keydown'], i;
+        for (i = 0; i < ev.length; i++) { try { d.addEventListener(ev[i], onMove, true); } catch (e) {} }
+        try { d.addEventListener('sws:move', function () { onMove(null); }); } catch (e) {}
+        var n = -1; try { if (window.performance && window.performance.now) n = window.performance.now(); } catch (e) {}
+        var left = n >= 0 ? Math.max(0, FLOOR - n) : FLOOR;
+        if (left <= 0) M.floorDone = true;
+        else window.setTimeout(function () { M.floorDone = true; flush(); }, left);
+      };
+      M.move = function () { M.arm(); onMove(null); };
+      M.isOpen = function () { return M.moved && M.floorDone; };
+      M.when = function (fn) { M.arm(); if (M.isOpen()) { try { fn(); } catch (e) {} } else M.waiters.push(fn); };
+      M.claim = function (name) { if (M.owner && M.owner !== name) return false; M.owner = name; return true; };
+      M.release = function (name) { if (M.owner === name) M.owner = null; };
+      M.busy = function () { return M.owner; };
+      /* is anything of the game's under this rectangle? 3 rows by 5 columns of probes, our own chrome looked through */
+      M.seatFree = function (r) {
+        try {
+          var d = window.document, W = window.innerWidth || 375, H = window.innerHeight || 667, area = W * H, i, j, k;
+          if (!d.elementsFromPoint) return true;
+          if (r.left < 0 || r.top < 0 || r.right > W || r.bottom > H) return false;
+          for (j = 0; j < 3; j++) for (i = 0; i < 5; i++) {
+            var x = r.left + 4 + (r.right - r.left - 8) * i / 4, y = r.top + 4 + (r.bottom - r.top - 8) * j / 2;
+            var stack = d.elementsFromPoint(x, y) || [];
+            for (k = 0; k < stack.length; k++) {
+              var el = stack[k]; if (!el || ours(el)) continue;
+              if (el === d.body || el === d.documentElement) break;                          /* the page itself: free */
+              if (el.tagName === 'CANVAS' || el.tagName === 'svg' || el.tagName === 'SVG' || el.tagName === 'IMG' || el.tagName === 'VIDEO') return false;   /* a board or art */
+              if (el.closest && el.closest('button,a,input,select,textarea,label,[role="button"],[onclick]')) return false;
+              var cs = window.getComputedStyle(el);
+              if (cs && cs.cursor === 'pointer') return false;
+              var n = el.childNodes, t;
+              for (t = 0; t < n.length; t++) if (n[t].nodeType === 3 && (n[t].nodeValue || '').replace(/\s/g, '')) {
+                var rg = d.createRange(); rg.selectNodeContents(n[t]); var rs = rg.getClientRects(), q;
+                for (q = 0; q < rs.length; q++) if (x >= rs[q].left - 6 && x <= rs[q].right + 6 && y >= rs[q].top - 6 && y <= rs[q].bottom + 6) return false;
+              }
+              var b = el.getBoundingClientRect();
+              if (b.width * b.height >= area * 0.6) continue;                                 /* a full screen backdrop: look under it */
+              return false;                                                                   /* a tile, a row, a panel: content */
+            }
+          }
+          return true;
+        } catch (e) { return false; }
+      };
+      window.SWSManners = M;
+    } catch (e) {}
+  })();
+  var MN = window.SWSManners || { when: function (f) { f(); }, move: function () {}, isOpen: function () { return true; }, claim: function () { return true; }, release: function () {}, seatFree: function () { return true; }, arm: function () {} };
+  /* ==== end SWS MANNERS v1 ==== */
+
   /* ---- storage, defensively ---------------------------------------------- */
   function lsGet(k) { try { var v = window.localStorage.getItem(k); return v == null ? null : String(v); } catch (e) { return null; } }
   function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
@@ -129,7 +209,7 @@
   function ensurePlayer(cb) {
     if (window.SWS_MUSIC) return cb(window.SWS_MUSIC);
     S.playerCbs.push(cb); if (S.playerCbs.length > 1) return;
-    addChip();                                                        /* Listen now may come before the settle delay: place it now */
+    addChip('force');                                                 /* Listen now may come before the settle delay: place it now */
     function done() { var api = null; try { var d = window.document, btn = S.chip || d.getElementById('shell-music-btn') || null; if (window.SWSPlayer && window.SWSPlayer.init) api = window.SWSPlayer.init(btn ? { button: btn } : {}); } catch (e) {} api = api || window.SWS_MUSIC || null; var cbs = S.playerCbs; S.playerCbs = []; var i; for (i = 0; i < cbs.length; i++) { try { cbs[i](api); } catch (e) {} } }
     function withTracks() { try { if (typeof window.LW_FOLD_GAME_UNLOCKS === 'function') window.LW_FOLD_GAME_UNLOCKS(); } catch (e) {} if (window.SWSPlayer) done(); else loadScript('/music-player.js?v=20260905a', done); }
     if (window.LW_TRACKS) withTracks(); else loadScript('/music-tracks.js', withTracks);
@@ -141,7 +221,7 @@
     if (S.styled) return; S.styled = true;
     try { var d = window.document; var st = d.createElement('style'); st.id = 'sws-music-style';
       st.textContent = '#' + CARD_ID + '{position:fixed;left:12px;right:12px;bottom:12px;max-width:420px;margin:0 auto;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.55);touch-action:none;z-index:2147482000;box-sizing:border-box;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));background:#0d100c;color:#e8dcc8;border-top:1px solid rgba(200,168,75,0.7);border-radius:22px 22px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,0.6);font-family:system-ui,sans-serif;max-height:60vh;overflow:auto}'
-        + '#' + CARD_ID + ' .swsm-eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c8a84b;padding-right:44px}'
+        + '#' + CARD_ID + ' .swsm-eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c8a84b;padding-right:60px}'
         + '#' + CARD_ID + ' .swsm-bar{height:22px;margin:-10px 0 4px;display:flex;align-items:center;justify-content:center;cursor:grab}'
         + '#' + CARD_ID + ' .swsm-bar i{display:block;width:44px;height:5px;border-radius:3px;background:rgba(232,220,200,.35)}'
         + '#' + CARD_ID + ' .swsm-min{position:absolute;top:8px;right:8px;width:48px;height:48px;min-height:48px;flex:0 0 auto;padding:0;border-radius:12px;font-size:20px;line-height:1;border:1px solid rgba(232,220,200,.25)!important;background:transparent!important;color:#e8dcc8!important}'
@@ -238,7 +318,7 @@
           /* text on a PANEL (a result card, a dialog, a sheet) outranks the canvas it floats over:
              Airworthy's result card scored 2 and so did the gym floor under it, every corner tied,
              and the chip sat on the card's first line at 320x568 */
-          return onPanel(el, area) ? 2.5 : 2;
+          return onPanel(el, area) ? 2.5 : 2.05;   /* 25 Nov 2026: a hair over a canvas's 2, so words are never a seat (seatVis) */
         }
         /* a bordered or shadowed panel smaller than the screen is a card, a row, a tile: its
            empty half is not background (the chip sat inside Deepwell's LAMP shop row, scored 1) */
@@ -300,9 +380,44 @@
     var tight = (freeCorner.lastScore || 0) >= 1.5;
     if (tight !== b._tight) {
       b._tight = tight;
-      b.textContent = tight ? '\u266B' : '\u266B Music';
       if (tight) b.classList.add('swsm-tight'); else b.classList.remove('swsm-tight');
     }
+    chipLabel(b);
+    seatVis(b, freeCorner.lastScore || 0);
+  }
+  /* 23 Nov 2026 (manners): the chip says New song while a song waits for the player (its card never lands over a game
+     uninvited any more), and Music otherwise */
+  function chipLabel(b) {
+    try {
+      var t = b._tight ? (S.newSong ? '\u266B\u2022' : '\u266B') : (S.newSong ? '\u266B New song' : '\u266B Music');
+      if (b.textContent !== t) b.textContent = t;
+      b.setAttribute('aria-label', S.newSong ? 'A new song is waiting, open it' : 'Open the soundtrack');
+    } catch (e) {}
+  }
+  /* 23 Nov 2026 (manners): a hold stays a hold (applyCorner rewrites the whole style attribute, and that used to wipe the
+     display:none that hold(true) had set, so the next reseat brought the chip back over the game), and a chip whose best
+     seat is still somebody's control or HUD (score 3 and up) waits out of sight until a reseat finds a better one */
+  function seatVis(b, score) {
+    try {
+      if (S.hold) { b.style.display = 'none'; return; }
+      b.style.display = '';
+      /* and it steps out while the song card is up: the card is its own, and the chip sat under the card's bottom rim */
+      var cardUp = !!(S.card && S.card.style.display !== 'none');
+      /* 25 Nov 2026: and score the chip's REAL box too. The seat search scores a 97 x 48 footprint at the spot's
+         nominal place, but "New song" makes the chip 137 wide and a page can offset it (Conduit's Sites list at
+         360 x 640: the chip measured 27 px lower than its seat and its rim lay on the first site card). */
+      if (score < 2.05 && !cardUp) { try {
+        var R = b.getBoundingClientRect(), gi, gj, rs;
+        if (R.width > 0) for (gj = 0; gj < 3 && score < 2.05; gj++) for (gi = 0; gi < 5; gi++) {
+          rs = occupancy(R.left + 3 + (R.width - 6) * gi / 4, R.top + 3 + (R.height - 6) * gj / 2);
+          if (rs > score) score = rs; if (score >= 2.05) break;
+        }
+      } catch (e2) {} }
+      /* 25 Nov 2026: and words (2.05), a card (2.2) or words on a panel (2.5) hide it too: the second sweep shot the chip on
+         The Attic's rules, Frost Watch's footer line, the rim of Conduit's first site card and Deepwell's Open air panel.
+         A canvas with pixels (2) still keeps it, or a canvas game would never have its Music button. */
+      b.style.visibility = (score >= 2.05 || cardUp) ? 'hidden' : '';
+    } catch (e) {}
   }
   /* The chip used to be placed ONCE, 900 ms after load, against the BOOT layout, and never
      again: 101 of the 186 audited games had it sitting on their own UI once the real screen
@@ -310,10 +425,11 @@
      seconds and on resize, and never moves a chip the player has dragged. */
   function reseat() {
     try {
-      var b = S.chip; if (!b || b._moved || !window.document.body.contains(b)) return;
-      if (lsGet('sws_music_chip_pos')) return;                                   /* the player put it there */
+      var b = S.chip; if (!b || !window.document.body.contains(b)) return;
+      if (b._moved || lsGet('sws_music_chip_pos')) { seatVis(b, 0); return; }   /* the player put it there */
       var css = freeCorner(b.getAttribute('data-corner'));
       if (css && css !== b.getAttribute('data-corner')) applyCorner(b, css);
+      else seatVis(b, freeCorner.lastScore || 0);
     } catch (e) {}
   }
   /* for probes: every candidate corner with its score, and a reseat on demand (hung on the api
@@ -371,16 +487,25 @@
       else window.addEventListener('load', function () { window.setTimeout(addChip, CHIP_DELAY); });
     } catch (e) {}
   }
-  function addChip() {
+  /* mode: undefined (the gate is open, the uniform chip), 'force' (the player asked for the player: Play it now, or a game's
+     own menu calling openPlayer), 'new' (a song waits and the game's own Music button cannot say so: the play shells; the
+     chip is a New song button until the song is answered, then it goes) */
+  function addChip(mode) {
     if (S.hold) return;                                               /* held: the game has its own Music control */
+    if (!mode && !MN.isOpen()) { MN.when(addChip); return; }          /* manners: not before the first move and half a minute */
     try {
       var d = window.document; if (!d.body || S.chip) return;
-      if (d.getElementById('shell-music-btn') || d.getElementById(CHIP_ID) || window.SWS_MUSIC || window.SWSPlayer) return;   /* the game already has the player's button */
-      S.chipPlaced = true;
+      var native = d.getElementById('shell-music-btn') || window.SWS_MUSIC || window.SWSPlayer;
+      if (d.getElementById(CHIP_ID) || (native && mode !== 'new')) return;   /* the game already has the player's button */
+      S.chipPlaced = true; S.chipOnlyForNew = !!native;
       ensureStyle();
       var b = d.createElement('button'); b.id = CHIP_ID; b.type = 'button'; b.textContent = '\u266B Music'; b.setAttribute('aria-label', 'Open the soundtrack');
       applyCorner(b, freeCorner(null));
-      b.addEventListener('click', function () { if (b._moved) { b._moved = false; return; } ensurePlayer(function (api) { try { if (api && api.open) api.open(); } catch (e) {} }); });
+      b.addEventListener('click', function () {
+        if (b._moved) { b._moved = false; return; }
+        if (S.newSong) { openWaiting(); return; }                     /* the song that waited: its card, asked for */
+        ensurePlayer(function (api) { try { if (api && api.open) api.open(); } catch (e) {} });
+      });
       drag(b, 'sws_music_chip_pos');
       d.body.appendChild(b); S.chip = b;
       scheduleReseat();
@@ -417,6 +542,10 @@
       function armIdle() { try { if (idle) window.clearTimeout(idle); idle = window.setTimeout(minimise, 12000); } catch (x) {} }
       function minimise() {
         if (S.hold) { close(); return; }                                  /* held: a folded card closes as seen; no floating pill */
+        /* 23 Nov 2026 (manners): folded, the song waits in the Music chip (New song), seated by the chip's own free corner
+           search, instead of a second floating pill fixed bottom left over whatever the game has there */
+        try { if (!S.chip) addChip('new'); } catch (x) {}
+        if (S.chip) { try { if (idle) window.clearTimeout(idle); idle = null; card.style.display = 'none'; } catch (x) {} MN.release('card'); flagNew(); reseat(); return; }
         try { if (idle) window.clearTimeout(idle); idle = null; card.style.display = 'none';
           if (!pill) { pill = d.createElement('button'); pill.type = 'button'; pill.id = 'sws-music-pill'; pill.textContent = '\u266B New song'; pill.setAttribute('aria-label', 'Show the new song');
             pill.addEventListener('click', function () { if (pill._moved) { pill._moved = false; return; } try { pill.remove(); } catch (x) {} pill = null; card.style.display = ''; armIdle(); });
@@ -424,6 +553,7 @@
         } catch (x) {}
       }
       minb.addEventListener('click', minimise);
+      S.unfold = function () { try { MN.owner = 'card'; if (pill) { pill.remove(); pill = null; } card.style.display = ''; if (S.chip) seatVis(S.chip, 0); armIdle(); } catch (x) {} };
       card.addEventListener('pointerdown', armIdle, true);
       /* the player touched the GAME while the card was up: get out of the way. Found by Ripcord's
          playthrough gate, where the card sat over the Launch button. */
@@ -449,30 +579,78 @@
       var btns = d.createElement('div'); btns.className = 'swsm-btns';
       var listen = d.createElement('button'); listen.id = 'sws-music-listen'; listen.type = 'button'; listen.className = 'swsm-primary'; listen.textContent = 'Play it now';
       var later = d.createElement('button'); later.id = 'sws-music-later'; later.type = 'button'; later.textContent = 'Later';
-      function close() { try { if (idle) window.clearTimeout(idle); d.removeEventListener('pointerdown', outside, true); card.remove(); if (pill) pill.remove(); } catch (x) {} pill = null; S.card = null; tellGame(false); markRevealed(e.id); S.interacted = true; showNext(); }
+      function close() { try { if (idle) window.clearTimeout(idle); d.removeEventListener('pointerdown', outside, true); card.remove(); if (pill) pill.remove(); } catch (x) {} pill = null; S.card = null; S.unfold = null; MN.release('card'); tellGame(false); markRevealed(e.id); refreshNew(); reseat(); S.interacted = true; showNext(); }
       listen.addEventListener('click', function () { close(); playById(e.id); });
       later.addEventListener('click', function () { close(); });
       btns.appendChild(listen); btns.appendChild(later); card.appendChild(btns);
-      d.body.appendChild(card); S.card = card; tellGame(true);
+      d.body.appendChild(card); S.card = card; MN.owner = 'card'; if (S.chip) seatVis(S.chip, 0); tellGame(true);   /* a card wins the one-at-a-time token */
     } catch (x) {}
   }
   /* at boot or at a milestone: the newest fresh grant, else the newest pending reveal from any game; never mid round */
+  function waitingList(fresh) {
+    var list = [], seen = {}, i, pend = readList(LS_PENDING);
+    for (i = 0; i < fresh.length; i++) if (fresh[i] && !seen[fresh[i].id] && !isRevealed(fresh[i].id)) { seen[fresh[i].id] = 1; list.push(fresh[i]); }
+    for (i = 0; i < pend.length; i++) if (pend[i] && pend[i].id && !seen[pend[i].id] && !isRevealed(pend[i].id)) { seen[pend[i].id] = 1; list.push(pend[i]); }
+    return list;
+  }
+  /* shows the card NOW: the game's own break (reveal) or the player tapping the waiting song */
   function revealPending(fresh) {
     if (S.hold && !S.forced) { for (var h = 0; h < fresh.length; h++) if (!isRevealed(fresh[h].id)) addPending(fresh[h]); return true; }   /* held: wait for the game's break */
-    var list = [], i, pend = readList(LS_PENDING);
-    for (i = 0; i < fresh.length; i++) if (!isRevealed(fresh[i].id)) list.push(fresh[i]);
-    for (i = 0; i < pend.length; i++) if (pend[i] && pend[i].id && !isRevealed(pend[i].id)) list.push(pend[i]);
+    var list = waitingList(fresh);
     if (!list.length) return false;
     showCard(list[list.length - 1], list.length - 1);
     return true;
+  }
+  /* 23 Nov 2026 (manners): the moment the gate opens (first move + half a minute), or a milestone after it. The card shows
+     only where nothing of the game's is under it and no other shared pop-up is up; otherwise the song waits in the Music
+     chip, which says New song, and the card comes when the player taps it. Every song is pending until answered, so a
+     player who leaves first meets it next visit instead of losing it. */
+  function cardRect() {
+    var W = window.innerWidth || 375, H = window.innerHeight || 667, w = Math.min(W - 24, 420), h = 212;
+    try { var pos = parse(lsGet('sws_music_card_pos'), null); if (pos && pos.x >= 0 && pos.y >= 0 && pos.x < W - 80 && pos.y < H - 80) return { left: pos.x, top: pos.y, right: Math.min(W, pos.x + w), bottom: Math.min(H, pos.y + h) }; } catch (e) {}
+    return { left: (W - w) / 2, right: (W + w) / 2, top: H - 12 - h, bottom: H - 12 };
+  }
+  function present(fresh) {
+    var i, list;
+    if (S.hold) { for (i = 0; i < fresh.length; i++) if (!isRevealed(fresh[i].id)) addPending(fresh[i]); return true; }
+    list = waitingList(fresh); if (!list.length) return false;
+    for (i = 0; i < list.length; i++) addPending(list[i]);
+    if (S.card) return true;
+    if (MN.busy() && MN.busy() !== 'card') { window.setTimeout(function () { present([]); }, 2000); return true; }   /* one at a time */
+    if (!MN.seatFree(cardRect())) { flagNew(); return true; }
+    showCard(list[list.length - 1], list.length - 1);
+    return true;
+  }
+  function flagNew() {
+    if (S.hold) return;
+    S.newSong = true;
+    try { if (!S.chip) addChip('new'); if (S.chip) { chipLabel(S.chip); reseat(); } } catch (e) {}
+  }
+  function refreshNew() {
+    try {
+      if (waitingList([]).length) return;
+      S.newSong = false;
+      if (S.chip && S.chipOnlyForNew) { S.chip.remove(); S.chip = null; }
+      else if (S.chip) chipLabel(S.chip);
+    } catch (e) {}
+  }
+  function openWaiting() {
+    if (S.card && S.unfold) { S.unfold(); return; }
+    S.forced = true; var shown = false; try { shown = revealPending([]); } catch (e) {} S.forced = false;
+    if (!shown) { refreshNew(); ensurePlayer(function (api) { try { if (api && api.open) api.open(); } catch (e) {} }); }
   }
 
   /* ---- the toast: one inert pill, three seconds, queued, never while hidden ---- */
   function reduced() { try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } }
   function showNext() {
     if (S.hold) { S.queue.length = 0; return; }                         /* held: the song waits in pending instead */
-    if (S.showing || !S.queue.length || !S.interacted) return;
+    if (S.showing || !S.queue.length || !S.interacted || !MN.isOpen()) return;
     var d = window.document; if (!d || !d.body || d.hidden) return;
+    /* manners: one at a time, and only over nothing of the game's; a toast that cannot sit is dropped (the song is
+       pending and the chip says New song) */
+    var title = S.queue[0], W = window.innerWidth || 375, tw = Math.min(W * 0.9, 36 + 8 * (11 + String(title).length));
+    if (!MN.claim('toast')) { window.setTimeout(showNext, 1500); return; }
+    if (!MN.seatFree({ left: (W - tw) / 2, right: (W + tw) / 2, top: 12, bottom: 56 })) { S.queue.length = 0; MN.release('toast'); flagNew(); return; }
     var el = d.createElement('div'), st = el.style;
     el.id = TOAST_ID; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
     el.textContent = '♫ New song: ' + S.queue.shift();
@@ -484,7 +662,7 @@
     st.boxShadow = '0 6px 18px rgba(0,0,0,0.55)';
     if (!reduced()) { st.transition = 'opacity 0.25s'; }
     d.body.appendChild(el); S.showing = true;
-    window.setTimeout(function () { try { el.remove(); } catch (e) {} S.showing = false; showNext(); }, TOAST_MS);
+    window.setTimeout(function () { try { el.remove(); } catch (e) {} S.showing = false; MN.release('toast'); showNext(); }, TOAST_MS);
   }
   function toast(title) { S.queue.push(String(title)); showNext(); }
   /* first interaction opens the toast gate; passive, no preventDefault, removed after one use */
@@ -503,6 +681,7 @@
       S.loadSecs += TICK_MS / 1000;
       writeProgress(function (p) { p.secs += TICK_MS / 1000; if (!S.sessionCounted && S.loadSecs >= SESSION_SECS) { p.sessions += 1; S.sessionCounted = true; } });
       var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) { addPending(fresh[i]); toast(fresh[i].title); }
+      if (fresh.length) MN.when(flagNew);
     } catch (e) {}
   }
   function startTicks() { if (S.timer != null) return; S.timer = window.setInterval(tick, TICK_MS); }
@@ -526,9 +705,13 @@
       var fresh = rebuild();
       /* the chip waits for the page to SETTLE: at DOMContentLoaded most games have not drawn their HUD yet, and a corner
          that measures empty now gets painted under a moment later (Deepwell's close button, P11 LOOK). */
-      placeChipLater();
-      /* the moment: a card at boot for the fresh song, or one earned mid round in ANY game last time; no toast for it */
-      if (!revealPending(fresh)) { var i; for (i = 0; i < fresh.length; i++) toast(fresh[i].title); }
+      /* 23 Nov 2026 (manners): the chip, the card and the toast all wait for the player's first move AND half a minute */
+      MN.when(placeChipLater);
+      /* the boot song waits in pending from the start: a player who leaves before the gate opens meets it next visit */
+      (function () { var k; for (k = 0; k < fresh.length; k++) if (!isRevealed(fresh[k].id)) addPending(fresh[k]); })();
+      /* the moment: a card for the fresh song, or one earned mid round in ANY game last time; no toast for it */
+      MN.when(function () { if (!present(fresh)) { var i; for (i = 0; i < fresh.length; i++) toast(fresh[i].title); } });
+      MN.when(showNext);
       if (!shelvesFor(S.id).length) { log('no shelf for ' + S.id + ', visit recorded, no ticks'); return; }
       S.ticking = true;
       try { window.document.addEventListener('visibilitychange', onVisibility); } catch (e) {}
@@ -569,7 +752,8 @@
         if (!(n > 0)) return false;
         writeProgress(function (p) { if (n > (p.milestones | 0)) p.milestones = n; });
         var fresh = rebuild(), i; for (i = 0; i < fresh.length; i++) addPending(fresh[i]);
-        if (!revealPending(fresh)) { for (i = 0; i < fresh.length; i++) toast(fresh[i].title); }
+        MN.move();                                                      /* a milestone is a move */
+        MN.when(function () { if (!present(fresh)) { for (i = 0; i < fresh.length; i++) toast(fresh[i].title); } });
         return true;
       } catch (e) { return false; }
     },

@@ -1,6 +1,6 @@
 // Sweet Spot service worker — cache-first app shell for offline play.
 // Bump CACHE whenever any cached asset changes, to force clients to re-fetch.
-const CACHE = 'sweet-spot-v1';
+const CACHE = 'sweet-spot-v2';
 /* Only ever delete caches that belong to THIS app. `caches` is shared by the
    whole origin, so an unfiltered sweep deletes every sibling app's cache too. */
 const OWNED = /^sweet\-spot\-/;

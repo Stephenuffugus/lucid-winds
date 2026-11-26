@@ -16,6 +16,86 @@
 (function () {
   if (window.LW_Feedback) return;
 
+  /* ==== SWS MANNERS v1 (23 Nov 2026) ====================================================================
+     The SAME block sits in feedback.js and music-unlocks.js; whichever loads first defines window.SWSManners
+     and the other uses it. The lead's rule (docs/briefs/fleet/FIRST-SCREEN-MANNERS.md): nothing from the
+     shared scripts shows until the player has made a FIRST MOVE in this game AND half a minute has passed
+     since the page opened; never over a board, a list or a control; one at a time.
+       when(fn)       run fn once the gate is open (now, if it already is)
+       move()         a game that announces a move or a result opens the move half of the gate
+                      (SWSMusic.milestone does; so does a document event 'sws:move')
+       claim(name)    the one-at-a-time token for pop-ups (tip, card, toast); release(name) hands it back
+       seatFree(r)    true when nothing of the game's is under rect r: no control, no text, no canvas, no
+                      tile or panel; only the page or a full screen backdrop
+     ?manners=0 in the URL or window.SWS_MANNERS_OFF = true opens the gate at once (tests and the owner). */
+  (function () {
+    try {
+      if (window.SWSManners && window.SWSManners.v >= 1) return;
+      var FLOOR = 30000, M = { v: 1, moved: false, floorDone: false, owner: null, waiters: [], armed: false };
+      var off = false; try { off = window.SWS_MANNERS_OFF === true || /[?&]manners=0(&|$)/.test(window.location.search || ''); } catch (e) {}
+      function ours(t) { try { return !!(t && t.closest && t.closest('[id^="sws-music"],.lwfb-fab,.lwfb-bg,.lwfb-tip')); } catch (e) { return false; } }
+      function flush() {
+        if (!M.isOpen()) return;
+        var w = M.waiters, i; M.waiters = [];
+        for (i = 0; i < w.length; i++) { try { w[i](); } catch (e) {} }
+      }
+      function onMove(ev) {
+        if (M.moved) return;
+        if (ev && ev.target && ours(ev.target)) return;
+        M.moved = true; flush();
+      }
+      M.arm = function () {
+        if (M.armed) return; M.armed = true;
+        if (off) { M.moved = true; M.floorDone = true; return; }
+        var d = window.document, ev = ['pointerdown', 'keydown'], i;
+        for (i = 0; i < ev.length; i++) { try { d.addEventListener(ev[i], onMove, true); } catch (e) {} }
+        try { d.addEventListener('sws:move', function () { onMove(null); }); } catch (e) {}
+        var n = -1; try { if (window.performance && window.performance.now) n = window.performance.now(); } catch (e) {}
+        var left = n >= 0 ? Math.max(0, FLOOR - n) : FLOOR;
+        if (left <= 0) M.floorDone = true;
+        else window.setTimeout(function () { M.floorDone = true; flush(); }, left);
+      };
+      M.move = function () { M.arm(); onMove(null); };
+      M.isOpen = function () { return M.moved && M.floorDone; };
+      M.when = function (fn) { M.arm(); if (M.isOpen()) { try { fn(); } catch (e) {} } else M.waiters.push(fn); };
+      M.claim = function (name) { if (M.owner && M.owner !== name) return false; M.owner = name; return true; };
+      M.release = function (name) { if (M.owner === name) M.owner = null; };
+      M.busy = function () { return M.owner; };
+      /* is anything of the game's under this rectangle? 3 rows by 5 columns of probes, our own chrome looked through */
+      M.seatFree = function (r) {
+        try {
+          var d = window.document, W = window.innerWidth || 375, H = window.innerHeight || 667, area = W * H, i, j, k;
+          if (!d.elementsFromPoint) return true;
+          if (r.left < 0 || r.top < 0 || r.right > W || r.bottom > H) return false;
+          for (j = 0; j < 3; j++) for (i = 0; i < 5; i++) {
+            var x = r.left + 4 + (r.right - r.left - 8) * i / 4, y = r.top + 4 + (r.bottom - r.top - 8) * j / 2;
+            var stack = d.elementsFromPoint(x, y) || [];
+            for (k = 0; k < stack.length; k++) {
+              var el = stack[k]; if (!el || ours(el)) continue;
+              if (el === d.body || el === d.documentElement) break;                          /* the page itself: free */
+              if (el.tagName === 'CANVAS' || el.tagName === 'svg' || el.tagName === 'SVG' || el.tagName === 'IMG' || el.tagName === 'VIDEO') return false;   /* a board or art */
+              if (el.closest && el.closest('button,a,input,select,textarea,label,[role="button"],[onclick]')) return false;
+              var cs = window.getComputedStyle(el);
+              if (cs && cs.cursor === 'pointer') return false;
+              var n = el.childNodes, t;
+              for (t = 0; t < n.length; t++) if (n[t].nodeType === 3 && (n[t].nodeValue || '').replace(/\s/g, '')) {
+                var rg = d.createRange(); rg.selectNodeContents(n[t]); var rs = rg.getClientRects(), q;
+                for (q = 0; q < rs.length; q++) if (x >= rs[q].left - 6 && x <= rs[q].right + 6 && y >= rs[q].top - 6 && y <= rs[q].bottom + 6) return false;
+              }
+              var b = el.getBoundingClientRect();
+              if (b.width * b.height >= area * 0.6) continue;                                 /* a full screen backdrop: look under it */
+              return false;                                                                   /* a tile, a row, a panel: content */
+            }
+          }
+          return true;
+        } catch (e) { return false; }
+      };
+      window.SWSManners = M;
+    } catch (e) {}
+  })();
+  var MN = window.SWSManners || { when: function (f) { f(); }, move: function () {}, isOpen: function () { return true; }, claim: function () { return true; }, release: function () {}, seatFree: function () { return true; }, arm: function () {} };
+  /* ==== end SWS MANNERS v1 ==== */
+
   // 2026-07-27: reports now go to the swFeedback cloud function (Firestore
   // queue + instant Discord ping) instead of /api/feedback.php — the PHP
   // mail() route delivered to an inbox nobody watches, so player reports
@@ -678,12 +758,14 @@
     }
     return out;
   }
+  /* 4 x 4 probes across the footprint (25 Nov 2026, first screen manners). The old five (four corners and
+     the middle) left 20 px gaps: on Dewball at 360 x 640 the corner of "Sound: On" poked 3 px into the
+     chip and 15 px under its dismiss badge, between two probes, and the chip sat on the button for good. */
   function fyProbePoints(r, vw, vh) {
-    var p = FY.PAD, pts = [
-      [r.left + p, r.top + p], [r.right - p, r.top + p],
-      [r.left + p, r.bottom - p], [r.right - p, r.bottom - p],
-      [(r.left + r.right) / 2, (r.top + r.bottom) / 2]
-    ], out = [], i;
+    var p = FY.PAD, pts = [], out = [], i, j;
+    for (j = 0; j < 4; j++) for (i = 0; i < 4; i++) {
+      pts.push([r.left + p + (r.right - r.left - 2 * p) * i / 3, r.top + p + (r.bottom - r.top - 2 * p) * j / 3]);
+    }
     for (i = 0; i < pts.length; i++) {
       var x = Math.round(Math.min(vw - 1, Math.max(0, pts[i][0])));
       var y = Math.round(Math.min(vh - 1, Math.max(0, pts[i][1])));
@@ -971,7 +1053,11 @@
       // round 1 again, permanently. A snooze sits still for a minute and then
       // starts behaving again once the page has moved on.
       if (w.hiddenAt && (Date.now() - w.hiddenAt) >= FY.HIDDEN_MAX_MS) {
-        fyGoHome(w); w.snoozeUntil = Date.now() + FY.SNOOZE_MS; w.forced = true;
+        /* First screen manners (25 Nov 2026): the ceiling never puts the chip back ON a control. A page
+           whose home corner is a button keeps the chip faded until the screen changes (the form stays
+           reachable from the game's own menu); a cover-only block (a canvas sheet) still comes home. */
+        if (fyBlockedAt(w.homeRect, w.el, vw, vh, 'control').blocked) { w.hiddenAt = Date.now(); fyYield(w, vw, vh); }
+        else { fyGoHome(w); w.snoozeUntil = Date.now() + FY.SNOOZE_MS; w.forced = true; }
       } else {
         fyYield(w, vw, vh);   // an anchor may have freed up
       }
@@ -1057,8 +1143,17 @@
     return watch;
   }
 
+  var fabWaiting = false;
   function mountFab(opts) {
     if (document.querySelector('.lwfb-fab')) return;
+    /* 23 Nov 2026 (first screen manners): in a game (the mini ladybug) nothing shows until the player's first move AND
+       half a minute; the hub and the portal keep their labelled button at once. opts.now or window.LW_FB_NOW skips the wait. */
+    var inGame = opts && (opts.mini || opts.surface === 'satellite');
+    if (inGame && !opts.now && window.LW_FB_NOW !== true && !MN.isOpen()) {
+      if (fabWaiting) return; fabWaiting = true;
+      MN.when(function () { fabWaiting = false; mountFab(opts); });
+      return;
+    }
     // Respect a dismissal (Stephen 7/19 + 7/26: full-screen players must be
     // able to clear the button). Hidden until tomorrow, then it returns.
     try { if (localStorage.getItem('lwfb_hidden_day') === dayKey()) return; } catch (e) {}
@@ -1153,35 +1248,54 @@
     if (b.classList.contains('lwfb-mini')) { try { explainOnce(b); } catch (e) {} }
   }
 
+  /* 23 Nov 2026 (first screen manners): the note used to land 1.5 s after load wherever the fab was, on Shell Shuffle's
+     Start, Cipher Bloom's title, Frost Watch's How button. Now it waits its turn (one shared pop-up at a time), and it is
+     placed only where nothing of the game's is under it: above the ladybug, beside it, or below it, whichever is free.
+     No free place: it tries again every few seconds for two minutes, then waits for the next visit (not marked seen). */
   function explainOnce(b) {
     try { if (localStorage.getItem('lwfb_explained') === '1') return; } catch (e) { return; }
-    setTimeout(function () {
-      if (!b.parentNode || b.getAttribute('data-lwfb-yield') === '1') return;   // hidden over a control: next visit
+    var tries = 0;
+    function attempt() {
+      tries++;
+      if (tries > 40 || !b.parentNode) return;
+      if (b.getAttribute('data-lwfb-yield') === '1' || !MN.claim('tip')) { setTimeout(attempt, 3000); return; }
       var r = b.getBoundingClientRect();
-      if (!r.width) return;
+      if (!r.width) { MN.release('tip'); return; }
       var tip = document.createElement('div');
       tip.className = 'lwfb-tip';
       tip.setAttribute('role', 'status');
       tip.textContent = 'Found a bug or have an idea? Tap the ladybug to tell us.';
+      tip.style.visibility = 'hidden'; tip.style.left = '0px'; tip.style.top = '0px';
       document.body.appendChild(tip);
-      var tw = tip.offsetWidth, th = tip.offsetHeight;
-      var left = Math.max(8, Math.min(window.innerWidth - tw - 8, r.right - tw));
-      var top = r.top - th - 10;
-      if (top < 8) top = r.bottom + 10;
-      tip.style.left = left + 'px';
-      tip.style.top = top + 'px';
+      var tw = tip.offsetWidth, th = tip.offsetHeight, W = window.innerWidth, H = window.innerHeight;
+      var spots = [
+        { l: r.right - tw, t: r.top - th - 10 },                       // above, right aligned (as before)
+        { l: r.left - tw - 10, t: r.top + r.height / 2 - th / 2 },      // to its left
+        { l: r.right - tw, t: r.bottom + 10 },                         // below
+        { l: r.right + 10, t: r.top + r.height / 2 - th / 2 }           // to its right
+      ], i, at = null;
+      for (i = 0; i < spots.length && !at; i++) {
+        var L = Math.max(8, Math.min(W - tw - 8, spots[i].l)), T = spots[i].t;
+        if (T < 8 || T + th > H - 8) continue;
+        if (MN.seatFree({ left: L, top: T, right: L + tw, bottom: T + th })) at = { l: L, t: T };
+      }
+      if (!at) { if (tip.parentNode) tip.parentNode.removeChild(tip); MN.release('tip'); setTimeout(attempt, 3000); return; }
+      tip.style.left = at.l + 'px';
+      tip.style.top = at.t + 'px';
+      tip.style.visibility = '';
       try { localStorage.setItem('lwfb_explained', '1'); } catch (e) {}
       var gone = false;
       var hide = function () {
         if (gone) return;
         gone = true;
         tip.style.opacity = '0';
-        setTimeout(function () { if (tip.parentNode) tip.parentNode.removeChild(tip); }, 260);
+        setTimeout(function () { if (tip.parentNode) tip.parentNode.removeChild(tip); MN.release('tip'); }, 260);
       };
       tip.addEventListener('click', hide);
       b.addEventListener('pointerdown', hide);
       setTimeout(hide, 7000);
-    }, 1500);
+    }
+    setTimeout(attempt, 1500);
   }
 
   window.LW_Feedback = {
